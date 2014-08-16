@@ -1,0 +1,13 @@
+interface Calculator
+{
+	void dispose();
+	int sum(int n1, int n2);
+	int getMemory();
+	void setMemory(int n);
+	void sumAndStore(int n1, int n2);
+}
+
+interface Calculator2 : Calculator
+{
+	int multiply(int n1, int n2);
+}

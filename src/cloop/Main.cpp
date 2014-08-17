@@ -572,7 +572,6 @@ public:
 		fprintf(out, "#define %s\n\n", headerGuard.c_str());
 		fprintf(out, "#include <stdint.h>\n\n");
 
-
 		fprintf(out, "#ifndef CLOOP_EXTERN_C\n");
 		fprintf(out, "#ifdef __cplusplus\n");
 		fprintf(out, "#define CLOOP_EXTERN_C extern \"C\"\n");
@@ -580,7 +579,6 @@ public:
 		fprintf(out, "#define CLOOP_EXTERN_C\n");
 		fprintf(out, "#endif\n");
 		fprintf(out, "#endif\n\n\n");
-
 
 		for (auto& interface : parser->interfaces)
 		{
@@ -698,6 +696,186 @@ private:
 };
 
 
+class PascalGenerator : public FileGenerator
+{
+public:
+	PascalGenerator(const string& filename, Parser* parser, const string& unitName)
+		: FileGenerator(filename),
+		  parser(parser),
+		  unitName(unitName)
+	{
+	}
+
+public:
+	virtual void generate()
+	{
+		fprintf(out, "unit %s;\n\n", unitName.c_str());
+		fprintf(out, "interface\n\n");
+		fprintf(out, "uses Classes;\n\n");
+		fprintf(out, "type\n");
+
+		for (auto& interface : parser->interfaces)
+		{
+			for (auto& method : interface->methods)
+			{
+				fprintf(out, "\t%s_%sPtr = %s(this: Pointer",
+					interface->name.c_str(), method->name.c_str(),
+					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"));
+
+				for (auto& parameter : method->parameters)
+				{
+					fprintf(out, "; %s: %s",
+						parameter->name.c_str(), convertType(parameter->type).c_str());
+				}
+
+				fprintf(out, ")");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, ": %s", convertType(method->returnType).c_str());
+
+				fprintf(out, "; cdecl;\n");
+			}
+		}
+
+		fprintf(out, "\n");
+
+		for (auto& interface : parser->interfaces)
+		{
+			fprintf(out, "\t%sVTable = class", interface->name.c_str());
+
+			if (interface->super)
+				fprintf(out, "(%sVTable)", interface->super->name.c_str());
+
+			fprintf(out, "\n");
+
+			if (!interface->super)
+			{
+				fprintf(out, "{$ifndef FPC}\n");
+				fprintf(out, "\t\tdummy: PtrInt;\n");
+				fprintf(out, "{$endif}\n");
+				fprintf(out, "\t\tversion: PtrInt;\n");
+			}
+
+			for (auto& method : interface->methods)
+			{
+				fprintf(out, "\t\t%s: %s_%sPtr;\n", method->name.c_str(), interface->name.c_str(),
+					method->name.c_str());
+			}
+
+			fprintf(out, "\tend;\n\n");
+
+			fprintf(out, "\t%s = class", interface->name.c_str());
+
+			if (interface->super)
+				fprintf(out, "(%s)", interface->super->name.c_str());
+
+			fprintf(out, "\n");
+
+			if (!interface->super)
+			{
+				fprintf(out, "{$ifndef FPC}\n");
+				fprintf(out, "\t\tdummy: PtrInt;\n");
+				fprintf(out, "{$endif}\n");
+				fprintf(out, "\t\tvTable: %sVTable;\n", interface->name.c_str());
+			}
+
+			for (auto& method : interface->methods)
+			{
+				fprintf(out, "\t\t%s %s(",
+					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					method->name.c_str());
+
+				bool firstParameter = true;
+				for (auto& parameter : method->parameters)
+				{
+					if (firstParameter)
+						firstParameter = false;
+					else
+						fprintf(out, "; ");
+
+					fprintf(out, "%s: %s",
+						parameter->name.c_str(), convertType(parameter->type).c_str());
+				}
+
+				fprintf(out, ")");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, ": %s", convertType(method->returnType).c_str());
+
+				fprintf(out, ";\n");
+			}
+
+			fprintf(out, "\tend;\n\n");
+		}
+
+		fprintf(out, "implementation\n\n");
+
+		for (auto& interface : parser->interfaces)
+		{
+			for (auto& method : interface->methods)
+			{
+				fprintf(out, "%s %s.%s(",
+					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					interface->name.c_str(),
+					method->name.c_str());
+
+				bool firstParameter = true;
+				for (auto& parameter : method->parameters)
+				{
+					if (firstParameter)
+						firstParameter = false;
+					else
+						fprintf(out, "; ");
+
+					fprintf(out, "%s: %s",
+						parameter->name.c_str(), convertType(parameter->type).c_str());
+				}
+
+				fprintf(out, ")");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, ": %s", convertType(method->returnType).c_str());
+
+				fprintf(out, ";\n");
+				fprintf(out, "begin\n");
+				fprintf(out, "\t");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, "Result := ");
+
+				fprintf(out, "%sVTable(vTable).%s(Self",
+					interface->name.c_str(), method->name.c_str());
+
+				for (auto& parameter : method->parameters)
+					fprintf(out, ", %s", parameter->name.c_str());
+
+				fprintf(out, ");\n");
+				fprintf(out, "end;\n\n");
+			}
+		}
+
+		fprintf(out, "end.\n");
+	}
+
+private:
+	string convertType(const Token& token)
+	{
+		switch (token.type)
+		{
+			case Token::TYPE_INT:
+				return "Integer";
+
+			default:
+				return token.text;
+		}
+	}
+
+private:
+	Parser* parser;
+	string unitName;
+};
+
+
 void run(int argc, const char* argv[])
 {
 	string inFilename(argv[1]);
@@ -741,6 +919,15 @@ void run(int argc, const char* argv[])
 		string includeFilename(argv[4]);
 
 		generator.reset(new CImplGenerator(outFilename, &parser, includeFilename));
+	}
+	else if (outFormat == "pascal")
+	{
+		if (argc < 5)
+			throw runtime_error("Invalid command line parameters for Pascal output.");
+
+		string unitName(argv[4]);
+
+		generator.reset(new PascalGenerator(outFilename, &parser, unitName));
 	}
 	else
 		throw runtime_error("Invalid output format.");

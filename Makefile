@@ -50,7 +50,8 @@ all: mkdirs \
 	$(BIN_DIR)/test1-c$(SHRLIB_EXT)	\
 	$(BIN_DIR)/test1-c$(EXE_EXT)	\
 	$(BIN_DIR)/test1-cpp$(SHRLIB_EXT)	\
-	$(BIN_DIR)/test1-cpp$(EXE_EXT)
+	$(BIN_DIR)/test1-cpp$(EXE_EXT)	\
+	$(BIN_DIR)/test1-pascal$(EXE_EXT)
 
 mkdirs: $(OBJ_DIRS) $(BIN_DIR) $(LIB_DIR)
 
@@ -76,8 +77,11 @@ $(SRC_DIR)/tests/test1/CalcCApi.h: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Inter
 $(SRC_DIR)/tests/test1/CalcCApi.c: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl $(SRC_DIR)/tests/test1/CalcCApi.h
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl c-impl $@ CalcCApi.h
 
-$(SRC_DIR)/tests/test1/CalcCppApi.h: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl $(SRC_DIR)/tests/test1/CalcCApi.h
+$(SRC_DIR)/tests/test1/CalcCppApi.h: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl c++ $@ CALC_CPP_API_H CalcApi
+
+$(SRC_DIR)/tests/test1/CalcPascalApi.pas: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
+	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl pascal $@ CalcPascalApi
 
 $(SRC_DIR)/tests/test1/CppTest.cpp: $(SRC_DIR)/tests/test1/CalcCppApi.h
 
@@ -102,3 +106,9 @@ $(BIN_DIR)/test1-cpp$(EXE_EXT): \
 	$(OBJ_DIR)/tests/test1/CppTest.o \
 
 	$(LD) $^ -ldl -o $@
+
+$(BIN_DIR)/test1-pascal$(EXE_EXT): \
+	$(SRC_DIR)/tests/test1/PascalTest.pas \
+	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
+
+	fpc -Mdelphi -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(EXE_EXT) $(SRC_DIR)/tests/test1/PascalTest.pas

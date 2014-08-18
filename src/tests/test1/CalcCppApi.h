@@ -31,7 +31,7 @@ public:
 		VTable* cloopVTable;
 
 	public:
-		static const int VERSION = sizeof(VTable) / sizeof(void*) - 2;
+		static const int VERSION = 5;
 
 		void dispose()
 		{
@@ -73,7 +73,7 @@ public:
 		};
 
 	public:
-		static const int VERSION = sizeof(VTable) / sizeof(void*) - 2;
+		static const int VERSION = 6;
 
 		int multiply(int n1, int n2)
 		{

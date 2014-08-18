@@ -325,6 +325,11 @@ public:
 
 		for (auto& interface : parser->interfaces)
 		{
+			deque<Method*> methods;
+
+			for (Interface* p = interface; p; p = p->super)
+				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
+
 			if (!interface->super)
 				fprintf(out, "\tclass %s\n", interface->name.c_str());
 			else
@@ -373,8 +378,7 @@ public:
 			}
 
 			fprintf(out, "\tpublic:\n");
-			fprintf(out, "\t\tstatic const int VERSION = sizeof(VTable) / sizeof(void*) - %d;\n",
-				(1 + DUMMY_VTABLE));
+			fprintf(out, "\t\tstatic const int VERSION = %d;\n", (int) methods.size());
 
 			unsigned methodNumber = (interface->super ? interface->super->methods.size() : 0);
 			for (auto& method : interface->methods)

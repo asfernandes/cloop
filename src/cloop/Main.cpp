@@ -307,35 +307,10 @@ public:
 		fprintf(out, "#ifndef %s\n", headerGuard.c_str());
 		fprintf(out, "#define %s\n\n", headerGuard.c_str());
 		fprintf(out, "#include <stdint.h>\n");
-		fprintf(out, "#include <stdarg.h>\n\n\n");
 
 		fprintf(out, "template <typename Policy>\n");
 		fprintf(out, "class %s\n", className.c_str());
 		fprintf(out, "{\n");
-		fprintf(out, "private:\n");
-		fprintf(out, "\ttemplate <typename T>\n");
-		fprintf(out, "\tclass VTableInitializer\n");
-		fprintf(out, "\t{\n");
-		fprintf(out, "\tpublic:\n");
-		fprintf(out, "\t\tVTableInitializer(unsigned version, ...)\n");
-		fprintf(out, "\t\t{\n");
-		fprintf(out, "\t\t\tva_list va;\n");
-		fprintf(out, "\t\t\tva_start(va, version);\n");
-		fprintf(out, "\n");
-		fprintf(out, "\t\t\tvTable.version = version;\n");
-		fprintf(out, "\n");
-		fprintf(out, "\t\t\tvoid** end = ((void**) &vTable.version) + version;\n");
-		fprintf(out, "\n");
-		fprintf(out, "\t\t\tfor (void** p = (void**) &vTable.version; p < end; )\n");
-		fprintf(out, "\t\t\t\t*++p = va_arg(va, void*);\n");
-		fprintf(out, "\n");
-		fprintf(out, "\t\t\tva_end(va);\n");
-		fprintf(out, "\t\t}\n");
-		fprintf(out, "\n");
-		fprintf(out, "\t\tT vTable;\n");
-		fprintf(out, "\t};\n");
-		fprintf(out, "\n");
-
 		fprintf(out, "public:\n");
 
 		fprintf(out, "\t// Interfaces declarations\n\n");
@@ -450,18 +425,23 @@ public:
 			fprintf(out, "\tpublic:\n");
 			fprintf(out, "\t\t%sBaseImpl()\n", interface->name.c_str());
 			fprintf(out, "\t\t{\n");
-			fprintf(out, "\t\t\tstatic VTableInitializer<typename Base::VTable> vTableInit(\n");
-			fprintf(out, "\t\t\t\tBase::VERSION");
+			fprintf(out, "\t\t\tstatic struct VTableImpl : Base::VTable\n");
+			fprintf(out, "\t\t\t{\n");
+			fprintf(out, "\t\t\t\tVTableImpl()\n");
+			fprintf(out, "\t\t\t\t{\n");
+			fprintf(out, "\t\t\t\t\tthis->version = Base::VERSION;\n");
 
 			for (auto& method : methods)
 			{
-				fprintf(out, ",\n");
-				fprintf(out, "\t\t\t\t&Name::cloop%sDispatcher", method->name.c_str());
+				fprintf(out, "\t\t\t\t\tthis->%s = &Name::cloop%sDispatcher;\n",
+					method->name.c_str(), method->name.c_str());
 			}
 
+			fprintf(out, "\t\t\t\t}\n");
+			fprintf(out, "\t\t\t} vTable;\n");
 			fprintf(out, "\n");
-			fprintf(out, "\t\t\t);\n\n");
-			fprintf(out, "\t\t\tthis->cloopVTable = &vTableInit.vTable;\n");
+
+			fprintf(out, "\t\t\tthis->cloopVTable = &vTable;\n");
 			fprintf(out, "\t\t}\n");
 
 			for (auto& method : interface->methods)

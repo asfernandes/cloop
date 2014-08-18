@@ -2,35 +2,9 @@
 #define CALC_CPP_API_H
 
 #include <stdint.h>
-#include <stdarg.h>
-
-
 template <typename Policy>
 class CalcApi
 {
-private:
-	template <typename T>
-	class VTableInitializer
-	{
-	public:
-		VTableInitializer(unsigned version, ...)
-		{
-			va_list va;
-			va_start(va, version);
-
-			vTable.version = version;
-
-			void** end = ((void**) &vTable.version) + version;
-
-			for (void** p = (void**) &vTable.version; p < end; )
-				*++p = va_arg(va, void*);
-
-			va_end(va);
-		}
-
-		T vTable;
-	};
-
 public:
 	// Interfaces declarations
 
@@ -112,16 +86,20 @@ public:
 	public:
 		CalculatorBaseImpl()
 		{
-			static VTableInitializer<typename Base::VTable> vTableInit(
-				Base::VERSION,
-				&Name::cloopdisposeDispatcher,
-				&Name::cloopsumDispatcher,
-				&Name::cloopgetMemoryDispatcher,
-				&Name::cloopsetMemoryDispatcher,
-				&Name::cloopsumAndStoreDispatcher
-			);
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
+					this->sum = &Name::cloopsumDispatcher;
+					this->getMemory = &Name::cloopgetMemoryDispatcher;
+					this->setMemory = &Name::cloopsetMemoryDispatcher;
+					this->sumAndStore = &Name::cloopsumAndStoreDispatcher;
+				}
+			} vTable;
 
-			this->cloopVTable = &vTableInit.vTable;
+			this->cloopVTable = &vTable;
 		}
 
 		static void cloopdisposeDispatcher(Calculator* self) throw()
@@ -171,17 +149,21 @@ public:
 	public:
 		Calculator2BaseImpl()
 		{
-			static VTableInitializer<typename Base::VTable> vTableInit(
-				Base::VERSION,
-				&Name::cloopdisposeDispatcher,
-				&Name::cloopsumDispatcher,
-				&Name::cloopgetMemoryDispatcher,
-				&Name::cloopsetMemoryDispatcher,
-				&Name::cloopsumAndStoreDispatcher,
-				&Name::cloopmultiplyDispatcher
-			);
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
+					this->sum = &Name::cloopsumDispatcher;
+					this->getMemory = &Name::cloopgetMemoryDispatcher;
+					this->setMemory = &Name::cloopsetMemoryDispatcher;
+					this->sumAndStore = &Name::cloopsumAndStoreDispatcher;
+					this->multiply = &Name::cloopmultiplyDispatcher;
+				}
+			} vTable;
 
-			this->cloopVTable = &vTableInit.vTable;
+			this->cloopVTable = &vTable;
 		}
 
 		static int cloopmultiplyDispatcher(Calculator2* self, int n1, int n2) throw()

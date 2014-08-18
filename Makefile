@@ -27,9 +27,14 @@ OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
 
 C_FLAGS := -ggdb -fPIC -MMD -MP -W -Wall -Wno-unused-parameter
 CXX_FLAGS := $(C_FLAGS) -std=c++11
+FPC_FLAGS := -Mdelphi
 
 ifeq ($(TARGET),release)
 	CXX_FLAGS += -O3
+endif
+
+ifeq ($(TARGET),debug)
+	FPC_FLAGS += -g
 endif
 
 vpath %.c $(SRC_DIRS)
@@ -112,10 +117,10 @@ $(BIN_DIR)/test1-pascal$(SHRLIB_EXT): \
 	$(SRC_DIR)/tests/test1/PascalLibrary.pas \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
-	fpc -g -Mdelphi -fPIC -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.pas
+	fpc $(FPC_FLAGS) -fPIC -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.pas
 
 $(BIN_DIR)/test1-pascal$(EXE_EXT): \
 	$(SRC_DIR)/tests/test1/PascalTest.pas \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
-	fpc -g -Mdelphi -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(EXE_EXT) $(SRC_DIR)/tests/test1/PascalTest.pas
+	fpc $(FPC_FLAGS) -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(EXE_EXT) $(SRC_DIR)/tests/test1/PascalTest.pas

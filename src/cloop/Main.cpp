@@ -843,29 +843,6 @@ public:
 			}
 
 			fprintf(out, "\n");
-			fprintf(out, "\tprivate\n");
-			fprintf(out, "\t\tclass var vTableImpl: %sVTable;\n", interface->name.c_str());
-
-			for (auto& method : methods)
-			{
-				fprintf(out, "\t\tclass %s %sDispatcher(this: Pointer",
-					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
-					method->name.c_str());
-
-				for (auto& parameter : method->parameters)
-				{
-					fprintf(out, "; %s: %s",
-						parameter->name.c_str(), convertType(parameter->type).c_str());
-				}
-
-				fprintf(out, ")");
-
-				if (method->returnType.type != Token::TYPE_VOID)
-					fprintf(out, ": %s", convertType(method->returnType).c_str());
-
-				fprintf(out, "; cdecl; static;\n");
-			}
-
 			fprintf(out, "\tend;\n\n");
 		}
 
@@ -922,33 +899,9 @@ public:
 			for (Interface* p = interface; p; p = p->super)
 				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
-			fprintf(out, "constructor %sImpl.create;\n", interface->name.c_str());
-			fprintf(out, "var\n");
-			fprintf(out, "\tnewVTable: %sVTable;\n", interface->name.c_str());
-			fprintf(out, "begin\n");
-			fprintf(out, "\tif (vTableImpl = nil) then\n");
-			fprintf(out, "\tbegin\n");
-			fprintf(out, "\t\tnewVTable := %sVTable.create;\n", interface->name.c_str());
-			fprintf(out, "\t\tnewVTable.version := %d;\n", 0);	//// FIXME:
-
 			for (auto& method : methods)
 			{
-				fprintf(out, "\t\tnewVTable.%s := @%sImpl.%sDispatcher;\n",
-					method->name.c_str(),
-					interface->name.c_str(),
-					method->name.c_str());
-			}
-
-			fprintf(out, "\t\tvTableImpl := newVTable;\n");
-
-			fprintf(out, "\tend;\n");
-			fprintf(out, "\n");
-			fprintf(out, "\tvTable := vTableImpl;\n");
-			fprintf(out, "end;\n\n");
-
-			for (auto& method : methods)
-			{
-				fprintf(out, "class %s %sImpl.%sDispatcher(this: Pointer",
+				fprintf(out, "%s %sImpl_%sDispatcher(this: Pointer",
 					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
 					interface->name.c_str(),
 					method->name.c_str());
@@ -964,7 +917,7 @@ public:
 				if (method->returnType.type != Token::TYPE_VOID)
 					fprintf(out, ": %s", convertType(method->returnType).c_str());
 
-				fprintf(out, "; cdecl; static;\n");
+				fprintf(out, "; cdecl;\n");
 				fprintf(out, "begin\n");
 				fprintf(out, "\t");
 
@@ -987,8 +940,49 @@ public:
 				fprintf(out, ");\n");
 				fprintf(out, "end;\n\n");
 			}
+
+			fprintf(out, "var\n");
+			fprintf(out, "\t%sImpl_vTable: %sVTable;\n\n",
+				interface->name.c_str(), interface->name.c_str());
+
+			fprintf(out, "constructor %sImpl.create;\n", interface->name.c_str());
+			fprintf(out, "begin\n");
+			fprintf(out, "\tvTable := %sImpl_vTable;\n", interface->name.c_str());
+			fprintf(out, "end;\n\n");
 		}
 
+		fprintf(out, "initialization\n");
+
+		for (auto& interface : parser->interfaces)
+		{
+			deque<Method*> methods;
+
+			for (Interface* p = interface; p; p = p->super)
+				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
+
+			fprintf(out, "\t%sImpl_vTable := %sVTable.create;\n",
+				interface->name.c_str(), interface->name.c_str());
+			fprintf(out, "\t%sImpl_vTable.version := %d;\n",
+				interface->name.c_str(), (int) methods.size());
+
+			for (auto& method : methods)
+			{
+				fprintf(out, "\t%sImpl_vTable.%s := @%sImpl_%sDispatcher;\n",
+					interface->name.c_str(),
+					method->name.c_str(),
+					interface->name.c_str(),
+					method->name.c_str());
+			}
+
+			fprintf(out, "\n");
+		}
+
+		fprintf(out, "finalization\n");
+
+		for (auto& interface : parser->interfaces)
+			fprintf(out, "\t%sImpl_vTable.destroy;\n", interface->name.c_str());
+
+		fprintf(out, "\n");
 		fprintf(out, "end.\n");
 	}
 

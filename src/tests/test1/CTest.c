@@ -127,7 +127,7 @@ struct Calculator2* Calculator2Impl_create()
 
 static int BrokenCalculatorImpl_sum(struct Calculator* self, int n1, int n2)
 {
-	return n1 + n2 + 1;
+	return CalculatorImpl_sum(self, n1, n2) + 1;
 }
 
 struct Calculator* BrokenCalculatorImpl_create()

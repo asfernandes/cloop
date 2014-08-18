@@ -51,6 +51,7 @@ all: mkdirs \
 	$(BIN_DIR)/test1-c$(EXE_EXT)	\
 	$(BIN_DIR)/test1-cpp$(SHRLIB_EXT)	\
 	$(BIN_DIR)/test1-cpp$(EXE_EXT)	\
+	$(BIN_DIR)/test1-pascal$(SHRLIB_EXT)	\
 	$(BIN_DIR)/test1-pascal$(EXE_EXT)
 
 mkdirs: $(OBJ_DIRS) $(BIN_DIR) $(LIB_DIR)
@@ -107,8 +108,14 @@ $(BIN_DIR)/test1-cpp$(EXE_EXT): \
 
 	$(LD) $^ -ldl -o $@
 
+$(BIN_DIR)/test1-pascal$(SHRLIB_EXT): \
+	$(SRC_DIR)/tests/test1/PascalLibrary.pas \
+	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
+
+	fpc -g -Mdelphi -fPIC -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.pas
+
 $(BIN_DIR)/test1-pascal$(EXE_EXT): \
 	$(SRC_DIR)/tests/test1/PascalTest.pas \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
-	fpc -Mdelphi -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(EXE_EXT) $(SRC_DIR)/tests/test1/PascalTest.pas
+	fpc -g -Mdelphi -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(EXE_EXT) $(SRC_DIR)/tests/test1/PascalTest.pas

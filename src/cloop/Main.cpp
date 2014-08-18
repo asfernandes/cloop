@@ -806,6 +806,67 @@ public:
 			}
 
 			fprintf(out, "\tend;\n\n");
+
+			fprintf(out, "\t%sImpl = class(%s)\n",
+				interface->name.c_str(), interface->name.c_str());
+			fprintf(out, "\t\tconstructor create;\n\n");
+
+			deque<Method*> methods;
+
+			for (Interface* p = interface; p; p = p->super)
+				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
+
+			for (auto& method : methods)
+			{
+				fprintf(out, "\t\t%s %s(",
+					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					method->name.c_str());
+
+				bool firstParameter = true;
+				for (auto& parameter : method->parameters)
+				{
+					if (firstParameter)
+						firstParameter = false;
+					else
+						fprintf(out, "; ");
+
+					fprintf(out, "%s: %s",
+						parameter->name.c_str(), convertType(parameter->type).c_str());
+				}
+
+				fprintf(out, ")");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, ": %s", convertType(method->returnType).c_str());
+
+				fprintf(out, "; virtual; abstract;\n");
+			}
+
+			fprintf(out, "\n");
+			fprintf(out, "\tprivate\n");
+			fprintf(out, "\t\tclass var vTableImpl: %sVTable;\n", interface->name.c_str());
+
+			for (auto& method : methods)
+			{
+				fprintf(out, "\t\tclass %s %sDispatcher(this: Pointer",
+					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					method->name.c_str());
+
+				for (auto& parameter : method->parameters)
+				{
+					fprintf(out, "; %s: %s",
+						parameter->name.c_str(), convertType(parameter->type).c_str());
+				}
+
+				fprintf(out, ")");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, ": %s", convertType(method->returnType).c_str());
+
+				fprintf(out, "; cdecl; static;\n");
+			}
+
+			fprintf(out, "\tend;\n\n");
 		}
 
 		fprintf(out, "implementation\n\n");
@@ -848,6 +909,80 @@ public:
 
 				for (auto& parameter : method->parameters)
 					fprintf(out, ", %s", parameter->name.c_str());
+
+				fprintf(out, ");\n");
+				fprintf(out, "end;\n\n");
+			}
+		}
+
+		for (auto& interface : parser->interfaces)
+		{
+			deque<Method*> methods;
+
+			for (Interface* p = interface; p; p = p->super)
+				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
+
+			fprintf(out, "constructor %sImpl.create;\n", interface->name.c_str());
+			fprintf(out, "var\n");
+			fprintf(out, "\tnewVTable: %sVTable;\n", interface->name.c_str());
+			fprintf(out, "begin\n");
+			fprintf(out, "\tif (vTableImpl = nil) then\n");
+			fprintf(out, "\tbegin\n");
+			fprintf(out, "\t\tnewVTable := %sVTable.create;\n", interface->name.c_str());
+			fprintf(out, "\t\tnewVTable.version := %d;\n", 0);	//// FIXME:
+
+			for (auto& method : methods)
+			{
+				fprintf(out, "\t\tnewVTable.%s := @%sImpl.%sDispatcher;\n",
+					method->name.c_str(),
+					interface->name.c_str(),
+					method->name.c_str());
+			}
+
+			fprintf(out, "\t\tvTableImpl := newVTable;\n");
+
+			fprintf(out, "\tend;\n");
+			fprintf(out, "\n");
+			fprintf(out, "\tvTable := vTableImpl;\n");
+			fprintf(out, "end;\n\n");
+
+			for (auto& method : methods)
+			{
+				fprintf(out, "class %s %sImpl.%sDispatcher(this: Pointer",
+					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					interface->name.c_str(),
+					method->name.c_str());
+
+				for (auto& parameter : method->parameters)
+				{
+					fprintf(out, "; %s: %s",
+						parameter->name.c_str(), convertType(parameter->type).c_str());
+				}
+
+				fprintf(out, ")");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, ": %s", convertType(method->returnType).c_str());
+
+				fprintf(out, "; cdecl; static;\n");
+				fprintf(out, "begin\n");
+				fprintf(out, "\t");
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, "Result := ");
+
+				fprintf(out, "%sImpl(this).%s(", interface->name.c_str(), method->name.c_str());
+
+				bool firstParameter = true;
+				for (auto& parameter : method->parameters)
+				{
+					if (firstParameter)
+						firstParameter = false;
+					else
+						fprintf(out, ", ");
+
+					fprintf(out, "%s", parameter->name.c_str());
+				}
 
 				fprintf(out, ");\n");
 				fprintf(out, "end;\n\n");

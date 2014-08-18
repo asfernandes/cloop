@@ -582,7 +582,13 @@ public:
 
 		for (auto& interface : parser->interfaces)
 		{
-			fprintf(out, "#define %s_VERSION %d\n\n", interface->name.c_str(), (1 + DUMMY_VTABLE));
+			deque<Method*> methods;
+
+			for (Interface* p = interface; p; p = p->super)
+				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
+
+			fprintf(out, "#define %s_VERSION %d\n\n",
+				interface->name.c_str(), (int) methods.size());
 
 			fprintf(out, "struct %s;\n\n", interface->name.c_str());
 
@@ -590,11 +596,6 @@ public:
 			fprintf(out, "{\n");
 			fprintf(out, "\tvoid* cloopDummy[%d];\n", DUMMY_VTABLE);
 			fprintf(out, "\tuintptr_t version;\n");
-
-			deque<Method*> methods;
-
-			for (Interface* p = interface; p; p = p->super)
-				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
 			for (auto& method : methods)
 			{

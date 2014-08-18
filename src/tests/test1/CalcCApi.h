@@ -12,7 +12,7 @@
 #endif
 
 
-#define Calculator_VERSION 2
+#define Calculator_VERSION 5
 
 struct Calculator;
 
@@ -43,7 +43,7 @@ CLOOP_EXTERN_C void Calculator_setMemory(struct Calculator* self, int n);
 
 CLOOP_EXTERN_C void Calculator_sumAndStore(struct Calculator* self, int n1, int n2);
 
-#define Calculator2_VERSION 2
+#define Calculator2_VERSION 6
 
 struct Calculator2;
 

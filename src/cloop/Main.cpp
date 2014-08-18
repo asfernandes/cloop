@@ -617,8 +617,10 @@ public:
 				for (auto& parameter : method->parameters)
 					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
 
-				fprintf(out, ");\n\n");
+				fprintf(out, ");\n");
 			}
+
+			fprintf(out, "\n");
 		}
 
 		fprintf(out, "#endif\t// %s\n", headerGuard.c_str());

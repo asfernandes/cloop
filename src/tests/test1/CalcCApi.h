@@ -36,13 +36,9 @@ struct Calculator
 };
 
 CLOOP_EXTERN_C void Calculator_dispose(struct Calculator* self);
-
 CLOOP_EXTERN_C int Calculator_sum(struct Calculator* self, int n1, int n2);
-
 CLOOP_EXTERN_C int Calculator_getMemory(struct Calculator* self);
-
 CLOOP_EXTERN_C void Calculator_setMemory(struct Calculator* self, int n);
-
 CLOOP_EXTERN_C void Calculator_sumAndStore(struct Calculator* self, int n1, int n2);
 
 #define Calculator2_VERSION 6
@@ -68,15 +64,10 @@ struct Calculator2
 };
 
 CLOOP_EXTERN_C void Calculator2_dispose(struct Calculator2* self);
-
 CLOOP_EXTERN_C int Calculator2_sum(struct Calculator2* self, int n1, int n2);
-
 CLOOP_EXTERN_C int Calculator2_getMemory(struct Calculator2* self);
-
 CLOOP_EXTERN_C void Calculator2_setMemory(struct Calculator2* self, int n);
-
 CLOOP_EXTERN_C void Calculator2_sumAndStore(struct Calculator2* self, int n1, int n2);
-
 CLOOP_EXTERN_C int Calculator2_multiply(struct Calculator2* self, int n1, int n2);
 
 #endif	// CALC_C_API_H

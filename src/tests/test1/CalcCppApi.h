@@ -4,6 +4,8 @@
 #define CALC_CPP_API_H
 
 #include <stdint.h>
+
+
 template <typename Policy>
 class CalcApi
 {
@@ -185,5 +187,6 @@ public:
 		virtual int multiply(int n1, int n2) = 0;
 	};
 };
+
 
 #endif	// CALC_CPP_API_H

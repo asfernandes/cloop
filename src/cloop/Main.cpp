@@ -314,7 +314,7 @@ public:
 
 		fprintf(out, "#ifndef %s\n", headerGuard.c_str());
 		fprintf(out, "#define %s\n\n", headerGuard.c_str());
-		fprintf(out, "#include <stdint.h>\n");
+		fprintf(out, "#include <stdint.h>\n\n\n");
 
 		fprintf(out, "template <typename Policy>\n");
 		fprintf(out, "class %s\n", className.c_str());
@@ -531,7 +531,7 @@ public:
 			fprintf(out, "\t};\n");
 		}
 
-		fprintf(out, "};\n\n");
+		fprintf(out, "};\n\n\n");
 
 		fprintf(out, "#endif\t// %s\n", headerGuard.c_str());
 	}
@@ -623,6 +623,7 @@ public:
 			fprintf(out, "\n");
 		}
 
+		fprintf(out, "\n");
 		fprintf(out, "#endif\t// %s\n", headerGuard.c_str());
 	}
 

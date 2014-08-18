@@ -70,4 +70,5 @@ CLOOP_EXTERN_C void Calculator2_setMemory(struct Calculator2* self, int n);
 CLOOP_EXTERN_C void Calculator2_sumAndStore(struct Calculator2* self, int n1, int n2);
 CLOOP_EXTERN_C int Calculator2_multiply(struct Calculator2* self, int n1, int n2);
 
+
 #endif	// CALC_C_API_H

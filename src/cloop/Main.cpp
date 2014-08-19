@@ -246,6 +246,7 @@ private:
 		{
 			case Token::TYPE_VOID:
 			case Token::TYPE_INT:
+			case Token::TYPE_IDENTIFIER:
 				break;
 
 			default:
@@ -300,12 +301,39 @@ protected:
 };
 
 
-class CppGenerator : public FileGenerator
+class CBasedGenerator : public FileGenerator
+{
+protected:
+	CBasedGenerator(const string& filename, bool cPlusPlus)
+		: FileGenerator(filename),
+		  cPlusPlus(cPlusPlus)
+	{
+	}
+
+protected:
+	string convertType(const Token& token)
+	{
+		switch (token.type)
+		{
+			case Token::TYPE_IDENTIFIER:
+				return string(cPlusPlus ? "" : "struct ") + token.text + "*";
+
+			default:
+				return token.text;
+		}
+	}
+
+private:
+	bool cPlusPlus;
+};
+
+
+class CppGenerator : public CBasedGenerator
 {
 public:
 	CppGenerator(const string& filename, Parser* parser, const string& headerGuard,
 			const string& className)
-		: FileGenerator(filename),
+		: CBasedGenerator(filename, true),
 		  parser(parser),
 		  headerGuard(headerGuard),
 		  className(className)
@@ -371,7 +399,8 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "\t\t\t%s (*%s)(%s* self",
-					method->returnType.text.c_str(), method->name.c_str(), interface->name.c_str());
+					convertType(method->returnType).c_str(), method->name.c_str(),
+					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
 					 k != method->parameters.end();
@@ -379,7 +408,8 @@ public:
 				{
 					Parameter* parameter = *k;
 
-					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+					fprintf(out, ", %s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
 				fprintf(out, ");\n");
@@ -407,7 +437,8 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "\n");
-				fprintf(out, "\t\t%s %s(", method->returnType.text.c_str(), method->name.c_str());
+				fprintf(out, "\t\t%s %s(",
+					convertType(method->returnType).c_str(), method->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
 					 k != method->parameters.end();
@@ -418,7 +449,8 @@ public:
 					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
-					fprintf(out, "%s %s", parameter->type.text.c_str(), parameter->name.c_str());
+					fprintf(out, "%s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
 				fprintf(out, ")\n");
@@ -500,14 +532,17 @@ public:
 
 				fprintf(out, "\n");
 				fprintf(out, "\t\tstatic %s cloop%sDispatcher(%s* self",
-					method->returnType.text.c_str(), method->name.c_str(), interface->name.c_str());
+					convertType(method->returnType).c_str(), method->name.c_str(),
+					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
 					 k != method->parameters.end();
 					 ++k)
 				{
 					Parameter* parameter = *k;
-					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+
+					fprintf(out, ", %s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
 				fprintf(out, ") throw()\n");
@@ -566,7 +601,7 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "\t\tvirtual %s %s(",
-					method->returnType.text.c_str(), method->name.c_str());
+					convertType(method->returnType).c_str(), method->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
 					 k != method->parameters.end();
@@ -577,7 +612,8 @@ public:
 					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
-					fprintf(out, "%s %s", parameter->type.text.c_str(), parameter->name.c_str());
+					fprintf(out, "%s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
 				fprintf(out, ") = 0;\n");
@@ -598,11 +634,11 @@ private:
 };
 
 
-class CHeaderGenerator : public FileGenerator
+class CHeaderGenerator : public CBasedGenerator
 {
 public:
 	CHeaderGenerator(const string& filename, Parser* parser, const string& headerGuard)
-		: FileGenerator(filename),
+		: CBasedGenerator(filename, false),
 		  parser(parser),
 		  headerGuard(headerGuard)
 	{
@@ -651,14 +687,17 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "\t%s (*%s)(struct %s* self",
-					method->returnType.text.c_str(), method->name.c_str(), interface->name.c_str());
+					convertType(method->returnType).c_str(), method->name.c_str(),
+					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
 					 k != method->parameters.end();
 					 ++k)
 				{
 					Parameter* parameter = *k;
-					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+
+					fprintf(out, ", %s %s", convertType(parameter->type).c_str(),
+						parameter->name.c_str());
 				}
 
 				fprintf(out, ");\n");
@@ -677,7 +716,7 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(struct %s* self",
-					method->returnType.text.c_str(),
+					convertType(method->returnType).c_str(),
 					interface->name.c_str(),
 					method->name.c_str(),
 					interface->name.c_str());
@@ -687,7 +726,9 @@ public:
 					 ++k)
 				{
 					Parameter* parameter = *k;
-					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+
+					fprintf(out, ", %s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
 				fprintf(out, ");\n");
@@ -706,11 +747,11 @@ private:
 };
 
 
-class CImplGenerator : public FileGenerator
+class CImplGenerator : public CBasedGenerator
 {
 public:
 	CImplGenerator(const string& filename, Parser* parser, const string& includeFilename)
-		: FileGenerator(filename),
+		: CBasedGenerator(filename, false),
 		  parser(parser),
 		  includeFilename(includeFilename)
 	{
@@ -739,7 +780,7 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(struct %s* self",
-					method->returnType.text.c_str(),
+					convertType(method->returnType).c_str(),
 					interface->name.c_str(),
 					method->name.c_str(),
 					interface->name.c_str());
@@ -749,7 +790,9 @@ public:
 					 ++k)
 				{
 					Parameter* parameter = *k;
-					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+
+					fprintf(out, ", %s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
 				fprintf(out, ")\n");
@@ -800,6 +843,16 @@ public:
 		fprintf(out, "interface\n\n");
 		fprintf(out, "uses Classes;\n\n");
 		fprintf(out, "type\n");
+
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
+		{
+			Interface* interface = *i;
+			fprintf(out, "\t%s = class;\n", interface->name.c_str());
+		}
+
+		fprintf(out, "\n");
 
 		for (vector<Interface*>::iterator i = parser->interfaces.begin();
 			 i != parser->interfaces.end();

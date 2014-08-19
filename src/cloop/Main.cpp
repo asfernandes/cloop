@@ -176,6 +176,10 @@ public:
 			{
 				string superName = getToken(token, Token::TYPE_IDENTIFIER).text;
 				map<string, Interface*>::iterator it = interfacesByName.find(superName);
+
+				if (it == interfacesByName.end())
+					throw runtime_error(string("Super interface '") + superName + "' not found.");
+
 				interface->super = it->second;
 			}
 			else

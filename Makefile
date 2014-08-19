@@ -26,7 +26,7 @@ OBJS_C := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS_C))
 OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
 
 C_FLAGS := -ggdb -fPIC -MMD -MP -W -Wall -Wno-unused-parameter
-CXX_FLAGS := $(C_FLAGS) -std=c++11
+CXX_FLAGS := $(C_FLAGS)
 FPC_FLAGS := -Mdelphi
 
 ifeq ($(TARGET),release)

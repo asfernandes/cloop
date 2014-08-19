@@ -23,7 +23,7 @@ using std::endl;
 
 #define DUMMY_VTABLE	1
 #define DUMMY_INSTANCE	1
-#define TOKEN(c)	static_cast<::Token::Type>(c)
+#define TOKEN(c)	static_cast< ::Token::Type>(c)
 
 
 class Token
@@ -175,7 +175,7 @@ public:
 			if (lexer->getToken(token).type == ':')
 			{
 				string superName = getToken(token, Token::TYPE_IDENTIFIER).text;
-				auto it = interfacesByName.find(superName);
+				map<string, Interface*>::iterator it = interfacesByName.find(superName);
 				interface->super = it->second;
 			}
 			else
@@ -245,7 +245,8 @@ private:
 				break;
 
 			default:
-				throw runtime_error(string("Syntax error at '") + token.text + "'. Expected a type.");
+				throw runtime_error(string("Syntax error at '") + token.text +
+					"'. Expected a type.");
 		}
 
 		return token;
@@ -323,8 +324,12 @@ public:
 
 		fprintf(out, "\t// Interfaces declarations\n\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
+			Interface* interface = *i;
+
 			deque<Method*> methods;
 
 			for (Interface* p = interface; p; p = p->super)
@@ -355,13 +360,23 @@ public:
 				fprintf(out, "\t\t{\n");
 			}
 
-			for (auto& method : interface->methods)
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t\t\t%s (*%s)(%s* self",
 					method->returnType.text.c_str(), method->name.c_str(), interface->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
+
 					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+				}
 
 				fprintf(out, ");\n");
 			}
@@ -381,17 +396,22 @@ public:
 			fprintf(out, "\t\tstatic const int VERSION = %d;\n", (int) methods.size());
 
 			unsigned methodNumber = (interface->super ? interface->super->methods.size() : 0);
-			for (auto& method : interface->methods)
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\n");
 				fprintf(out, "\t\t%s %s(", method->returnType.text.c_str(), method->name.c_str());
 
-				bool firstParameter = true;
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
-					if (firstParameter)
-						firstParameter = false;
-					else
+					Parameter* parameter = *k;
+
+					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
 					fprintf(out, "%s %s", parameter->type.text.c_str(), parameter->name.c_str());
@@ -409,10 +429,16 @@ public:
 					//// TODO: Policy::upgrade
 				}
 
-				fprintf(out, "static_cast<VTable*>(this->cloopVTable)->%s(this", method->name.c_str());
+				fprintf(out, "static_cast<VTable*>(this->cloopVTable)->%s(this",
+					method->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
 					fprintf(out, ", %s", parameter->name.c_str());
+				}
 
 				fprintf(out, ");\n");
 				fprintf(out, "\t\t}\n");
@@ -423,8 +449,12 @@ public:
 
 		fprintf(out, "\t// Interfaces implementations\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
+			Interface* interface = *i;
+
 			deque<Method*> methods;
 
 			for (Interface* p = interface; p; p = p->super)
@@ -443,8 +473,10 @@ public:
 			fprintf(out, "\t\t\t\t{\n");
 			fprintf(out, "\t\t\t\t\tthis->version = Base::VERSION;\n");
 
-			for (auto& method : methods)
+			for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t\t\t\t\tthis->%s = &Name::cloop%sDispatcher;\n",
 					method->name.c_str(), method->name.c_str());
 			}
@@ -456,14 +488,23 @@ public:
 			fprintf(out, "\t\t\tthis->cloopVTable = &vTable;\n");
 			fprintf(out, "\t\t}\n");
 
-			for (auto& method : interface->methods)
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\n");
 				fprintf(out, "\t\tstatic %s cloop%sDispatcher(%s* self",
 					method->returnType.text.c_str(), method->name.c_str(), interface->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
 					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+				}
 
 				fprintf(out, ") throw()\n");
 				fprintf(out, "\t\t{\n");
@@ -474,12 +515,13 @@ public:
 
 				fprintf(out, "static_cast<Name*>(self)->Name::%s(", method->name.c_str());
 
-				bool firstParameter = true;
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
-					if (firstParameter)
-						firstParameter = false;
-					else
+					Parameter* parameter = *k;
+
+					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
 					fprintf(out, "%s", parameter->name.c_str());
@@ -513,17 +555,22 @@ public:
 			fprintf(out, "\t\t}\n");
 			fprintf(out, "\n");
 
-			for (auto& method : interface->methods)
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t\tvirtual %s %s(",
 					method->returnType.text.c_str(), method->name.c_str());
 
-				bool firstParameter = true;
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
-					if (firstParameter)
-						firstParameter = false;
-					else
+					Parameter* parameter = *k;
+
+					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
 					fprintf(out, "%s %s", parameter->type.text.c_str(), parameter->name.c_str());
@@ -574,8 +621,12 @@ public:
 		fprintf(out, "#endif\n");
 		fprintf(out, "#endif\n\n\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
+			Interface* interface = *i;
+
 			deque<Method*> methods;
 
 			for (Interface* p = interface; p; p = p->super)
@@ -591,13 +642,20 @@ public:
 			fprintf(out, "\tvoid* cloopDummy[%d];\n", DUMMY_VTABLE);
 			fprintf(out, "\tuintptr_t version;\n");
 
-			for (auto& method : methods)
+			for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t%s (*%s)(struct %s* self",
 					method->returnType.text.c_str(), method->name.c_str(), interface->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
 					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+				}
 
 				fprintf(out, ");\n");
 			}
@@ -610,16 +668,23 @@ public:
 			fprintf(out, "\tstruct %sVTable* vtable;\n", interface->name.c_str());
 			fprintf(out, "};\n\n");
 
-			for (auto& method : methods)
+			for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(struct %s* self",
 					method->returnType.text.c_str(),
 					interface->name.c_str(),
 					method->name.c_str(),
 					interface->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
 					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+				}
 
 				fprintf(out, ");\n");
 			}
@@ -654,23 +719,34 @@ public:
 
 		fprintf(out, "#include \"%s\"\n\n\n", includeFilename.c_str());
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
+			Interface* interface = *i;
+
 			deque<Method*> methods;
 
 			for (Interface* p = interface; p; p = p->super)
 				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
-			for (auto& method : methods)
+			for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(struct %s* self",
 					method->returnType.text.c_str(),
 					interface->name.c_str(),
 					method->name.c_str(),
 					interface->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
 					fprintf(out, ", %s %s", parameter->type.text.c_str(), parameter->name.c_str());
+				}
 
 				fprintf(out, ")\n");
 				fprintf(out, "{\n");
@@ -681,8 +757,13 @@ public:
 
 				fprintf(out, "self->vtable->%s(self", method->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
 					fprintf(out, ", %s", parameter->name.c_str());
+				}
 
 				fprintf(out, ");\n");
 				fprintf(out, "}\n\n");
@@ -716,16 +797,28 @@ public:
 		fprintf(out, "uses Classes;\n\n");
 		fprintf(out, "type\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
-			for (auto& method : interface->methods)
+			Interface* interface = *i;
+
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t%s_%sPtr = %s(this: Pointer",
 					interface->name.c_str(), method->name.c_str(),
 					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"));
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
+					Parameter* parameter = *k;
+
 					fprintf(out, "; %s: %s",
 						parameter->name.c_str(), convertType(parameter->type).c_str());
 				}
@@ -741,8 +834,12 @@ public:
 
 		fprintf(out, "\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
+			Interface* interface = *i;
+
 			fprintf(out, "\t%sVTable = class", interface->name.c_str());
 
 			if (interface->super)
@@ -758,8 +855,12 @@ public:
 				fprintf(out, "\t\tversion: PtrInt;\n");
 			}
 
-			for (auto& method : interface->methods)
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t\t%s: %s_%sPtr;\n", method->name.c_str(), interface->name.c_str(),
 					method->name.c_str());
 			}
@@ -781,18 +882,23 @@ public:
 				fprintf(out, "\t\tvTable: %sVTable;\n", interface->name.c_str());
 			}
 
-			for (auto& method : interface->methods)
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t\t%s %s(",
 					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
 					method->name.c_str());
 
-				bool firstParameter = true;
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
-					if (firstParameter)
-						firstParameter = false;
-					else
+					Parameter* parameter = *k;
+
+					if (k != method->parameters.begin())
 						fprintf(out, "; ");
 
 					fprintf(out, "%s: %s",
@@ -818,18 +924,21 @@ public:
 			for (Interface* p = interface; p; p = p->super)
 				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
-			for (auto& method : methods)
+			for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t\t%s %s(",
 					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
 					method->name.c_str());
 
-				bool firstParameter = true;
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
-					if (firstParameter)
-						firstParameter = false;
-					else
+					Parameter* parameter = *k;
+
+					if (k != method->parameters.begin())
 						fprintf(out, "; ");
 
 					fprintf(out, "%s: %s",
@@ -850,21 +959,30 @@ public:
 
 		fprintf(out, "implementation\n\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
-			for (auto& method : interface->methods)
+			Interface* interface = *i;
+
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "%s %s.%s(",
 					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
 					interface->name.c_str(),
 					method->name.c_str());
 
-				bool firstParameter = true;
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
-					if (firstParameter)
-						firstParameter = false;
-					else
+					Parameter* parameter = *k;
+
+					if (k != method->parameters.begin())
 						fprintf(out, "; ");
 
 					fprintf(out, "%s: %s",
@@ -886,30 +1004,45 @@ public:
 				fprintf(out, "%sVTable(vTable).%s(Self",
 					interface->name.c_str(), method->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
 					fprintf(out, ", %s", parameter->name.c_str());
+				}
 
 				fprintf(out, ");\n");
 				fprintf(out, "end;\n\n");
 			}
 		}
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
+			Interface* interface = *i;
+
 			deque<Method*> methods;
 
 			for (Interface* p = interface; p; p = p->super)
 				methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
-			for (auto& method : methods)
+			for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "%s %sImpl_%sDispatcher(this: Pointer",
 					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
 					interface->name.c_str(),
 					method->name.c_str());
 
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
+					Parameter* parameter = *k;
+
 					fprintf(out, "; %s: %s",
 						parameter->name.c_str(), convertType(parameter->type).c_str());
 				}
@@ -928,12 +1061,13 @@ public:
 
 				fprintf(out, "%sImpl(this).%s(", interface->name.c_str(), method->name.c_str());
 
-				bool firstParameter = true;
-				for (auto& parameter : method->parameters)
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
 				{
-					if (firstParameter)
-						firstParameter = false;
-					else
+					Parameter* parameter = *k;
+
+					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
 					fprintf(out, "%s", parameter->name.c_str());
@@ -955,8 +1089,12 @@ public:
 
 		fprintf(out, "initialization\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
 		{
+			Interface* interface = *i;
+
 			deque<Method*> methods;
 
 			for (Interface* p = interface; p; p = p->super)
@@ -967,8 +1105,10 @@ public:
 			fprintf(out, "\t%sImpl_vTable.version := %d;\n",
 				interface->name.c_str(), (int) methods.size());
 
-			for (auto& method : methods)
+			for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 			{
+				Method* method = *j;
+
 				fprintf(out, "\t%sImpl_vTable.%s := @%sImpl_%sDispatcher;\n",
 					interface->name.c_str(),
 					method->name.c_str(),
@@ -981,8 +1121,13 @@ public:
 
 		fprintf(out, "finalization\n");
 
-		for (auto& interface : parser->interfaces)
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
+		{
+			Interface* interface = *i;
 			fprintf(out, "\t%sImpl_vTable.destroy;\n", interface->name.c_str());
+		}
 
 		fprintf(out, "\n");
 		fprintf(out, "end.\n");

@@ -10,4 +10,5 @@ interface Calculator
 interface Calculator2 : Calculator
 {
 	int multiply(int n1, int n2);
+	void copyMemory(Calculator calculator);
 }

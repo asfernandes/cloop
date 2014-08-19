@@ -100,6 +100,11 @@ static int Calculator2Impl_multiply(struct Calculator2* self, int n1, int n2)
 	return n1 * n2;
 }
 
+static void Calculator2Impl_copyMemory(struct Calculator2* self, struct Calculator* calculator)
+{
+	Calculator2_setMemory(self, Calculator_getMemory(calculator));
+}
+
 struct Calculator2* Calculator2Impl_create()
 {
 	static struct Calculator2VTable vtable = {
@@ -110,6 +115,7 @@ struct Calculator2* Calculator2Impl_create()
 		.setMemory = Calculator2Impl_setMemory,
 		.sumAndStore = Calculator2Impl_sumAndStore,
 		.multiply = Calculator2Impl_multiply,
+		.copyMemory = Calculator2Impl_copyMemory
 	};
 
 	struct Calculator2Impl* impl = malloc(sizeof(struct Calculator2Impl));
@@ -185,9 +191,12 @@ static void test(struct Calculator* (*createCalculator)(),
 	Calculator_setMemory(calculator, Calculator_sum(calculator, 2, 33));
 	printf("%d\n", Calculator_getMemory(calculator));	// 35
 
-	Calculator_dispose(calculator);
-
 	struct Calculator2* calculator2 = createCalculator2();
+
+	Calculator2_copyMemory(calculator2, calculator);
+	printf("%d\n", Calculator2_getMemory(calculator2));	// 35
+
+	Calculator_dispose(calculator);
 	calculator = (struct Calculator*) calculator2;
 
 	Calculator_sumAndStore(calculator, 1, 22);

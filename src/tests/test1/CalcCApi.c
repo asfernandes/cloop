@@ -58,3 +58,8 @@ CLOOP_EXTERN_C int Calculator2_multiply(struct Calculator2* self, int n1, int n2
 	return self->vtable->multiply(self, n1, n2);
 }
 
+CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, struct Calculator* calculator)
+{
+	self->vtable->copyMemory(self, calculator);
+}
+

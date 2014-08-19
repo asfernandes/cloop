@@ -41,7 +41,7 @@ CLOOP_EXTERN_C int Calculator_getMemory(struct Calculator* self);
 CLOOP_EXTERN_C void Calculator_setMemory(struct Calculator* self, int n);
 CLOOP_EXTERN_C void Calculator_sumAndStore(struct Calculator* self, int n1, int n2);
 
-#define Calculator2_VERSION 6
+#define Calculator2_VERSION 7
 
 struct Calculator2;
 
@@ -55,6 +55,7 @@ struct Calculator2VTable
 	void (*setMemory)(struct Calculator2* self, int n);
 	void (*sumAndStore)(struct Calculator2* self, int n1, int n2);
 	int (*multiply)(struct Calculator2* self, int n1, int n2);
+	void (*copyMemory)(struct Calculator2* self, struct Calculator* calculator);
 };
 
 struct Calculator2
@@ -69,6 +70,7 @@ CLOOP_EXTERN_C int Calculator2_getMemory(struct Calculator2* self);
 CLOOP_EXTERN_C void Calculator2_setMemory(struct Calculator2* self, int n);
 CLOOP_EXTERN_C void Calculator2_sumAndStore(struct Calculator2* self, int n1, int n2);
 CLOOP_EXTERN_C int Calculator2_multiply(struct Calculator2* self, int n1, int n2);
+CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, struct Calculator* calculator);
 
 
 #endif	// CALC_C_API_H

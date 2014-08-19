@@ -70,15 +70,22 @@ public:
 		struct VTable : public Calculator::VTable
 		{
 			int (*multiply)(Calculator2* self, int n1, int n2);
+			void (*copyMemory)(Calculator2* self, Calculator* calculator);
 		};
 
 	public:
-		static const int VERSION = 6;
+		static const int VERSION = 7;
 
 		int multiply(int n1, int n2)
 		{
 			Policy::template checkVersion<6>(this);
 			return static_cast<VTable*>(this->cloopVTable)->multiply(this, n1, n2);
+		}
+
+		void copyMemory(Calculator* calculator)
+		{
+			Policy::template checkVersion<7>(this);
+			static_cast<VTable*>(this->cloopVTable)->copyMemory(this, calculator);
 		}
 	};
 
@@ -164,6 +171,7 @@ public:
 					this->setMemory = &Name::cloopsetMemoryDispatcher;
 					this->sumAndStore = &Name::cloopsumAndStoreDispatcher;
 					this->multiply = &Name::cloopmultiplyDispatcher;
+					this->copyMemory = &Name::cloopcopyMemoryDispatcher;
 				}
 			} vTable;
 
@@ -173,6 +181,11 @@ public:
 		static int cloopmultiplyDispatcher(Calculator2* self, int n1, int n2) throw()
 		{
 			return static_cast<Name*>(self)->Name::multiply(n1, n2);
+		}
+
+		static void cloopcopyMemoryDispatcher(Calculator2* self, Calculator* calculator) throw()
+		{
+			static_cast<Name*>(self)->Name::copyMemory(calculator);
 		}
 	};
 
@@ -185,6 +198,7 @@ public:
 		}
 
 		virtual int multiply(int n1, int n2) = 0;
+		virtual void copyMemory(Calculator* calculator) = 0;
 	};
 };
 

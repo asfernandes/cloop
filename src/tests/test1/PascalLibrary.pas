@@ -25,6 +25,7 @@ type
 		procedure setMemory(n: Integer); override;
 		procedure sumAndStore(n1: Integer; n2: Integer); override;
 		function multiply(n1: Integer; n2: Integer): Integer; override;
+		procedure copyMemory(calculator: Calculator); override;
 
 	private
 		memory: Integer;
@@ -111,6 +112,11 @@ end;
 function MyCalculator2Impl.multiply(n1: Integer; n2: Integer): Integer;
 begin
 	Result := n1 * n2;
+end;
+
+procedure MyCalculator2Impl.copyMemory(calculator: Calculator);
+begin
+	setMemory(calculator.getMemory());
 end;
 
 

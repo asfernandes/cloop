@@ -7,12 +7,16 @@ interface
 uses Classes;
 
 type
+	Calculator = class;
+	Calculator2 = class;
+
 	Calculator_disposePtr = procedure(this: Pointer); cdecl;
 	Calculator_sumPtr = function(this: Pointer; n1: Integer; n2: Integer): Integer; cdecl;
 	Calculator_getMemoryPtr = function(this: Pointer): Integer; cdecl;
 	Calculator_setMemoryPtr = procedure(this: Pointer; n: Integer); cdecl;
 	Calculator_sumAndStorePtr = procedure(this: Pointer; n1: Integer; n2: Integer); cdecl;
 	Calculator2_multiplyPtr = function(this: Pointer; n1: Integer; n2: Integer): Integer; cdecl;
+	Calculator2_copyMemoryPtr = procedure(this: Pointer; calculator: Calculator); cdecl;
 
 	CalculatorVTable = class
 {$ifndef FPC}
@@ -51,10 +55,12 @@ type
 
 	Calculator2VTable = class(CalculatorVTable)
 		multiply: Calculator2_multiplyPtr;
+		copyMemory: Calculator2_copyMemoryPtr;
 	end;
 
 	Calculator2 = class(Calculator)
 		function multiply(n1: Integer; n2: Integer): Integer;
+		procedure copyMemory(calculator: Calculator);
 	end;
 
 	Calculator2Impl = class(Calculator2)
@@ -66,6 +72,7 @@ type
 		procedure setMemory(n: Integer); virtual; abstract;
 		procedure sumAndStore(n1: Integer; n2: Integer); virtual; abstract;
 		function multiply(n1: Integer; n2: Integer): Integer; virtual; abstract;
+		procedure copyMemory(calculator: Calculator); virtual; abstract;
 
 	end;
 
@@ -99,6 +106,11 @@ end;
 function Calculator2.multiply(n1: Integer; n2: Integer): Integer;
 begin
 	Result := Calculator2VTable(vTable).multiply(Self, n1, n2);
+end;
+
+procedure Calculator2.copyMemory(calculator: Calculator);
+begin
+	Calculator2VTable(vTable).copyMemory(Self, calculator);
 end;
 
 procedure CalculatorImpl_disposeDispatcher(this: Pointer); cdecl;
@@ -164,6 +176,11 @@ begin
 	Result := Calculator2Impl(this).multiply(n1, n2);
 end;
 
+procedure Calculator2Impl_copyMemoryDispatcher(this: Pointer; calculator: Calculator); cdecl;
+begin
+	Calculator2Impl(this).copyMemory(calculator);
+end;
+
 var
 	Calculator2Impl_vTable: Calculator2VTable;
 
@@ -182,13 +199,14 @@ initialization
 	CalculatorImpl_vTable.sumAndStore := @CalculatorImpl_sumAndStoreDispatcher;
 
 	Calculator2Impl_vTable := Calculator2VTable.create;
-	Calculator2Impl_vTable.version := 6;
+	Calculator2Impl_vTable.version := 7;
 	Calculator2Impl_vTable.dispose := @Calculator2Impl_disposeDispatcher;
 	Calculator2Impl_vTable.sum := @Calculator2Impl_sumDispatcher;
 	Calculator2Impl_vTable.getMemory := @Calculator2Impl_getMemoryDispatcher;
 	Calculator2Impl_vTable.setMemory := @Calculator2Impl_setMemoryDispatcher;
 	Calculator2Impl_vTable.sumAndStore := @Calculator2Impl_sumAndStoreDispatcher;
 	Calculator2Impl_vTable.multiply := @Calculator2Impl_multiplyDispatcher;
+	Calculator2Impl_vTable.copyMemory := @Calculator2Impl_copyMemoryDispatcher;
 
 finalization
 	CalculatorImpl_vTable.destroy;

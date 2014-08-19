@@ -108,6 +108,11 @@ public:
 		return n1 * n2;
 	}
 
+	virtual void copyMemory(Calculator* calculator)
+	{
+		setMemory(calculator->getMemory());
+	}
+
 private:
 	int memory;
 };
@@ -164,9 +169,12 @@ static void test(calc::Calculator* (*createCalculator)(),
 	calculator->setMemory(calculator->sum(2, 33));
 	printf("%d\n", calculator->getMemory());	// 35
 
-	calculator->dispose();
-
 	calc::Calculator2* calculator2 = createCalculator2();
+
+	calculator2->copyMemory(calculator);
+	printf("%d\n", calculator2->getMemory());	// 35
+
+	calculator->dispose();
 	calculator = calculator2;
 
 	calculator->sumAndStore(1, 22);

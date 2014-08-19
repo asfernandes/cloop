@@ -28,9 +28,12 @@ begin
 	calc.setMemory(calc.sum(2, 33));
 	WriteLn(calc.getMemory());	// 35
 
-	calc.dispose();
-
 	calc2 := createCalculator2();
+
+	calc2.copyMemory(calc);
+	WriteLn(calc2.getMemory());	// 35
+
+	calc.dispose();
 	calc := calc2;
 
 	calc.sumAndStore(1, 22);

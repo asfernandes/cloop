@@ -560,6 +560,10 @@ public:
 			fprintf(out, "\t\t\tthis->cloopVTable = &vTable;\n");
 			fprintf(out, "\t\t}\n");
 
+			// We generate all bases dispatchers so indirect overrides work. At the same time, we
+			// inherit from all bases impls, so pure virtual methods are introduced and required to
+			// be overriden in the user's implementation.
+
 			for (Interface* p = interface; p; p = p->super)
 			{
 				for (vector<Method*>::iterator j = p->methods.begin(); j != p->methods.end(); ++j)

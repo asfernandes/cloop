@@ -1,14 +1,25 @@
-interface Calculator
+interface Disposable
 {
 	void dispose();
-	int sum(int n1, int n2);
+}
+
+[exception]
+interface Status : Disposable
+{
+	int getCode();
+	void setCode(int code);
+}
+
+interface Calculator : Disposable
+{
+	int sum(Status status, int n1, int n2);
 	int getMemory();
 	void setMemory(int n);
-	void sumAndStore(int n1, int n2);
+	void sumAndStore(Status status, int n1, int n2);
 }
 
 interface Calculator2 : Calculator
 {
-	int multiply(int n1, int n2);
+	int multiply(Status status, int n1, int n2);
 	void copyMemory(Calculator calculator);
 }

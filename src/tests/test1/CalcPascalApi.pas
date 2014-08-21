@@ -7,50 +7,83 @@ interface
 uses Classes;
 
 type
+	Disposable = class;
+	Status = class;
 	Calculator = class;
 	Calculator2 = class;
 
-	Calculator_disposePtr = procedure(this: Pointer); cdecl;
-	Calculator_sumPtr = function(this: Pointer; n1: Integer; n2: Integer): Integer; cdecl;
+	Disposable_disposePtr = procedure(this: Pointer); cdecl;
+	Status_getCodePtr = function(this: Pointer): Integer; cdecl;
+	Status_setCodePtr = procedure(this: Pointer; code: Integer); cdecl;
+	Calculator_sumPtr = function(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 	Calculator_getMemoryPtr = function(this: Pointer): Integer; cdecl;
 	Calculator_setMemoryPtr = procedure(this: Pointer; n: Integer); cdecl;
-	Calculator_sumAndStorePtr = procedure(this: Pointer; n1: Integer; n2: Integer); cdecl;
-	Calculator2_multiplyPtr = function(this: Pointer; n1: Integer; n2: Integer): Integer; cdecl;
+	Calculator_sumAndStorePtr = procedure(this: Pointer; status: Status; n1: Integer; n2: Integer); cdecl;
+	Calculator2_multiplyPtr = function(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 	Calculator2_copyMemoryPtr = procedure(this: Pointer; calculator: Calculator); cdecl;
 
-	CalculatorVTable = class
+	DisposableVTable = class
 {$ifndef FPC}
 		dummy: PtrInt;
 {$endif}
 		version: PtrInt;
-		dispose: Calculator_disposePtr;
+		dispose: Disposable_disposePtr;
+	end;
+
+	Disposable = class
+{$ifndef FPC}
+		dummy: PtrInt;
+{$endif}
+		vTable: DisposableVTable;
+		procedure dispose();
+	end;
+
+	DisposableImpl = class(Disposable)
+		constructor create;
+
+		procedure dispose(); virtual; abstract;
+	end;
+
+	StatusVTable = class(DisposableVTable)
+		getCode: Status_getCodePtr;
+		setCode: Status_setCodePtr;
+	end;
+
+	Status = class(Disposable)
+		function getCode(): Integer;
+		procedure setCode(code: Integer);
+	end;
+
+	StatusImpl = class(Status)
+		constructor create;
+
+		procedure dispose(); virtual; abstract;
+		function getCode(): Integer; virtual; abstract;
+		procedure setCode(code: Integer); virtual; abstract;
+	end;
+
+	CalculatorVTable = class(DisposableVTable)
 		sum: Calculator_sumPtr;
 		getMemory: Calculator_getMemoryPtr;
 		setMemory: Calculator_setMemoryPtr;
 		sumAndStore: Calculator_sumAndStorePtr;
 	end;
 
-	Calculator = class
-{$ifndef FPC}
-		dummy: PtrInt;
-{$endif}
-		vTable: CalculatorVTable;
-		procedure dispose();
-		function sum(n1: Integer; n2: Integer): Integer;
+	Calculator = class(Disposable)
+		function sum(status: Status; n1: Integer; n2: Integer): Integer;
 		function getMemory(): Integer;
 		procedure setMemory(n: Integer);
-		procedure sumAndStore(n1: Integer; n2: Integer);
+		procedure sumAndStore(status: Status; n1: Integer; n2: Integer);
 	end;
 
 	CalculatorImpl = class(Calculator)
 		constructor create;
 
 		procedure dispose(); virtual; abstract;
-		function sum(n1: Integer; n2: Integer): Integer; virtual; abstract;
+		function sum(status: Status; n1: Integer; n2: Integer): Integer; virtual; abstract;
 		function getMemory(): Integer; virtual; abstract;
 		procedure setMemory(n: Integer); virtual; abstract;
-		procedure sumAndStore(n1: Integer; n2: Integer); virtual; abstract;
-
+		procedure sumAndStore(status: Status; n1: Integer; n2: Integer); virtual; abstract;
 	end;
 
 	Calculator2VTable = class(CalculatorVTable)
@@ -59,7 +92,7 @@ type
 	end;
 
 	Calculator2 = class(Calculator)
-		function multiply(n1: Integer; n2: Integer): Integer;
+		function multiply(status: Status; n1: Integer; n2: Integer): Integer;
 		procedure copyMemory(calculator: Calculator);
 	end;
 
@@ -67,25 +100,34 @@ type
 		constructor create;
 
 		procedure dispose(); virtual; abstract;
-		function sum(n1: Integer; n2: Integer): Integer; virtual; abstract;
+		function sum(status: Status; n1: Integer; n2: Integer): Integer; virtual; abstract;
 		function getMemory(): Integer; virtual; abstract;
 		procedure setMemory(n: Integer); virtual; abstract;
-		procedure sumAndStore(n1: Integer; n2: Integer); virtual; abstract;
-		function multiply(n1: Integer; n2: Integer): Integer; virtual; abstract;
+		procedure sumAndStore(status: Status; n1: Integer; n2: Integer); virtual; abstract;
+		function multiply(status: Status; n1: Integer; n2: Integer): Integer; virtual; abstract;
 		procedure copyMemory(calculator: Calculator); virtual; abstract;
-
 	end;
 
 implementation
 
-procedure Calculator.dispose();
+procedure Disposable.dispose();
 begin
-	CalculatorVTable(vTable).dispose(Self);
+	DisposableVTable(vTable).dispose(Self);
 end;
 
-function Calculator.sum(n1: Integer; n2: Integer): Integer;
+function Status.getCode(): Integer;
 begin
-	Result := CalculatorVTable(vTable).sum(Self, n1, n2);
+	Result := StatusVTable(vTable).getCode(Self);
+end;
+
+procedure Status.setCode(code: Integer);
+begin
+	StatusVTable(vTable).setCode(Self, code);
+end;
+
+function Calculator.sum(status: Status; n1: Integer; n2: Integer): Integer;
+begin
+	Result := CalculatorVTable(vTable).sum(Self, status, n1, n2);
 end;
 
 function Calculator.getMemory(): Integer;
@@ -98,14 +140,14 @@ begin
 	CalculatorVTable(vTable).setMemory(Self, n);
 end;
 
-procedure Calculator.sumAndStore(n1: Integer; n2: Integer);
+procedure Calculator.sumAndStore(status: Status; n1: Integer; n2: Integer);
 begin
-	CalculatorVTable(vTable).sumAndStore(Self, n1, n2);
+	CalculatorVTable(vTable).sumAndStore(Self, status, n1, n2);
 end;
 
-function Calculator2.multiply(n1: Integer; n2: Integer): Integer;
+function Calculator2.multiply(status: Status; n1: Integer; n2: Integer): Integer;
 begin
-	Result := Calculator2VTable(vTable).multiply(Self, n1, n2);
+	Result := Calculator2VTable(vTable).multiply(Self, status, n1, n2);
 end;
 
 procedure Calculator2.copyMemory(calculator: Calculator);
@@ -113,14 +155,50 @@ begin
 	Calculator2VTable(vTable).copyMemory(Self, calculator);
 end;
 
+procedure DisposableImpl_disposeDispatcher(this: Pointer); cdecl;
+begin
+	DisposableImpl(this).dispose();
+end;
+
+var
+	DisposableImpl_vTable: DisposableVTable;
+
+constructor DisposableImpl.create;
+begin
+	vTable := DisposableImpl_vTable;
+end;
+
+procedure StatusImpl_disposeDispatcher(this: Pointer); cdecl;
+begin
+	StatusImpl(this).dispose();
+end;
+
+function StatusImpl_getCodeDispatcher(this: Pointer): Integer; cdecl;
+begin
+	Result := StatusImpl(this).getCode();
+end;
+
+procedure StatusImpl_setCodeDispatcher(this: Pointer; code: Integer); cdecl;
+begin
+	StatusImpl(this).setCode(code);
+end;
+
+var
+	StatusImpl_vTable: StatusVTable;
+
+constructor StatusImpl.create;
+begin
+	vTable := StatusImpl_vTable;
+end;
+
 procedure CalculatorImpl_disposeDispatcher(this: Pointer); cdecl;
 begin
 	CalculatorImpl(this).dispose();
 end;
 
-function CalculatorImpl_sumDispatcher(this: Pointer; n1: Integer; n2: Integer): Integer; cdecl;
+function CalculatorImpl_sumDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
-	Result := CalculatorImpl(this).sum(n1, n2);
+	Result := CalculatorImpl(this).sum(status, n1, n2);
 end;
 
 function CalculatorImpl_getMemoryDispatcher(this: Pointer): Integer; cdecl;
@@ -133,9 +211,9 @@ begin
 	CalculatorImpl(this).setMemory(n);
 end;
 
-procedure CalculatorImpl_sumAndStoreDispatcher(this: Pointer; n1: Integer; n2: Integer); cdecl;
+procedure CalculatorImpl_sumAndStoreDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer); cdecl;
 begin
-	CalculatorImpl(this).sumAndStore(n1, n2);
+	CalculatorImpl(this).sumAndStore(status, n1, n2);
 end;
 
 var
@@ -151,9 +229,9 @@ begin
 	Calculator2Impl(this).dispose();
 end;
 
-function Calculator2Impl_sumDispatcher(this: Pointer; n1: Integer; n2: Integer): Integer; cdecl;
+function Calculator2Impl_sumDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
-	Result := Calculator2Impl(this).sum(n1, n2);
+	Result := Calculator2Impl(this).sum(status, n1, n2);
 end;
 
 function Calculator2Impl_getMemoryDispatcher(this: Pointer): Integer; cdecl;
@@ -166,14 +244,14 @@ begin
 	Calculator2Impl(this).setMemory(n);
 end;
 
-procedure Calculator2Impl_sumAndStoreDispatcher(this: Pointer; n1: Integer; n2: Integer); cdecl;
+procedure Calculator2Impl_sumAndStoreDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer); cdecl;
 begin
-	Calculator2Impl(this).sumAndStore(n1, n2);
+	Calculator2Impl(this).sumAndStore(status, n1, n2);
 end;
 
-function Calculator2Impl_multiplyDispatcher(this: Pointer; n1: Integer; n2: Integer): Integer; cdecl;
+function Calculator2Impl_multiplyDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
-	Result := Calculator2Impl(this).multiply(n1, n2);
+	Result := Calculator2Impl(this).multiply(status, n1, n2);
 end;
 
 procedure Calculator2Impl_copyMemoryDispatcher(this: Pointer; calculator: Calculator); cdecl;
@@ -190,6 +268,16 @@ begin
 end;
 
 initialization
+	DisposableImpl_vTable := DisposableVTable.create;
+	DisposableImpl_vTable.version := 1;
+	DisposableImpl_vTable.dispose := @DisposableImpl_disposeDispatcher;
+
+	StatusImpl_vTable := StatusVTable.create;
+	StatusImpl_vTable.version := 3;
+	StatusImpl_vTable.dispose := @StatusImpl_disposeDispatcher;
+	StatusImpl_vTable.getCode := @StatusImpl_getCodeDispatcher;
+	StatusImpl_vTable.setCode := @StatusImpl_setCodeDispatcher;
+
 	CalculatorImpl_vTable := CalculatorVTable.create;
 	CalculatorImpl_vTable.version := 5;
 	CalculatorImpl_vTable.dispose := @CalculatorImpl_disposeDispatcher;
@@ -209,6 +297,8 @@ initialization
 	Calculator2Impl_vTable.copyMemory := @Calculator2Impl_copyMemoryDispatcher;
 
 finalization
+	DisposableImpl_vTable.destroy;
+	StatusImpl_vTable.destroy;
 	CalculatorImpl_vTable.destroy;
 	Calculator2Impl_vTable.destroy;
 

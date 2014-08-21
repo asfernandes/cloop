@@ -3,7 +3,7 @@
 #include <dlfcn.h>
 
 
-class ManualPolice
+class CalcPolice
 {
 public:
 	template <unsigned V, typename T>
@@ -14,12 +14,68 @@ public:
 	template <typename T>
 	static inline T* upgrade(T* o)
 	{
+		//// TODO:
 		return o;
 	}
+
+	static void checkException(CalcApi<CalcPolice>::Status* status);
 };
 
 
-typedef CalcApi<ManualPolice> calc;
+typedef CalcApi<CalcPolice> calc;
+
+
+class CalcException
+{
+public:
+	CalcException(calc::Status* status)
+		: code(status ? status->getCode() : -1)
+	{
+	}
+
+public:
+	int code;
+};
+
+
+void CalcPolice::checkException(CalcApi<CalcPolice>::Status* status)
+{
+	if (status->getCode() != 0)
+		throw CalcException(status);
+}
+
+
+//--------------------------------------
+
+// StatusImpl
+
+
+class StatusImpl : public calc::StatusImpl<StatusImpl>
+{
+public:
+	StatusImpl()
+		: code(0)
+	{
+	}
+
+	virtual void dispose()
+	{
+		delete this;
+	}
+
+	virtual int getCode()
+	{
+		return code;
+	}
+
+	virtual void setCode(int code)
+	{
+		this->code = code;
+	}
+
+private:
+	int code;
+};
 
 
 //--------------------------------------
@@ -40,9 +96,15 @@ public:
 		delete this;
 	}
 
-	virtual int sum(int n1, int n2)
+	virtual int sum(calc::Status* status, int n1, int n2)
 	{
-		return n1 + n2;
+		if (n1 + n2 > 1000)
+		{
+			status->setCode(1);
+			return 0;
+		}
+		else
+			return n1 + n2;
 	}
 
 	virtual int getMemory()
@@ -55,9 +117,9 @@ public:
 		memory = n;
 	}
 
-	virtual void sumAndStore(int n1, int n2)
+	virtual void sumAndStore(calc::Status* status, int n1, int n2)
 	{
-		setMemory(sum(n1, n2));
+		setMemory(sum(status, n1, n2));
 	}
 
 private:
@@ -83,9 +145,15 @@ public:
 		delete this;
 	}
 
-	virtual int sum(int n1, int n2)
+	virtual int sum(calc::Status* status, int n1, int n2)
 	{
-		return n1 + n2;
+		if (n1 + n2 > 1000)
+		{
+			status->setCode(1);
+			return 0;
+		}
+		else
+			return n1 + n2;
 	}
 
 	virtual int getMemory()
@@ -98,17 +166,17 @@ public:
 		memory = n;
 	}
 
-	virtual void sumAndStore(int n1, int n2)
+	virtual void sumAndStore(calc::Status* status, int n1, int n2)
 	{
-		setMemory(sum(n1, n2));
+		setMemory(sum(status, n1, n2));
 	}
 
-	virtual int multiply(int n1, int n2)
+	virtual int multiply(calc::Status* status, int n1, int n2)
 	{
 		return n1 * n2;
 	}
 
-	virtual void copyMemory(Calculator* calculator)
+	virtual void copyMemory(calc::Calculator* calculator)
 	{
 		setMemory(calculator->getMemory());
 	}
@@ -126,9 +194,9 @@ private:
 class BrokenCalculatorImpl : public calc::CalculatorBaseImpl<BrokenCalculatorImpl, CalculatorImpl>
 {
 public:
-	virtual int sum(int n1, int n2)
+	virtual int sum(calc::Status* status, int n1, int n2)
 	{
-		return CalculatorImpl::sum(n1, n2) + 1;
+		return CalculatorImpl::sum(status, n1, n2) + 1;
 	}
 };
 
@@ -161,12 +229,14 @@ static void test(calc::Calculator* (*createCalculator)(),
 	calc::Calculator2* (*createCalculator2)(),
 	calc::Calculator* (*createBrokenCalculator)())
 {
+	StatusImpl status;
+
 	calc::Calculator* calculator = createCalculator();
 
-	calculator->sumAndStore(1, 22);
+	calculator->sumAndStore(&status, 1, 22);
 	printf("%d\n", calculator->getMemory());	// 23
 
-	calculator->setMemory(calculator->sum(2, 33));
+	calculator->setMemory(calculator->sum(&status, 2, 33));
 	printf("%d\n", calculator->getMemory());	// 35
 
 	calc::Calculator2* calculator2 = createCalculator2();
@@ -177,27 +247,36 @@ static void test(calc::Calculator* (*createCalculator)(),
 	calculator->dispose();
 	calculator = calculator2;
 
-	calculator->sumAndStore(1, 22);
+	calculator->sumAndStore(&status, 1, 22);
 	printf("%d\n", calculator->getMemory());	// 23
 
-	calculator->setMemory(calculator->sum(2, 33));
+	calculator->setMemory(calculator->sum(&status, 2, 33));
 	printf("%d\n", calculator->getMemory());	// 35
 
-	calculator2->sumAndStore(1, 22);
+	calculator2->sumAndStore(&status, 1, 22);
 	printf("%d\n", calculator2->getMemory());	// 23
 
-	calculator2->setMemory(calculator2->multiply(2, 33));
+	calculator2->setMemory(calculator2->multiply(&status, 2, 33));
 	printf("%d\n", calculator2->getMemory());	// 66
 
 	calculator->dispose();
 
 	calculator = createBrokenCalculator();
 
-	calculator->sumAndStore(1, 22);
+	calculator->sumAndStore(&status, 1, 22);
 	printf("%d\n", calculator->getMemory());	// 24
 
-	calculator->setMemory(calculator->sum(2, 33));
+	calculator->setMemory(calculator->sum(&status, 2, 33));
 	printf("%d\n", calculator->getMemory());	// 36
+
+	try
+	{
+		printf("%d\n", calculator->sum(&status, 600, 600));
+	}
+	catch (const CalcException& e)
+	{
+		printf("exception %d\n", e.code);	// exception 1
+	}
 
 	calculator->dispose();
 

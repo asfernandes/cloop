@@ -34,6 +34,7 @@ public:
 		TYPE_EOF = 256,
 		TYPE_IDENTIFIER,
 		// keywords
+		TYPE_EXCEPTION,
 		TYPE_INTERFACE,
 		// types
 		TYPE_VOID,
@@ -90,7 +91,9 @@ public:
 
 			ungetc(c, in);
 
-			if (token.text == "interface")
+			if (token.text == "exception")
+				token.type = Token::TYPE_EXCEPTION;
+			else if (token.text == "interface")
 				token.type = Token::TYPE_INTERFACE;
 			else if (token.text == "void")
 				token.type = Token::TYPE_VOID;
@@ -156,7 +159,8 @@ class Parser
 {
 public:
 	Parser(Lexer* lexer)
-		: lexer(lexer)
+		: exceptionInterface(NULL),
+		  lexer(lexer)
 	{
 	}
 
@@ -164,15 +168,34 @@ public:
 	{
 		Token token;
 
-		while (getToken(token, Token::TYPE_INTERFACE, true).type != Token::TYPE_EOF)
+		while (true)
 		{
+			bool exception = false;
+			lexer->getToken(token);
+
+			if (token.type == Token::TYPE_EOF)
+				break;
+			else if (token.type == TOKEN('['))
+			{
+				getToken(token, Token::TYPE_EXCEPTION);	// This is the only attribute we allow now.
+				exception = true;
+				getToken(token, TOKEN(']'));
+			}
+			else
+				lexer->pushToken(token);
+
+			getToken(token, Token::TYPE_INTERFACE);
+
 			Interface* interface = new Interface();
 			interfaces.push_back(interface);
 
 			interface->name = getToken(token, Token::TYPE_IDENTIFIER).text;
 			interfacesByName.insert(pair<string, Interface*>(interface->name, interface));
 
-			if (lexer->getToken(token).type == ':')
+			if (exception)
+				exceptionInterface = interface;
+
+			if (lexer->getToken(token).type == TOKEN(':'))
 			{
 				string superName = getToken(token, Token::TYPE_IDENTIFIER).text;
 				map<string, Interface*>::iterator it = interfacesByName.find(superName);
@@ -260,6 +283,7 @@ private:
 public:
 	vector<Interface*> interfaces;
 	map<string, Interface*> interfacesByName;
+	Interface* exceptionInterface;
 
 private:
 	Lexer* lexer;
@@ -461,7 +485,7 @@ public:
 
 				if (method->returnType.type != Token::TYPE_VOID)
 				{
-					fprintf(out, "return ");
+					fprintf(out, "%s ret = ", convertType(method->returnType).c_str());
 					//// TODO: Policy::upgrade
 				}
 
@@ -477,6 +501,18 @@ public:
 				}
 
 				fprintf(out, ");\n");
+
+				if (!method->parameters.empty() &&
+					parser->exceptionInterface &&
+					method->parameters.front()->type.text == parser->exceptionInterface->name)
+				{
+					fprintf(out, "\t\t\tPolicy::checkException(%s);\n",
+						method->parameters.front()->name.c_str());
+				}
+
+				if (method->returnType.type != Token::TYPE_VOID)
+					fprintf(out, "\t\t\treturn ret;\n");
+
 				fprintf(out, "\t\t}\n");
 			}
 
@@ -1021,7 +1057,6 @@ public:
 				fprintf(out, "; virtual; abstract;\n");
 			}
 
-			fprintf(out, "\n");
 			fprintf(out, "\tend;\n\n");
 		}
 

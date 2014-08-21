@@ -224,35 +224,59 @@ public:
 
 //--------------------------------------
 
-// Library entry points
+// FactoryImpl
 
 
-extern "C" calc::Calculator* createCalculator()
+class FactoryImpl : public calc::FactoryImpl<FactoryImpl>
 {
-	return new CalculatorImpl();
-}
+public:
+	virtual void dispose()
+	{
+		delete this;
+	}
 
-extern "C" calc::Calculator2* createCalculator2()
-{
-	return new Calculator2Impl();
-}
+	virtual calc::Status* createStatus()
+	{
+		return new StatusImpl();
+	}
 
-extern "C" calc::Calculator* createBrokenCalculator()
+	virtual calc::Calculator* createCalculator(calc::Status* status)
+	{
+		return new CalculatorImpl();
+	}
+
+	virtual calc::Calculator2* createCalculator2(calc::Status* status)
+	{
+		return new Calculator2Impl();
+	}
+
+	virtual calc::Calculator* createBrokenCalculator(calc::Status* status)
+	{
+		return new BrokenCalculatorImpl();
+	}
+};
+
+
+//--------------------------------------
+
+// Library entry point
+
+
+extern "C" calc::Factory* createFactory()
 {
-	return new BrokenCalculatorImpl();
+	return new FactoryImpl();
 }
 
 
 //--------------------------------------
 
 
-static void test(calc::Calculator* (*createCalculator)(),
-	calc::Calculator2* (*createCalculator2)(),
-	calc::Calculator* (*createBrokenCalculator)())
+static void test(calc::Factory* (*createFactory)())
 {
+	calc::Factory* factory = createFactory();
 	StatusImpl status;
 
-	calc::Calculator* calculator = createCalculator();
+	calc::Calculator* calculator = factory->createCalculator(&status);
 
 	calculator->sumAndStore(&status, 1, 22);
 	printf("%d\n", calculator->getMemory());	// 23
@@ -260,7 +284,7 @@ static void test(calc::Calculator* (*createCalculator)(),
 	calculator->setMemory(calculator->sum(&status, 2, 33));
 	printf("%d\n", calculator->getMemory());	// 35
 
-	calc::Calculator2* calculator2 = createCalculator2();
+	calc::Calculator2* calculator2 = factory->createCalculator2(&status);
 
 	calculator2->copyMemory(calculator);
 	printf("%d\n", calculator2->getMemory());	// 35
@@ -282,7 +306,7 @@ static void test(calc::Calculator* (*createCalculator)(),
 
 	calculator->dispose();
 
-	calculator = createBrokenCalculator();
+	calculator = factory->createBrokenCalculator(&status);
 
 	calculator->sumAndStore(&status, 1, 22);
 	printf("%d\n", calculator->getMemory());	// 24
@@ -300,6 +324,7 @@ static void test(calc::Calculator* (*createCalculator)(),
 	}
 
 	calculator->dispose();
+	factory->dispose();
 
 	printf("\n");
 }
@@ -314,16 +339,10 @@ int main(int argc, char* argv[])
 {
 	void* library = dlopen(argv[1], RTLD_LAZY);
 
-	calc::Calculator* (*createCalculator)();
-	loadSymbol(library, "createCalculator", createCalculator);
+	calc::Factory* (*createFactory)();
+	loadSymbol(library, "createFactory", createFactory);
 
-	calc::Calculator2* (*createCalculator2)();
-	loadSymbol(library, "createCalculator2", createCalculator2);
-
-	calc::Calculator* (*createBrokenCalculator)();
-	loadSymbol(library, "createBrokenCalculator", createBrokenCalculator);
-
-	test(createCalculator, createCalculator2, createBrokenCalculator);
+	test(createFactory);
 
 	dlclose(library);
 

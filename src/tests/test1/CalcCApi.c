@@ -83,3 +83,28 @@ CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, struct Calc
 	self->vtable->copyMemory(self, calculator);
 }
 
+CLOOP_EXTERN_C void Factory_dispose(struct Factory* self)
+{
+	self->vtable->dispose(self);
+}
+
+CLOOP_EXTERN_C struct Status* Factory_createStatus(struct Factory* self)
+{
+	return self->vtable->createStatus(self);
+}
+
+CLOOP_EXTERN_C struct Calculator* Factory_createCalculator(struct Factory* self, struct Status* status)
+{
+	return self->vtable->createCalculator(self, status);
+}
+
+CLOOP_EXTERN_C struct Calculator2* Factory_createCalculator2(struct Factory* self, struct Status* status)
+{
+	return self->vtable->createCalculator2(self, status);
+}
+
+CLOOP_EXTERN_C struct Calculator* Factory_createBrokenCalculator(struct Factory* self, struct Status* status)
+{
+	return self->vtable->createBrokenCalculator(self, status);
+}
+

@@ -23,3 +23,11 @@ interface Calculator2 : Calculator
 	int multiply(Status status, int n1, int n2);
 	void copyMemory(Calculator calculator);
 }
+
+interface Factory : Disposable
+{
+	Status createStatus();
+	Calculator createCalculator(Status status);
+	Calculator2 createCalculator2(Status status);
+	Calculator createBrokenCalculator(Status status);
+}

@@ -4,6 +4,8 @@
 #include <dlfcn.h>
 
 
+//--------------------------------------
+
 // StatusImpl
 
 
@@ -47,7 +49,6 @@ struct Status* StatusImpl_create()
 
 
 //--------------------------------------
-
 
 // CalculatorImpl
 
@@ -214,35 +215,72 @@ struct Calculator* BrokenCalculatorImpl_create()
 
 //--------------------------------------
 
-// Library entry points
+// FactoryImpl
 
 
-struct Calculator* createCalculator()
+static void FactoryImpl_dispose(struct Factory* self)
+{
+	free(self);
+}
+
+static struct Status* FactoryImpl_createStatus(struct Factory* self)
+{
+	return StatusImpl_create();
+}
+
+static struct Calculator* FactoryImpl_createCalculator(struct Factory* self, struct Status* status)
 {
 	return CalculatorImpl_create();
 }
 
-struct Calculator2* createCalculator2()
+static struct Calculator2* FactoryImpl_createCalculator2(struct Factory* self, struct Status* status)
 {
 	return Calculator2Impl_create();
 }
 
-struct Calculator* createBrokenCalculator()
+static struct Calculator* FactoryImpl_createBrokenCalculator(struct Factory* self, struct Status* status)
 {
 	return BrokenCalculatorImpl_create();
+}
+
+struct Factory* FactoryImpl_create()
+{
+	static struct FactoryVTable vtable = {
+		.version = Factory_VERSION,
+		.dispose = FactoryImpl_dispose,
+		.createStatus = FactoryImpl_createStatus,
+		.createCalculator = FactoryImpl_createCalculator,
+		.createCalculator2 = FactoryImpl_createCalculator2,
+		.createBrokenCalculator = FactoryImpl_createBrokenCalculator
+	};
+
+	struct Factory* impl = malloc(sizeof(struct Factory));
+	impl->vtable = &vtable;
+
+	return impl;
+}
+
+
+//--------------------------------------
+
+// Library entry point
+
+
+struct Factory* createFactory()
+{
+	return FactoryImpl_create();
 }
 
 
 //--------------------------------------
 
 
-static void test(struct Calculator* (*createCalculator)(),
-	struct Calculator2* (*createCalculator2)(),
-	struct Calculator* (*createBrokenCalculator)())
+static void test(struct Factory* (*createFactory)())
 {
+	struct Factory* factory = createFactory();
 	struct Status* status = (struct Status*) StatusImpl_create();
 
-	struct Calculator* calculator = createCalculator();
+	struct Calculator* calculator = Factory_createCalculator(factory, status);
 
 	Calculator_sumAndStore(calculator, status, 1, 22);
 	printf("%d\n", Calculator_getMemory(calculator));	// 23
@@ -250,7 +288,7 @@ static void test(struct Calculator* (*createCalculator)(),
 	Calculator_setMemory(calculator, Calculator_sum(calculator, status, 2, 33));
 	printf("%d\n", Calculator_getMemory(calculator));	// 35
 
-	struct Calculator2* calculator2 = createCalculator2();
+	struct Calculator2* calculator2 = Factory_createCalculator2(factory, status);
 
 	Calculator2_copyMemory(calculator2, calculator);
 	printf("%d\n", Calculator2_getMemory(calculator2));	// 35
@@ -272,7 +310,7 @@ static void test(struct Calculator* (*createCalculator)(),
 
 	Calculator_dispose(calculator);
 
-	calculator = createBrokenCalculator();
+	calculator = Factory_createBrokenCalculator(factory, status);
 
 	Calculator_sumAndStore(calculator, status, 1, 22);
 	printf("%d\n", Calculator_getMemory(calculator));	// 24
@@ -290,6 +328,7 @@ static void test(struct Calculator* (*createCalculator)(),
 	Calculator_dispose(calculator);
 
 	Status_dispose(status);
+	Factory_dispose(factory);
 
 	printf("\n");
 }
@@ -298,11 +337,8 @@ int main(int argc, char* argv[])
 {
 	void* library = dlopen(argv[1], RTLD_LAZY);
 
-	struct Calculator* (*createCalculator)() = dlsym(library, "createCalculator");
-	struct Calculator2* (*createCalculator2)() = dlsym(library, "createCalculator2");
-	struct Calculator* (*createBrokenCalculator)() = dlsym(library, "createBrokenCalculator");
-
-	test(createCalculator, createCalculator2, createBrokenCalculator);
+	struct Factory* (*createFactory)() = dlsym(library, "createFactory");
+	test(createFactory);
 
 	dlclose(library);
 

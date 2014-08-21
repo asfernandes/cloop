@@ -11,6 +11,7 @@ type
 	Status = class;
 	Calculator = class;
 	Calculator2 = class;
+	Factory = class;
 
 	Disposable_disposePtr = procedure(this: Pointer); cdecl;
 	Status_getCodePtr = function(this: Pointer): Integer; cdecl;
@@ -21,6 +22,10 @@ type
 	Calculator_sumAndStorePtr = procedure(this: Pointer; status: Status; n1: Integer; n2: Integer); cdecl;
 	Calculator2_multiplyPtr = function(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 	Calculator2_copyMemoryPtr = procedure(this: Pointer; calculator: Calculator); cdecl;
+	Factory_createStatusPtr = function(this: Pointer): Status; cdecl;
+	Factory_createCalculatorPtr = function(this: Pointer; status: Status): Calculator; cdecl;
+	Factory_createCalculator2Ptr = function(this: Pointer; status: Status): Calculator2; cdecl;
+	Factory_createBrokenCalculatorPtr = function(this: Pointer; status: Status): Calculator; cdecl;
 
 	DisposableVTable = class
 {$ifndef FPC}
@@ -108,6 +113,30 @@ type
 		procedure copyMemory(calculator: Calculator); virtual; abstract;
 	end;
 
+	FactoryVTable = class(DisposableVTable)
+		createStatus: Factory_createStatusPtr;
+		createCalculator: Factory_createCalculatorPtr;
+		createCalculator2: Factory_createCalculator2Ptr;
+		createBrokenCalculator: Factory_createBrokenCalculatorPtr;
+	end;
+
+	Factory = class(Disposable)
+		function createStatus(): Status;
+		function createCalculator(status: Status): Calculator;
+		function createCalculator2(status: Status): Calculator2;
+		function createBrokenCalculator(status: Status): Calculator;
+	end;
+
+	FactoryImpl = class(Factory)
+		constructor create;
+
+		procedure dispose(); virtual; abstract;
+		function createStatus(): Status; virtual; abstract;
+		function createCalculator(status: Status): Calculator; virtual; abstract;
+		function createCalculator2(status: Status): Calculator2; virtual; abstract;
+		function createBrokenCalculator(status: Status): Calculator; virtual; abstract;
+	end;
+
 implementation
 
 procedure Disposable.dispose();
@@ -153,6 +182,26 @@ end;
 procedure Calculator2.copyMemory(calculator: Calculator);
 begin
 	Calculator2VTable(vTable).copyMemory(Self, calculator);
+end;
+
+function Factory.createStatus(): Status;
+begin
+	Result := FactoryVTable(vTable).createStatus(Self);
+end;
+
+function Factory.createCalculator(status: Status): Calculator;
+begin
+	Result := FactoryVTable(vTable).createCalculator(Self, status);
+end;
+
+function Factory.createCalculator2(status: Status): Calculator2;
+begin
+	Result := FactoryVTable(vTable).createCalculator2(Self, status);
+end;
+
+function Factory.createBrokenCalculator(status: Status): Calculator;
+begin
+	Result := FactoryVTable(vTable).createBrokenCalculator(Self, status);
 end;
 
 procedure DisposableImpl_disposeDispatcher(this: Pointer); cdecl;
@@ -267,6 +316,39 @@ begin
 	vTable := Calculator2Impl_vTable;
 end;
 
+procedure FactoryImpl_disposeDispatcher(this: Pointer); cdecl;
+begin
+	FactoryImpl(this).dispose();
+end;
+
+function FactoryImpl_createStatusDispatcher(this: Pointer): Status; cdecl;
+begin
+	Result := FactoryImpl(this).createStatus();
+end;
+
+function FactoryImpl_createCalculatorDispatcher(this: Pointer; status: Status): Calculator; cdecl;
+begin
+	Result := FactoryImpl(this).createCalculator(status);
+end;
+
+function FactoryImpl_createCalculator2Dispatcher(this: Pointer; status: Status): Calculator2; cdecl;
+begin
+	Result := FactoryImpl(this).createCalculator2(status);
+end;
+
+function FactoryImpl_createBrokenCalculatorDispatcher(this: Pointer; status: Status): Calculator; cdecl;
+begin
+	Result := FactoryImpl(this).createBrokenCalculator(status);
+end;
+
+var
+	FactoryImpl_vTable: FactoryVTable;
+
+constructor FactoryImpl.create;
+begin
+	vTable := FactoryImpl_vTable;
+end;
+
 initialization
 	DisposableImpl_vTable := DisposableVTable.create;
 	DisposableImpl_vTable.version := 1;
@@ -296,10 +378,19 @@ initialization
 	Calculator2Impl_vTable.multiply := @Calculator2Impl_multiplyDispatcher;
 	Calculator2Impl_vTable.copyMemory := @Calculator2Impl_copyMemoryDispatcher;
 
+	FactoryImpl_vTable := FactoryVTable.create;
+	FactoryImpl_vTable.version := 5;
+	FactoryImpl_vTable.dispose := @FactoryImpl_disposeDispatcher;
+	FactoryImpl_vTable.createStatus := @FactoryImpl_createStatusDispatcher;
+	FactoryImpl_vTable.createCalculator := @FactoryImpl_createCalculatorDispatcher;
+	FactoryImpl_vTable.createCalculator2 := @FactoryImpl_createCalculator2Dispatcher;
+	FactoryImpl_vTable.createBrokenCalculator := @FactoryImpl_createBrokenCalculatorDispatcher;
+
 finalization
 	DisposableImpl_vTable.destroy;
 	StatusImpl_vTable.destroy;
 	CalculatorImpl_vTable.destroy;
 	Calculator2Impl_vTable.destroy;
+	FactoryImpl_vTable.destroy;
 
 end.

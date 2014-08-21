@@ -3,27 +3,24 @@ program PascalTest;
 uses SysUtils, DynLibs, CalcPascalApi, PascalClasses;
 
 type
-	CreateCalculatorPtr = function(): Calculator; cdecl;
-	CreateCalculator2Ptr = function(): Calculator2; cdecl;
+	CreateFactoryPtr = function(): Factory; cdecl;
 
 var
 	lib: TLibHandle;
-	createCalculator: CreateCalculatorPtr;
-	createCalculator2: CreateCalculator2Ptr;
-	createBrokenCalculator: CreateCalculatorPtr;
+	createFactory: CreateFactoryPtr;
+	fact: Factory;
 	stat: Status;
 	calc: Calculator;
 	calc2: Calculator2;
 begin
 	lib := LoadLibrary(ParamStr(1));
 
-	createCalculator := GetProcedureAddress(lib, 'createCalculator');
-	createCalculator2 := GetProcedureAddress(lib, 'createCalculator2');
-	createBrokenCalculator := GetProcedureAddress(lib, 'createBrokenCalculator');
+	createFactory := GetProcedureAddress(lib, 'createFactory');
 
+	fact := createFactory();
 	stat := MyStatusImpl.create;
 
-	calc := createCalculator();
+	calc := fact.createCalculator(stat);
 
 	calc.sumAndStore(stat, 1, 22);
 	WriteLn(calc.getMemory());	// 23
@@ -31,7 +28,7 @@ begin
 	calc.setMemory(calc.sum(stat, 2, 33));
 	WriteLn(calc.getMemory());	// 35
 
-	calc2 := createCalculator2();
+	calc2 := fact.createCalculator2(stat);
 
 	calc2.copyMemory(calc);
 	WriteLn(calc2.getMemory());	// 35
@@ -53,7 +50,7 @@ begin
 
 	calc.dispose();
 
-	calc := createBrokenCalculator();
+	calc := fact.createBrokenCalculator(stat);
 
 	calc.sumAndStore(stat, 1, 22);
 	WriteLn(calc.getMemory());	// 24
@@ -70,8 +67,8 @@ begin
 	end;
 
 	calc.dispose();
-
 	stat.dispose();
+	fact.dispose();
 
 	WriteLn;
 

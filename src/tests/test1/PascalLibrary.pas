@@ -5,27 +5,15 @@ uses CalcPascalApi, PascalClasses;
 
 //--------------------------------------
 
-// Library entry points
+// Library entry point
 
 
-function createCalculator: Calculator; cdecl;
+function createFactory: Factory; cdecl;
 begin
-	Result := MyCalculatorImpl.create();
-end;
-
-function createCalculator2: Calculator2; cdecl;
-begin
-	Result := MyCalculator2Impl.create();
-end;
-
-function createBrokenCalculator: Calculator; cdecl;
-begin
-	Result := MyBrokenCalculatorImpl.create();
+	Result := MyFactoryImpl.create();
 end;
 
 exports
-	createCalculator,
-	createCalculator2,
-	createBrokenCalculator;
+	createFactory;
 
 end.

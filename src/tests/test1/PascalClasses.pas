@@ -48,6 +48,14 @@ type
 		function sum(status: Status; n1: Integer; n2: Integer): Integer; override;
 	end;
 
+	MyFactoryImpl = class(FactoryImpl)
+		procedure dispose(); override;
+		function createStatus(): Status; override;
+		function createCalculator(status: Status): Calculator; override;
+		function createCalculator2(status: Status): Calculator2; override;
+		function createBrokenCalculator(status: Status): Calculator; override;
+	end;
+
 implementation
 
 //--------------------------------------
@@ -186,27 +194,33 @@ end;
 
 //--------------------------------------
 
-// Library entry points
+// MyFactoryImpl
 
 
-function createCalculator: Calculator; cdecl;
+procedure MyFactoryImpl.dispose();
 begin
-	Result := MyCalculatorImpl.create();
+	self.destroy();
 end;
 
-function createCalculator2: Calculator2; cdecl;
+function MyFactoryImpl.createStatus(): Status;
 begin
-	Result := MyCalculator2Impl.create();
+	Result := MyStatusImpl.create;
 end;
 
-function createBrokenCalculator: Calculator; cdecl;
+function MyFactoryImpl.createCalculator(status: Status): Calculator;
 begin
-	Result := MyBrokenCalculatorImpl.create();
+	Result := MyCalculatorImpl.create;
 end;
 
-exports
-	createCalculator,
-	createCalculator2,
-	createBrokenCalculator;
+function MyFactoryImpl.createCalculator2(status: Status): Calculator2;
+begin
+	Result := MyCalculator2Impl.create;
+end;
+
+function MyFactoryImpl.createBrokenCalculator(status: Status): Calculator;
+begin
+	Result := MyBrokenCalculatorImpl.create;
+end;
+
 
 end.

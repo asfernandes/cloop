@@ -579,10 +579,21 @@ public:
 			}
 			else
 			{
-				fprintf(out,
-					"\ttemplate <typename Name, typename Base = %sImpl<Name, %s> >\n",
-					interface->super->name.c_str(),
-					interface->name.c_str());
+				string base;
+				unsigned baseCount = 0;
+
+				for (Interface* p = interface->super; p; p = p->super)
+				{
+					base += p->name + "Impl<Name, ";
+					++baseCount;
+				}
+
+				base += interface->name;
+
+				while (baseCount-- > 0)
+					base += "> ";
+
+				fprintf(out, "\ttemplate <typename Name, typename Base = %s>\n", base.c_str());
 			}
 
 			fprintf(out, "\tclass %sImpl : public %sBaseImpl<Name, Base>\n",

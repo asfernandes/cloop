@@ -198,6 +198,11 @@ public:
 		{
 			static_cast<Name*>(self)->Name::setCode(code);
 		}
+
+		static void cloopdisposeDispatcher(Disposable* self) throw()
+		{
+			static_cast<Name*>(self)->Name::dispose();
+		}
 	};
 
 	template <typename Name, typename Base = DisposableImpl<Name, Status> >
@@ -253,6 +258,11 @@ public:
 		{
 			static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
 		}
+
+		static void cloopdisposeDispatcher(Disposable* self) throw()
+		{
+			static_cast<Name*>(self)->Name::dispose();
+		}
 	};
 
 	template <typename Name, typename Base = DisposableImpl<Name, Calculator> >
@@ -301,6 +311,31 @@ public:
 		static void cloopcopyMemoryDispatcher(Calculator2* self, Calculator* calculator) throw()
 		{
 			static_cast<Name*>(self)->Name::copyMemory(calculator);
+		}
+
+		static int cloopsumDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
+		{
+			return static_cast<Name*>(self)->Name::sum(status, n1, n2);
+		}
+
+		static int cloopgetMemoryDispatcher(Calculator* self) throw()
+		{
+			return static_cast<Name*>(self)->Name::getMemory();
+		}
+
+		static void cloopsetMemoryDispatcher(Calculator* self, int n) throw()
+		{
+			static_cast<Name*>(self)->Name::setMemory(n);
+		}
+
+		static void cloopsumAndStoreDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
+		{
+			static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
+		}
+
+		static void cloopdisposeDispatcher(Disposable* self) throw()
+		{
+			static_cast<Name*>(self)->Name::dispose();
 		}
 	};
 

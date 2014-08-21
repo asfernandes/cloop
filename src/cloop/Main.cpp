@@ -560,50 +560,51 @@ public:
 			fprintf(out, "\t\t\tthis->cloopVTable = &vTable;\n");
 			fprintf(out, "\t\t}\n");
 
-			for (vector<Method*>::iterator j = interface->methods.begin();
-				 j != interface->methods.end();
-				 ++j)
+			for (Interface* p = interface; p; p = p->super)
 			{
-				Method* method = *j;
-
-				fprintf(out, "\n");
-				fprintf(out, "\t\tstatic %s cloop%sDispatcher(%s* self",
-					convertType(method->returnType).c_str(), method->name.c_str(),
-					interface->name.c_str());
-
-				for (vector<Parameter*>::iterator k = method->parameters.begin();
-					 k != method->parameters.end();
-					 ++k)
+				for (vector<Method*>::iterator j = p->methods.begin(); j != p->methods.end(); ++j)
 				{
-					Parameter* parameter = *k;
+					Method* method = *j;
 
-					fprintf(out, ", %s %s",
-						convertType(parameter->type).c_str(), parameter->name.c_str());
+					fprintf(out, "\n");
+					fprintf(out, "\t\tstatic %s cloop%sDispatcher(%s* self",
+						convertType(method->returnType).c_str(), method->name.c_str(),
+						p->name.c_str());
+
+					for (vector<Parameter*>::iterator k = method->parameters.begin();
+						 k != method->parameters.end();
+						 ++k)
+					{
+						Parameter* parameter = *k;
+
+						fprintf(out, ", %s %s",
+							convertType(parameter->type).c_str(), parameter->name.c_str());
+					}
+
+					fprintf(out, ") throw()\n");
+					fprintf(out, "\t\t{\n");
+					fprintf(out, "\t\t\t");
+
+					if (method->returnType.type != Token::TYPE_VOID)
+						fprintf(out, "return ");
+
+					fprintf(out, "static_cast<Name*>(self)->Name::%s(", method->name.c_str());
+
+					for (vector<Parameter*>::iterator k = method->parameters.begin();
+						 k != method->parameters.end();
+						 ++k)
+					{
+						Parameter* parameter = *k;
+
+						if (k != method->parameters.begin())
+							fprintf(out, ", ");
+
+						fprintf(out, "%s", parameter->name.c_str());
+					}
+
+					fprintf(out, ");\n");
+					fprintf(out, "\t\t}\n");
 				}
-
-				fprintf(out, ") throw()\n");
-				fprintf(out, "\t\t{\n");
-				fprintf(out, "\t\t\t");
-
-				if (method->returnType.type != Token::TYPE_VOID)
-					fprintf(out, "return ");
-
-				fprintf(out, "static_cast<Name*>(self)->Name::%s(", method->name.c_str());
-
-				for (vector<Parameter*>::iterator k = method->parameters.begin();
-					 k != method->parameters.end();
-					 ++k)
-				{
-					Parameter* parameter = *k;
-
-					if (k != method->parameters.begin())
-						fprintf(out, ", ");
-
-					fprintf(out, "%s", parameter->name.c_str());
-				}
-
-				fprintf(out, ");\n");
-				fprintf(out, "\t\t}\n");
 			}
 
 			fprintf(out, "\t};\n\n");

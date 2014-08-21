@@ -1,4 +1,5 @@
 #include "CalcCppApi.h"
+#include <assert.h>
 #include <stdio.h>
 #include <dlfcn.h>
 
@@ -19,6 +20,7 @@ public:
 	}
 
 	static void checkException(CalcApi<CalcPolice>::Status* status);
+	static void catchException(CalcApi<CalcPolice>::Status* status);
 };
 
 
@@ -33,6 +35,11 @@ public:
 	{
 	}
 
+	CalcException(int code)
+		: code(code)
+	{
+	}
+
 public:
 	int code;
 };
@@ -40,8 +47,28 @@ public:
 
 void CalcPolice::checkException(CalcApi<CalcPolice>::Status* status)
 {
+	assert(status);
+
 	if (status->getCode() != 0)
 		throw CalcException(status);
+}
+
+
+void CalcPolice::catchException(CalcApi<CalcPolice>::Status* status)
+{
+	try
+	{
+		throw;
+	}
+	catch (const CalcException& e)
+	{
+		assert(status);
+		status->setCode(e.code);
+	}
+	catch (...)
+	{
+		assert(false);
+	}
 }
 
 
@@ -99,10 +126,7 @@ public:
 	virtual int sum(calc::Status* status, int n1, int n2)
 	{
 		if (n1 + n2 > 1000)
-		{
-			status->setCode(1);
-			return 0;
-		}
+			throw CalcException(1);
 		else
 			return n1 + n2;
 	}
@@ -148,10 +172,7 @@ public:
 	virtual int sum(calc::Status* status, int n1, int n2)
 	{
 		if (n1 + n2 > 1000)
-		{
-			status->setCode(1);
-			return 0;
-		}
+			throw CalcException(1);
 		else
 			return n1 + n2;
 	}

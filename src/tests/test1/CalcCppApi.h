@@ -154,7 +154,14 @@ public:
 
 		static void cloopdisposeDispatcher(Disposable* self) throw()
 		{
-			static_cast<Name*>(self)->Name::dispose();
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 	};
 
@@ -191,17 +198,39 @@ public:
 
 		static int cloopgetCodeDispatcher(Status* self) throw()
 		{
-			return static_cast<Name*>(self)->Name::getCode();
+			try
+			{
+				return static_cast<Name*>(self)->Name::getCode();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+				return static_cast<int>(0);
+			}
 		}
 
 		static void cloopsetCodeDispatcher(Status* self, int code) throw()
 		{
-			static_cast<Name*>(self)->Name::setCode(code);
+			try
+			{
+				static_cast<Name*>(self)->Name::setCode(code);
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 
 		static void cloopdisposeDispatcher(Disposable* self) throw()
 		{
-			static_cast<Name*>(self)->Name::dispose();
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 	};
 
@@ -241,27 +270,64 @@ public:
 
 		static int cloopsumDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
 		{
-			return static_cast<Name*>(self)->Name::sum(status, n1, n2);
+			try
+			{
+				return static_cast<Name*>(self)->Name::sum(status, n1, n2);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<int>(0);
+			}
 		}
 
 		static int cloopgetMemoryDispatcher(Calculator* self) throw()
 		{
-			return static_cast<Name*>(self)->Name::getMemory();
+			try
+			{
+				return static_cast<Name*>(self)->Name::getMemory();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+				return static_cast<int>(0);
+			}
 		}
 
 		static void cloopsetMemoryDispatcher(Calculator* self, int n) throw()
 		{
-			static_cast<Name*>(self)->Name::setMemory(n);
+			try
+			{
+				static_cast<Name*>(self)->Name::setMemory(n);
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 
 		static void cloopsumAndStoreDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
 		{
-			static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
+			try
+			{
+				static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+			}
 		}
 
 		static void cloopdisposeDispatcher(Disposable* self) throw()
 		{
-			static_cast<Name*>(self)->Name::dispose();
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 	};
 
@@ -305,37 +371,89 @@ public:
 
 		static int cloopmultiplyDispatcher(Calculator2* self, Status* status, int n1, int n2) throw()
 		{
-			return static_cast<Name*>(self)->Name::multiply(status, n1, n2);
+			try
+			{
+				return static_cast<Name*>(self)->Name::multiply(status, n1, n2);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<int>(0);
+			}
 		}
 
 		static void cloopcopyMemoryDispatcher(Calculator2* self, Calculator* calculator) throw()
 		{
-			static_cast<Name*>(self)->Name::copyMemory(calculator);
+			try
+			{
+				static_cast<Name*>(self)->Name::copyMemory(calculator);
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 
 		static int cloopsumDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
 		{
-			return static_cast<Name*>(self)->Name::sum(status, n1, n2);
+			try
+			{
+				return static_cast<Name*>(self)->Name::sum(status, n1, n2);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<int>(0);
+			}
 		}
 
 		static int cloopgetMemoryDispatcher(Calculator* self) throw()
 		{
-			return static_cast<Name*>(self)->Name::getMemory();
+			try
+			{
+				return static_cast<Name*>(self)->Name::getMemory();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+				return static_cast<int>(0);
+			}
 		}
 
 		static void cloopsetMemoryDispatcher(Calculator* self, int n) throw()
 		{
-			static_cast<Name*>(self)->Name::setMemory(n);
+			try
+			{
+				static_cast<Name*>(self)->Name::setMemory(n);
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 
 		static void cloopsumAndStoreDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
 		{
-			static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
+			try
+			{
+				static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+			}
 		}
 
 		static void cloopdisposeDispatcher(Disposable* self) throw()
 		{
-			static_cast<Name*>(self)->Name::dispose();
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
 		}
 	};
 

@@ -587,7 +587,10 @@ public:
 
 					fprintf(out, ") throw()\n");
 					fprintf(out, "\t\t{\n");
-					fprintf(out, "\t\t\t");
+					fprintf(out, "\t\t\ttry\n");
+					fprintf(out, "\t\t\t{\n");
+
+					fprintf(out, "\t\t\t\t");
 
 					if (method->returnType.type != Token::TYPE_VOID)
 						fprintf(out, "return ");
@@ -607,6 +610,27 @@ public:
 					}
 
 					fprintf(out, ");\n");
+
+					Parameter* exceptionParameter =
+						(!method->parameters.empty() &&
+						 parser->exceptionInterface &&
+						 method->parameters.front()->type.text == parser->exceptionInterface->name
+						) ? method->parameters.front() : NULL;
+
+					fprintf(out, "\t\t\t}\n");
+					fprintf(out, "\t\t\tcatch (...)\n");
+					fprintf(out, "\t\t\t{\n");
+					fprintf(out, "\t\t\t\tPolicy::catchException(%s);\n",
+						(exceptionParameter ? exceptionParameter->name.c_str() : "0"));
+
+					if (method->returnType.type != Token::TYPE_VOID)
+					{
+						fprintf(out, "\t\t\t\treturn static_cast<%s>(0);\n",
+							convertType(method->returnType).c_str());
+					}
+
+					fprintf(out, "\t\t\t}\n");
+
 					fprintf(out, "\t\t}\n");
 				}
 			}

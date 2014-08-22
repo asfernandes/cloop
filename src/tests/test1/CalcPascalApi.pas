@@ -13,19 +13,19 @@ type
 	Calculator2 = class;
 	Factory = class;
 
-	Disposable_disposePtr = procedure(this: Pointer); cdecl;
-	Status_getCodePtr = function(this: Pointer): Integer; cdecl;
-	Status_setCodePtr = procedure(this: Pointer; code: Integer); cdecl;
-	Calculator_sumPtr = function(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
-	Calculator_getMemoryPtr = function(this: Pointer): Integer; cdecl;
-	Calculator_setMemoryPtr = procedure(this: Pointer; n: Integer); cdecl;
-	Calculator_sumAndStorePtr = procedure(this: Pointer; status: Status; n1: Integer; n2: Integer); cdecl;
-	Calculator2_multiplyPtr = function(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
-	Calculator2_copyMemoryPtr = procedure(this: Pointer; calculator: Calculator); cdecl;
-	Factory_createStatusPtr = function(this: Pointer): Status; cdecl;
-	Factory_createCalculatorPtr = function(this: Pointer; status: Status): Calculator; cdecl;
-	Factory_createCalculator2Ptr = function(this: Pointer; status: Status): Calculator2; cdecl;
-	Factory_createBrokenCalculatorPtr = function(this: Pointer; status: Status): Calculator; cdecl;
+	Disposable_disposePtr = procedure(this: Disposable); cdecl;
+	Status_getCodePtr = function(this: Status): Integer; cdecl;
+	Status_setCodePtr = procedure(this: Status; code: Integer); cdecl;
+	Calculator_sumPtr = function(this: Calculator; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
+	Calculator_getMemoryPtr = function(this: Calculator): Integer; cdecl;
+	Calculator_setMemoryPtr = procedure(this: Calculator; n: Integer); cdecl;
+	Calculator_sumAndStorePtr = procedure(this: Calculator; status: Status; n1: Integer; n2: Integer); cdecl;
+	Calculator2_multiplyPtr = function(this: Calculator2; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
+	Calculator2_copyMemoryPtr = procedure(this: Calculator2; calculator: Calculator); cdecl;
+	Factory_createStatusPtr = function(this: Factory): Status; cdecl;
+	Factory_createCalculatorPtr = function(this: Factory; status: Status): Calculator; cdecl;
+	Factory_createCalculator2Ptr = function(this: Factory; status: Status): Calculator2; cdecl;
+	Factory_createBrokenCalculatorPtr = function(this: Factory; status: Status): Calculator; cdecl;
 
 	DisposableVTable = class
 {$ifndef FPC}
@@ -204,7 +204,7 @@ begin
 	Result := FactoryVTable(vTable).createBrokenCalculator(Self, status);
 end;
 
-procedure DisposableImpl_disposeDispatcher(this: Pointer); cdecl;
+procedure DisposableImpl_disposeDispatcher(this: Disposable); cdecl;
 begin
 	DisposableImpl(this).dispose();
 end;
@@ -217,17 +217,17 @@ begin
 	vTable := DisposableImpl_vTable;
 end;
 
-procedure StatusImpl_disposeDispatcher(this: Pointer); cdecl;
+procedure StatusImpl_disposeDispatcher(this: Status); cdecl;
 begin
 	StatusImpl(this).dispose();
 end;
 
-function StatusImpl_getCodeDispatcher(this: Pointer): Integer; cdecl;
+function StatusImpl_getCodeDispatcher(this: Status): Integer; cdecl;
 begin
 	Result := StatusImpl(this).getCode();
 end;
 
-procedure StatusImpl_setCodeDispatcher(this: Pointer; code: Integer); cdecl;
+procedure StatusImpl_setCodeDispatcher(this: Status; code: Integer); cdecl;
 begin
 	StatusImpl(this).setCode(code);
 end;
@@ -240,27 +240,27 @@ begin
 	vTable := StatusImpl_vTable;
 end;
 
-procedure CalculatorImpl_disposeDispatcher(this: Pointer); cdecl;
+procedure CalculatorImpl_disposeDispatcher(this: Calculator); cdecl;
 begin
 	CalculatorImpl(this).dispose();
 end;
 
-function CalculatorImpl_sumDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
+function CalculatorImpl_sumDispatcher(this: Calculator; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
 	Result := CalculatorImpl(this).sum(status, n1, n2);
 end;
 
-function CalculatorImpl_getMemoryDispatcher(this: Pointer): Integer; cdecl;
+function CalculatorImpl_getMemoryDispatcher(this: Calculator): Integer; cdecl;
 begin
 	Result := CalculatorImpl(this).getMemory();
 end;
 
-procedure CalculatorImpl_setMemoryDispatcher(this: Pointer; n: Integer); cdecl;
+procedure CalculatorImpl_setMemoryDispatcher(this: Calculator; n: Integer); cdecl;
 begin
 	CalculatorImpl(this).setMemory(n);
 end;
 
-procedure CalculatorImpl_sumAndStoreDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer); cdecl;
+procedure CalculatorImpl_sumAndStoreDispatcher(this: Calculator; status: Status; n1: Integer; n2: Integer); cdecl;
 begin
 	CalculatorImpl(this).sumAndStore(status, n1, n2);
 end;
@@ -273,37 +273,37 @@ begin
 	vTable := CalculatorImpl_vTable;
 end;
 
-procedure Calculator2Impl_disposeDispatcher(this: Pointer); cdecl;
+procedure Calculator2Impl_disposeDispatcher(this: Calculator2); cdecl;
 begin
 	Calculator2Impl(this).dispose();
 end;
 
-function Calculator2Impl_sumDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
+function Calculator2Impl_sumDispatcher(this: Calculator2; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
 	Result := Calculator2Impl(this).sum(status, n1, n2);
 end;
 
-function Calculator2Impl_getMemoryDispatcher(this: Pointer): Integer; cdecl;
+function Calculator2Impl_getMemoryDispatcher(this: Calculator2): Integer; cdecl;
 begin
 	Result := Calculator2Impl(this).getMemory();
 end;
 
-procedure Calculator2Impl_setMemoryDispatcher(this: Pointer; n: Integer); cdecl;
+procedure Calculator2Impl_setMemoryDispatcher(this: Calculator2; n: Integer); cdecl;
 begin
 	Calculator2Impl(this).setMemory(n);
 end;
 
-procedure Calculator2Impl_sumAndStoreDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer); cdecl;
+procedure Calculator2Impl_sumAndStoreDispatcher(this: Calculator2; status: Status; n1: Integer; n2: Integer); cdecl;
 begin
 	Calculator2Impl(this).sumAndStore(status, n1, n2);
 end;
 
-function Calculator2Impl_multiplyDispatcher(this: Pointer; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
+function Calculator2Impl_multiplyDispatcher(this: Calculator2; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
 	Result := Calculator2Impl(this).multiply(status, n1, n2);
 end;
 
-procedure Calculator2Impl_copyMemoryDispatcher(this: Pointer; calculator: Calculator); cdecl;
+procedure Calculator2Impl_copyMemoryDispatcher(this: Calculator2; calculator: Calculator); cdecl;
 begin
 	Calculator2Impl(this).copyMemory(calculator);
 end;
@@ -316,27 +316,27 @@ begin
 	vTable := Calculator2Impl_vTable;
 end;
 
-procedure FactoryImpl_disposeDispatcher(this: Pointer); cdecl;
+procedure FactoryImpl_disposeDispatcher(this: Factory); cdecl;
 begin
 	FactoryImpl(this).dispose();
 end;
 
-function FactoryImpl_createStatusDispatcher(this: Pointer): Status; cdecl;
+function FactoryImpl_createStatusDispatcher(this: Factory): Status; cdecl;
 begin
 	Result := FactoryImpl(this).createStatus();
 end;
 
-function FactoryImpl_createCalculatorDispatcher(this: Pointer; status: Status): Calculator; cdecl;
+function FactoryImpl_createCalculatorDispatcher(this: Factory; status: Status): Calculator; cdecl;
 begin
 	Result := FactoryImpl(this).createCalculator(status);
 end;
 
-function FactoryImpl_createCalculator2Dispatcher(this: Pointer; status: Status): Calculator2; cdecl;
+function FactoryImpl_createCalculator2Dispatcher(this: Factory; status: Status): Calculator2; cdecl;
 begin
 	Result := FactoryImpl(this).createCalculator2(status);
 end;
 
-function FactoryImpl_createBrokenCalculatorDispatcher(this: Pointer; status: Status): Calculator; cdecl;
+function FactoryImpl_createBrokenCalculatorDispatcher(this: Factory; status: Status): Calculator; cdecl;
 begin
 	Result := FactoryImpl(this).createBrokenCalculator(status);
 end;

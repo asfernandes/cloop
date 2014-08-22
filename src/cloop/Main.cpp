@@ -998,9 +998,10 @@ public:
 			{
 				Method* method = *j;
 
-				fprintf(out, "\t%s_%sPtr = %s(this: Pointer",
+				fprintf(out, "\t%s_%sPtr = %s(this: %s",
 					interface->name.c_str(), method->name.c_str(),
-					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"));
+					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
 					 k != method->parameters.end();
@@ -1220,10 +1221,11 @@ public:
 			{
 				Method* method = *j;
 
-				fprintf(out, "%s %sImpl_%sDispatcher(this: Pointer",
+				fprintf(out, "%s %sImpl_%sDispatcher(this: %s",
 					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
 					interface->name.c_str(),
-					method->name.c_str());
+					method->name.c_str(),
+					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
 					 k != method->parameters.end();

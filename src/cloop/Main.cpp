@@ -58,6 +58,12 @@ public:
 			throw runtime_error("Input file not found.");
 	}
 
+	~Lexer()
+	{
+		fclose(in);
+	}
+
+public:
 	Token& getToken(Token& token)
 	{
 		if (!tokens.empty())
@@ -69,18 +75,14 @@ public:
 
 		token.text = "";
 
-		int c;
-
-		while ((c = fgetc(in)) == ' ' || c == '\t' || c == '\r' || c == '\n')
-			;
+		int c = skip();
 
 		if (c == -1)
 		{
 			token.type = Token::TYPE_EOF;
 			return token;
 		}
-
-		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_')
+		else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_')
 		{
 			while ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
 				   (c >= '0' && c <= '9'))
@@ -116,9 +118,63 @@ public:
 		tokens.push(token);
 	}
 
-	~Lexer()
+private:
+	int skip()	// skip spaces and comments
 	{
-		fclose(in);
+		while (true)
+		{
+			int c;
+
+			while ((c = fgetc(in)) == ' ' || c == '\t' || c == '\r' || c == '\n')
+				;
+
+			// check for comments
+
+			if (c != '/')
+				return c;
+
+			c = fgetc(in);
+
+			switch (c)
+			{
+				case '*':
+				{
+					bool inComment = true;
+
+					while (inComment)
+					{
+						while ((c = fgetc(in)) != '*' && c != -1)
+							;
+
+						if (c == -1)
+							throw runtime_error("Unterminated comment.");
+						else
+						{
+							c = fgetc(in);
+
+							if (c == '/')
+								inComment = false;
+							else
+								ungetc(c, in);
+						}
+					}
+
+					break;
+				}
+
+				case '/':
+					while ((c = fgetc(in)) != '\n' && c != -1)
+						;
+
+					break;
+
+				default:	// not a comment
+					ungetc(c, in);
+					return '/';
+			}
+		}
+
+		// should never be here
 	}
 
 private:

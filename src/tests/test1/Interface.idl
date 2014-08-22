@@ -1,8 +1,10 @@
+// Base for all interfaces.
 interface Disposable
 {
 	void dispose();
 }
 
+/* Status is the *exception* class. */
 [exception]
 interface Status : Disposable
 {

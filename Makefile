@@ -114,12 +114,14 @@ $(BIN_DIR)/test1-cpp$(EXE_EXT): \
 	$(LD) $^ -ldl -o $@
 
 $(BIN_DIR)/test1-pascal$(SHRLIB_EXT): \
+	$(SRC_DIR)/tests/test1/PascalClasses.pas \
 	$(SRC_DIR)/tests/test1/PascalLibrary.pas \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
 	fpc $(FPC_FLAGS) -fPIC -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.pas
 
 $(BIN_DIR)/test1-pascal$(EXE_EXT): \
+	$(SRC_DIR)/tests/test1/PascalClasses.pas \
 	$(SRC_DIR)/tests/test1/PascalTest.pas \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 

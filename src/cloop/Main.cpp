@@ -44,18 +44,31 @@ public:
 public:
 	Type type;
 	string text;
+	unsigned line;
+	unsigned column;
 };
 
 
 class Lexer
 {
+private:
+	struct Char
+	{
+		int c;
+		unsigned line;
+		unsigned column;
+	};
+
 public:
 	Lexer(const string& filename)
+		: filename(filename),
+		  line(1),
+		  column(1)
 	{
 		in = fopen(filename.c_str(), "r");
 
 		if (!in)
-			throw runtime_error("Input file not found.");
+			throw runtime_error(string("Input file not found: ") + filename + ".");
 	}
 
 	~Lexer()
@@ -75,23 +88,27 @@ public:
 
 		token.text = "";
 
-		int c = skip();
+		Char ch;
+		skip(ch);
 
-		if (c == -1)
+		token.line = ch.line;
+		token.column = ch.column;
+
+		if (ch.c == -1)
 		{
 			token.type = Token::TYPE_EOF;
 			return token;
 		}
-		else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_')
+		else if ((ch.c >= 'a' && ch.c <= 'z') || (ch.c >= 'A' && ch.c <= 'Z') || ch.c == '_')
 		{
-			while ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' ||
-				   (c >= '0' && c <= '9'))
+			while ((ch.c >= 'a' && ch.c <= 'z') || (ch.c >= 'A' && ch.c <= 'Z') || ch.c == '_' ||
+				   (ch.c >= '0' && ch.c <= '9'))
 			{
-				token.text += c;
-				c = fgetc(in);
+				token.text += ch.c;
+				getChar(ch);
 			}
 
-			ungetc(c, in);
+			ungetChar(ch);
 
 			if (token.text == "exception")
 				token.type = Token::TYPE_EXCEPTION;
@@ -106,8 +123,8 @@ public:
 		}
 		else
 		{
-			token.type = static_cast<Token::Type>(c);
-			token.text = c;
+			token.type = static_cast<Token::Type>(ch.c);
+			token.text = ch.c;
 		}
 
 		return token;
@@ -119,23 +136,22 @@ public:
 	}
 
 private:
-	int skip()	// skip spaces and comments
+	void skip(Char& ch)	// skip spaces and comments
 	{
 		while (true)
 		{
-			int c;
-
-			while ((c = fgetc(in)) == ' ' || c == '\t' || c == '\r' || c == '\n')
+			while (getChar(ch).c == ' ' || ch.c == '\t' || ch.c == '\r' || ch.c == '\n')
 				;
 
 			// check for comments
 
-			if (c != '/')
-				return c;
+			if (ch.c != '/')
+				return;
 
-			c = fgetc(in);
+			Char firstCh = ch;
+			getChar(ch);
 
-			switch (c)
+			switch (ch.c)
 			{
 				case '*':
 				{
@@ -143,19 +159,25 @@ private:
 
 					while (inComment)
 					{
-						while ((c = fgetc(in)) != '*' && c != -1)
+						while (getChar(ch).c != '*' && ch.c != -1)
 							;
 
-						if (c == -1)
-							throw runtime_error("Unterminated comment.");
+						if (ch.c == -1)
+						{
+							char buffer[1024];
+							sprintf(buffer, "%s:%i:%i: error: Unterminated comment.",
+								filename.c_str(),
+								firstCh.line, firstCh.column);
+							throw runtime_error(buffer);
+						}
 						else
 						{
-							c = fgetc(in);
+							getChar(ch);
 
-							if (c == '/')
+							if (ch.c == '/')
 								inComment = false;
 							else
-								ungetc(c, in);
+								ungetChar(ch);
 						}
 					}
 
@@ -163,22 +185,50 @@ private:
 				}
 
 				case '/':
-					while ((c = fgetc(in)) != '\n' && c != -1)
+					while (getChar(ch).c != '\n' && ch.c != -1)
 						;
 
 					break;
 
 				default:	// not a comment
-					ungetc(c, in);
-					return '/';
+					ch = firstCh;
+					break;
 			}
 		}
 
 		// should never be here
 	}
 
+	Char& getChar(Char& ch)
+	{
+		ch.c = fgetc(in);
+		ch.line = line;
+		ch.column = column;
+
+		if (ch.c == '\n')
+		{
+			++line;
+			column = 1;
+		}
+		else
+			++column;
+
+		return ch;
+	}
+
+	void ungetChar(const Char& ch)
+	{
+		ungetc(ch.c, in);
+		line = ch.line;
+		column = ch.column;
+	}
+
+public:
+	const string filename;
+
 private:
 	FILE* in;
+	unsigned line, column;
 	stack<Token> tokens;
 };
 
@@ -257,7 +307,7 @@ public:
 				map<string, Interface*>::iterator it = interfacesByName.find(superName);
 
 				if (it == interfacesByName.end())
-					throw runtime_error(string("Super interface '") + superName + "' not found.");
+					error(token, string("Super interface '") + superName + "' not found.");
 
 				interface->super = it->second;
 			}
@@ -312,7 +362,7 @@ private:
 		lexer->getToken(token);
 
 		if (token.type != expected && !(allowEof && token.type == Token::TYPE_EOF))
-			throw runtime_error(string("Syntax error at '") + token.text + "'.");
+			error(token, string("Syntax error at '") + token.text + "'.");
 
 		return token;
 	}
@@ -329,11 +379,18 @@ private:
 				break;
 
 			default:
-				throw runtime_error(string("Syntax error at '") + token.text +
-					"'. Expected a type.");
+				error(token, string("Syntax error at '") + token.text + "'. Expected a type.");
 		}
 
 		return token;
+	}
+
+	void error(const Token& token, const string& msg)
+	{
+		char buffer[1024];
+		sprintf(buffer, "%s:%i:%i: error: %s",
+			lexer->filename.c_str(), token.line, token.column, msg.c_str());
+		throw runtime_error(buffer);
 	}
 
 public:

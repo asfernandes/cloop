@@ -26,9 +26,8 @@ using std::endl;
 #define TOKEN(c)	static_cast< ::Token::Type>(c)
 
 
-class Token
+struct Token
 {
-public:
 	enum Type
 	{
 		TYPE_EOF = 256,
@@ -42,11 +41,16 @@ public:
 		TYPE_INT
 	};
 
-public:
 	Type type;
 	string text;
 	unsigned line;
 	unsigned column;
+};
+
+
+struct Type
+{
+	Token token;
 };
 
 
@@ -239,7 +243,7 @@ private:
 struct Parameter
 {
 	string name;
-	Token type;
+	Type type;
 };
 
 
@@ -251,7 +255,7 @@ struct Method
 	}
 
 	string name;
-	Token returnType;
+	Type returnType;
 	vector<Parameter*> parameters;
 	bool isConst;
 };
@@ -332,7 +336,7 @@ public:
 				Method* method = new Method();
 				interface->methods.push_back(method);
 
-				method->returnType = parseType(token);
+				method->returnType = parseType();
 				method->name = getToken(token, Token::TYPE_IDENTIFIER).text;
 				getToken(token, TOKEN('('));
 
@@ -345,7 +349,7 @@ public:
 						Parameter* parameter = new Parameter();
 						method->parameters.push_back(parameter);
 
-						parameter->type = parseType(token);
+						parameter->type = parseType();
 						parameter->name = getToken(token, Token::TYPE_IDENTIFIER).text;
 
 						lexer->getToken(token);
@@ -381,11 +385,12 @@ private:
 		return token;
 	}
 
-	Token& parseType(Token& token)
+	Type parseType()
 	{
-		lexer->getToken(token);
+		Type type;
+		lexer->getToken(type.token);
 
-		switch (token.type)
+		switch (type.token.type)
 		{
 			case Token::TYPE_VOID:
 			case Token::TYPE_INT:
@@ -393,10 +398,12 @@ private:
 				break;
 
 			default:
-				error(token, string("Syntax error at '") + token.text + "'. Expected a type.");
+				error(type.token, string("Syntax error at '") +
+					type.token.text + "'. Expected a type.");
+				break;
 		}
 
-		return token;
+		return type;
 	}
 
 	void error(const Token& token, const string& msg)
@@ -462,15 +469,15 @@ protected:
 	}
 
 protected:
-	string convertType(const Token& token)
+	string convertType(const Type& type)
 	{
-		switch (token.type)
+		switch (type.token.type)
 		{
 			case Token::TYPE_IDENTIFIER:
-				return string(cPlusPlus ? "" : "struct ") + token.text + "*";
+				return string(cPlusPlus ? "" : "struct ") + type.token.text + "*";
 
 			default:
-				return token.text;
+				return type.token.text;
 		}
 	}
 
@@ -612,7 +619,7 @@ public:
 
 				fprintf(out, "\t\t\t");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 				{
 					fprintf(out, "%s ret = ", convertType(method->returnType).c_str());
 					//// TODO: Policy::upgrade
@@ -633,13 +640,13 @@ public:
 
 				if (!method->parameters.empty() &&
 					parser->exceptionInterface &&
-					method->parameters.front()->type.text == parser->exceptionInterface->name)
+					method->parameters.front()->type.token.text == parser->exceptionInterface->name)
 				{
 					fprintf(out, "\t\t\tPolicy::checkException(%s);\n",
 						method->parameters.front()->name.c_str());
 				}
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, "\t\t\treturn ret;\n");
 
 				fprintf(out, "\t\t}\n");
@@ -723,7 +730,7 @@ public:
 
 					fprintf(out, "\t\t\t\t");
 
-					if (method->returnType.type != Token::TYPE_VOID)
+					if (method->returnType.token.type != Token::TYPE_VOID)
 						fprintf(out, "return ");
 
 					fprintf(out, "static_cast<%sName*>(self)->Name::%s(",
@@ -747,7 +754,7 @@ public:
 					Parameter* exceptionParameter =
 						(!method->parameters.empty() &&
 						 parser->exceptionInterface &&
-						 method->parameters.front()->type.text == parser->exceptionInterface->name
+						 method->parameters.front()->type.token.text == parser->exceptionInterface->name
 						) ? method->parameters.front() : NULL;
 
 					fprintf(out, "\t\t\t}\n");
@@ -756,7 +763,7 @@ public:
 					fprintf(out, "\t\t\t\tPolicy::catchException(%s);\n",
 						(exceptionParameter ? exceptionParameter->name.c_str() : "0"));
 
-					if (method->returnType.type != Token::TYPE_VOID)
+					if (method->returnType.token.type != Token::TYPE_VOID)
 					{
 						fprintf(out, "\t\t\t\treturn static_cast<%s>(0);\n",
 							convertType(method->returnType).c_str());
@@ -1012,7 +1019,7 @@ public:
 				fprintf(out, "{\n");
 				fprintf(out, "\t");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, "return ");
 
 				fprintf(out, "self->vtable->%s(self", method->name.c_str());
@@ -1081,7 +1088,7 @@ public:
 
 				fprintf(out, "\t%s_%sPtr = %s(this: %s",
 					interface->name.c_str(), method->name.c_str(),
-					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1096,7 +1103,7 @@ public:
 
 				fprintf(out, ")");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, ": %s", convertType(method->returnType).c_str());
 
 				fprintf(out, "; cdecl;\n");
@@ -1160,7 +1167,7 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "\t\t%s %s(",
-					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 					method->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1178,7 +1185,7 @@ public:
 
 				fprintf(out, ")");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, ": %s", convertType(method->returnType).c_str());
 
 				fprintf(out, ";\n");
@@ -1200,7 +1207,7 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "\t\t%s %s(",
-					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 					method->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1218,7 +1225,7 @@ public:
 
 				fprintf(out, ")");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, ": %s", convertType(method->returnType).c_str());
 
 				fprintf(out, "; virtual; abstract;\n");
@@ -1242,7 +1249,7 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "%s %s.%s(",
-					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 					interface->name.c_str(),
 					method->name.c_str());
 
@@ -1261,14 +1268,14 @@ public:
 
 				fprintf(out, ")");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, ": %s", convertType(method->returnType).c_str());
 
 				fprintf(out, ";\n");
 				fprintf(out, "begin\n");
 				fprintf(out, "\t");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, "Result := ");
 
 				fprintf(out, "%sVTable(vTable).%s(Self",
@@ -1303,7 +1310,7 @@ public:
 				Method* method = *j;
 
 				fprintf(out, "%s %sImpl_%sDispatcher(this: %s",
-					(method->returnType.type == Token::TYPE_VOID ? "procedure" : "function"),
+					(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 					interface->name.c_str(),
 					method->name.c_str(),
 					interface->name.c_str());
@@ -1320,14 +1327,14 @@ public:
 
 				fprintf(out, ")");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, ": %s", convertType(method->returnType).c_str());
 
 				fprintf(out, "; cdecl;\n");
 				fprintf(out, "begin\n");
 				fprintf(out, "\t");
 
-				if (method->returnType.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID)
 					fprintf(out, "Result := ");
 
 				fprintf(out, "%sImpl(this).%s(", interface->name.c_str(), method->name.c_str());
@@ -1405,15 +1412,15 @@ public:
 	}
 
 private:
-	string convertType(const Token& token)
+	string convertType(const Type& type)
 	{
-		switch (token.type)
+		switch (type.token.type)
 		{
 			case Token::TYPE_INT:
 				return "Integer";
 
 			default:
-				return token.text;
+				return type.token.text;
 		}
 	}
 

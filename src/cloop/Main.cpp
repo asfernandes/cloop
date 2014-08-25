@@ -34,6 +34,7 @@ public:
 		TYPE_EOF = 256,
 		TYPE_IDENTIFIER,
 		// keywords
+		TYPE_CONST,
 		TYPE_EXCEPTION,
 		TYPE_INTERFACE,
 		// types
@@ -110,7 +111,9 @@ public:
 
 			ungetChar(ch);
 
-			if (token.text == "exception")
+			if (token.text == "const")
+				token.type = Token::TYPE_CONST;
+			else if (token.text == "exception")
 				token.type = Token::TYPE_EXCEPTION;
 			else if (token.text == "interface")
 				token.type = Token::TYPE_INTERFACE;
@@ -242,9 +245,15 @@ struct Parameter
 
 struct Method
 {
+	Method()
+		: isConst(false)
+	{
+	}
+
 	string name;
 	Token returnType;
 	vector<Parameter*> parameters;
+	bool isConst;
 };
 
 
@@ -350,6 +359,11 @@ public:
 
 					getToken(token, TOKEN(')'));
 				}
+
+				if (lexer->getToken(token).type == Token::TYPE_CONST)
+					method->isConst = true;
+				else
+					lexer->pushToken(token);
 
 				getToken(token, TOKEN(';'));
 			}
@@ -535,8 +549,10 @@ public:
 			{
 				Method* method = *j;
 
-				fprintf(out, "\t\t\t%s (*%s)(%s* self",
-					convertType(method->returnType).c_str(), method->name.c_str(),
+				fprintf(out, "\t\t\t%s (*%s)(%s%s* self",
+					convertType(method->returnType).c_str(),
+					method->name.c_str(),
+					(method->isConst ? "const " : ""),
 					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -590,7 +606,7 @@ public:
 						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
-				fprintf(out, ")\n");
+				fprintf(out, ")%s\n", (method->isConst ? " const" : ""));
 				fprintf(out, "\t\t{\n");
 				fprintf(out, "\t\t\tPolicy::template checkVersion<%d>(this);\n", ++methodNumber);
 
@@ -684,8 +700,10 @@ public:
 					Method* method = *j;
 
 					fprintf(out, "\n");
-					fprintf(out, "\t\tstatic %s cloop%sDispatcher(%s* self",
-						convertType(method->returnType).c_str(), method->name.c_str(),
+					fprintf(out, "\t\tstatic %s cloop%sDispatcher(%s%s* self",
+						convertType(method->returnType).c_str(),
+						method->name.c_str(),
+						(method->isConst ? "const " : ""),
 						p->name.c_str());
 
 					for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -708,7 +726,9 @@ public:
 					if (method->returnType.type != Token::TYPE_VOID)
 						fprintf(out, "return ");
 
-					fprintf(out, "static_cast<Name*>(self)->Name::%s(", method->name.c_str());
+					fprintf(out, "static_cast<%sName*>(self)->Name::%s(",
+						(method->isConst ? "const " : ""),
+						method->name.c_str());
 
 					for (vector<Parameter*>::iterator k = method->parameters.begin();
 						 k != method->parameters.end();
@@ -805,7 +825,7 @@ public:
 						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
-				fprintf(out, ") = 0;\n");
+				fprintf(out, ")%s = 0;\n", (method->isConst ? " const" : ""));
 			}
 
 			fprintf(out, "\t};\n");
@@ -875,8 +895,10 @@ public:
 			{
 				Method* method = *j;
 
-				fprintf(out, "\t%s (*%s)(struct %s* self",
-					convertType(method->returnType).c_str(), method->name.c_str(),
+				fprintf(out, "\t%s (*%s)(%sstruct %s* self",
+					convertType(method->returnType).c_str(),
+					method->name.c_str(),
+					(method->isConst ? "const " : ""),
 					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -904,10 +926,11 @@ public:
 			{
 				Method* method = *j;
 
-				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(struct %s* self",
+				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(%sstruct %s* self",
 					convertType(method->returnType).c_str(),
 					interface->name.c_str(),
 					method->name.c_str(),
+					(method->isConst ? "const " : ""),
 					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -968,10 +991,11 @@ public:
 			{
 				Method* method = *j;
 
-				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(struct %s* self",
+				fprintf(out, "CLOOP_EXTERN_C %s %s_%s(%sstruct %s* self",
 					convertType(method->returnType).c_str(),
 					interface->name.c_str(),
 					method->name.c_str(),
+					(method->isConst ? "const " : ""),
 					interface->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();

@@ -8,21 +8,21 @@ interface Disposable
 [exception]
 interface Status : Disposable
 {
-	int getCode();
+	int getCode() const;
 	void setCode(int code);
 }
 
 interface Calculator : Disposable
 {
-	int sum(Status status, int n1, int n2);
-	int getMemory();
+	int sum(Status status, int n1, int n2) const;
+	int getMemory() const;
 	void setMemory(int n);
 	void sumAndStore(Status status, int n1, int n2);
 }
 
 interface Calculator2 : Calculator
 {
-	int multiply(Status status, int n1, int n2);
+	int multiply(Status status, int n1, int n2) const;
 	void copyMemory(Calculator calculator);
 }
 

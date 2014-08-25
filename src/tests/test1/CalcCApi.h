@@ -42,7 +42,7 @@ struct StatusVTable
 	void* cloopDummy[1];
 	uintptr_t version;
 	void (*dispose)(struct Status* self);
-	int (*getCode)(struct Status* self);
+	int (*getCode)(const struct Status* self);
 	void (*setCode)(struct Status* self, int code);
 };
 
@@ -53,7 +53,7 @@ struct Status
 };
 
 CLOOP_EXTERN_C void Status_dispose(struct Status* self);
-CLOOP_EXTERN_C int Status_getCode(struct Status* self);
+CLOOP_EXTERN_C int Status_getCode(const struct Status* self);
 CLOOP_EXTERN_C void Status_setCode(struct Status* self, int code);
 
 #define Calculator_VERSION 5
@@ -65,8 +65,8 @@ struct CalculatorVTable
 	void* cloopDummy[1];
 	uintptr_t version;
 	void (*dispose)(struct Calculator* self);
-	int (*sum)(struct Calculator* self, struct Status* status, int n1, int n2);
-	int (*getMemory)(struct Calculator* self);
+	int (*sum)(const struct Calculator* self, struct Status* status, int n1, int n2);
+	int (*getMemory)(const struct Calculator* self);
 	void (*setMemory)(struct Calculator* self, int n);
 	void (*sumAndStore)(struct Calculator* self, struct Status* status, int n1, int n2);
 };
@@ -78,8 +78,8 @@ struct Calculator
 };
 
 CLOOP_EXTERN_C void Calculator_dispose(struct Calculator* self);
-CLOOP_EXTERN_C int Calculator_sum(struct Calculator* self, struct Status* status, int n1, int n2);
-CLOOP_EXTERN_C int Calculator_getMemory(struct Calculator* self);
+CLOOP_EXTERN_C int Calculator_sum(const struct Calculator* self, struct Status* status, int n1, int n2);
+CLOOP_EXTERN_C int Calculator_getMemory(const struct Calculator* self);
 CLOOP_EXTERN_C void Calculator_setMemory(struct Calculator* self, int n);
 CLOOP_EXTERN_C void Calculator_sumAndStore(struct Calculator* self, struct Status* status, int n1, int n2);
 
@@ -92,11 +92,11 @@ struct Calculator2VTable
 	void* cloopDummy[1];
 	uintptr_t version;
 	void (*dispose)(struct Calculator2* self);
-	int (*sum)(struct Calculator2* self, struct Status* status, int n1, int n2);
-	int (*getMemory)(struct Calculator2* self);
+	int (*sum)(const struct Calculator2* self, struct Status* status, int n1, int n2);
+	int (*getMemory)(const struct Calculator2* self);
 	void (*setMemory)(struct Calculator2* self, int n);
 	void (*sumAndStore)(struct Calculator2* self, struct Status* status, int n1, int n2);
-	int (*multiply)(struct Calculator2* self, struct Status* status, int n1, int n2);
+	int (*multiply)(const struct Calculator2* self, struct Status* status, int n1, int n2);
 	void (*copyMemory)(struct Calculator2* self, struct Calculator* calculator);
 };
 
@@ -107,11 +107,11 @@ struct Calculator2
 };
 
 CLOOP_EXTERN_C void Calculator2_dispose(struct Calculator2* self);
-CLOOP_EXTERN_C int Calculator2_sum(struct Calculator2* self, struct Status* status, int n1, int n2);
-CLOOP_EXTERN_C int Calculator2_getMemory(struct Calculator2* self);
+CLOOP_EXTERN_C int Calculator2_sum(const struct Calculator2* self, struct Status* status, int n1, int n2);
+CLOOP_EXTERN_C int Calculator2_getMemory(const struct Calculator2* self);
 CLOOP_EXTERN_C void Calculator2_setMemory(struct Calculator2* self, int n);
 CLOOP_EXTERN_C void Calculator2_sumAndStore(struct Calculator2* self, struct Status* status, int n1, int n2);
-CLOOP_EXTERN_C int Calculator2_multiply(struct Calculator2* self, struct Status* status, int n1, int n2);
+CLOOP_EXTERN_C int Calculator2_multiply(const struct Calculator2* self, struct Status* status, int n1, int n2);
 CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, struct Calculator* calculator);
 
 #define Factory_VERSION 5

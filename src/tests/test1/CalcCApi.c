@@ -13,7 +13,7 @@ CLOOP_EXTERN_C void Status_dispose(struct Status* self)
 	self->vtable->dispose(self);
 }
 
-CLOOP_EXTERN_C int Status_getCode(struct Status* self)
+CLOOP_EXTERN_C int Status_getCode(const struct Status* self)
 {
 	return self->vtable->getCode(self);
 }
@@ -28,12 +28,12 @@ CLOOP_EXTERN_C void Calculator_dispose(struct Calculator* self)
 	self->vtable->dispose(self);
 }
 
-CLOOP_EXTERN_C int Calculator_sum(struct Calculator* self, struct Status* status, int n1, int n2)
+CLOOP_EXTERN_C int Calculator_sum(const struct Calculator* self, struct Status* status, int n1, int n2)
 {
 	return self->vtable->sum(self, status, n1, n2);
 }
 
-CLOOP_EXTERN_C int Calculator_getMemory(struct Calculator* self)
+CLOOP_EXTERN_C int Calculator_getMemory(const struct Calculator* self)
 {
 	return self->vtable->getMemory(self);
 }
@@ -53,12 +53,12 @@ CLOOP_EXTERN_C void Calculator2_dispose(struct Calculator2* self)
 	self->vtable->dispose(self);
 }
 
-CLOOP_EXTERN_C int Calculator2_sum(struct Calculator2* self, struct Status* status, int n1, int n2)
+CLOOP_EXTERN_C int Calculator2_sum(const struct Calculator2* self, struct Status* status, int n1, int n2)
 {
 	return self->vtable->sum(self, status, n1, n2);
 }
 
-CLOOP_EXTERN_C int Calculator2_getMemory(struct Calculator2* self)
+CLOOP_EXTERN_C int Calculator2_getMemory(const struct Calculator2* self)
 {
 	return self->vtable->getMemory(self);
 }
@@ -73,7 +73,7 @@ CLOOP_EXTERN_C void Calculator2_sumAndStore(struct Calculator2* self, struct Sta
 	self->vtable->sumAndStore(self, status, n1, n2);
 }
 
-CLOOP_EXTERN_C int Calculator2_multiply(struct Calculator2* self, struct Status* status, int n1, int n2)
+CLOOP_EXTERN_C int Calculator2_multiply(const struct Calculator2* self, struct Status* status, int n1, int n2)
 {
 	return self->vtable->multiply(self, status, n1, n2);
 }

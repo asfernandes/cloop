@@ -41,14 +41,14 @@ public:
 	protected:
 		struct VTable : public Disposable::VTable
 		{
-			int (*getCode)(Status* self);
+			int (*getCode)(const Status* self);
 			void (*setCode)(Status* self, int code);
 		};
 
 	public:
 		static const int VERSION = 3;
 
-		int getCode()
+		int getCode() const
 		{
 			Policy::template checkVersion<2>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getCode(this);
@@ -67,8 +67,8 @@ public:
 	protected:
 		struct VTable : public Disposable::VTable
 		{
-			int (*sum)(Calculator* self, Status* status, int n1, int n2);
-			int (*getMemory)(Calculator* self);
+			int (*sum)(const Calculator* self, Status* status, int n1, int n2);
+			int (*getMemory)(const Calculator* self);
 			void (*setMemory)(Calculator* self, int n);
 			void (*sumAndStore)(Calculator* self, Status* status, int n1, int n2);
 		};
@@ -76,7 +76,7 @@ public:
 	public:
 		static const int VERSION = 5;
 
-		int sum(Status* status, int n1, int n2)
+		int sum(Status* status, int n1, int n2) const
 		{
 			Policy::template checkVersion<2>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->sum(this, status, n1, n2);
@@ -84,7 +84,7 @@ public:
 			return ret;
 		}
 
-		int getMemory()
+		int getMemory() const
 		{
 			Policy::template checkVersion<3>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getMemory(this);
@@ -110,14 +110,14 @@ public:
 	protected:
 		struct VTable : public Calculator::VTable
 		{
-			int (*multiply)(Calculator2* self, Status* status, int n1, int n2);
+			int (*multiply)(const Calculator2* self, Status* status, int n1, int n2);
 			void (*copyMemory)(Calculator2* self, Calculator* calculator);
 		};
 
 	public:
 		static const int VERSION = 7;
 
-		int multiply(Status* status, int n1, int n2)
+		int multiply(Status* status, int n1, int n2) const
 		{
 			Policy::template checkVersion<5>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->multiply(this, status, n1, n2);
@@ -242,11 +242,11 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int cloopgetCodeDispatcher(Status* self) throw()
+		static int cloopgetCodeDispatcher(const Status* self) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getCode();
+				return static_cast<const Name*>(self)->Name::getCode();
 			}
 			catch (...)
 			{
@@ -288,7 +288,7 @@ public:
 		{
 		}
 
-		virtual int getCode() = 0;
+		virtual int getCode() const = 0;
 		virtual void setCode(int code) = 0;
 	};
 
@@ -314,11 +314,11 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int cloopsumDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
+		static int cloopsumDispatcher(const Calculator* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::sum(status, n1, n2);
+				return static_cast<const Name*>(self)->Name::sum(status, n1, n2);
 			}
 			catch (...)
 			{
@@ -327,11 +327,11 @@ public:
 			}
 		}
 
-		static int cloopgetMemoryDispatcher(Calculator* self) throw()
+		static int cloopgetMemoryDispatcher(const Calculator* self) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMemory();
+				return static_cast<const Name*>(self)->Name::getMemory();
 			}
 			catch (...)
 			{
@@ -385,8 +385,8 @@ public:
 		{
 		}
 
-		virtual int sum(Status* status, int n1, int n2) = 0;
-		virtual int getMemory() = 0;
+		virtual int sum(Status* status, int n1, int n2) const = 0;
+		virtual int getMemory() const = 0;
 		virtual void setMemory(int n) = 0;
 		virtual void sumAndStore(Status* status, int n1, int n2) = 0;
 	};
@@ -415,11 +415,11 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int cloopmultiplyDispatcher(Calculator2* self, Status* status, int n1, int n2) throw()
+		static int cloopmultiplyDispatcher(const Calculator2* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::multiply(status, n1, n2);
+				return static_cast<const Name*>(self)->Name::multiply(status, n1, n2);
 			}
 			catch (...)
 			{
@@ -440,11 +440,11 @@ public:
 			}
 		}
 
-		static int cloopsumDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
+		static int cloopsumDispatcher(const Calculator* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::sum(status, n1, n2);
+				return static_cast<const Name*>(self)->Name::sum(status, n1, n2);
 			}
 			catch (...)
 			{
@@ -453,11 +453,11 @@ public:
 			}
 		}
 
-		static int cloopgetMemoryDispatcher(Calculator* self) throw()
+		static int cloopgetMemoryDispatcher(const Calculator* self) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMemory();
+				return static_cast<const Name*>(self)->Name::getMemory();
 			}
 			catch (...)
 			{
@@ -511,7 +511,7 @@ public:
 		{
 		}
 
-		virtual int multiply(Status* status, int n1, int n2) = 0;
+		virtual int multiply(Status* status, int n1, int n2) const = 0;
 		virtual void copyMemory(Calculator* calculator) = 0;
 	};
 

@@ -90,7 +90,7 @@ public:
 		delete this;
 	}
 
-	virtual int getCode()
+	virtual int getCode() const
 	{
 		return code;
 	}
@@ -123,7 +123,7 @@ public:
 		delete this;
 	}
 
-	virtual int sum(calc::Status* status, int n1, int n2)
+	virtual int sum(calc::Status* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
 			throw CalcException(1);
@@ -131,7 +131,7 @@ public:
 			return n1 + n2;
 	}
 
-	virtual int getMemory()
+	virtual int getMemory() const
 	{
 		return memory;
 	}
@@ -169,7 +169,7 @@ public:
 		delete this;
 	}
 
-	virtual int sum(calc::Status* status, int n1, int n2)
+	virtual int sum(calc::Status* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
 			throw CalcException(1);
@@ -177,7 +177,7 @@ public:
 			return n1 + n2;
 	}
 
-	virtual int getMemory()
+	virtual int getMemory() const
 	{
 		return memory;
 	}
@@ -192,7 +192,7 @@ public:
 		setMemory(sum(status, n1, n2));
 	}
 
-	virtual int multiply(calc::Status* status, int n1, int n2)
+	virtual int multiply(calc::Status* status, int n1, int n2) const
 	{
 		return n1 * n2;
 	}
@@ -215,7 +215,7 @@ private:
 class BrokenCalculatorImpl : public calc::CalculatorBaseImpl<BrokenCalculatorImpl, CalculatorImpl>
 {
 public:
-	virtual int sum(calc::Status* status, int n1, int n2)
+	virtual int sum(calc::Status* status, int n1, int n2) const
 	{
 		return CalculatorImpl::sum(status, n1, n2) + 1;
 	}

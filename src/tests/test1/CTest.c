@@ -21,7 +21,7 @@ static void StatusImpl_dispose(struct Status* self)
 	free(self);
 }
 
-static int StatusImpl_getCode(struct Status* self)
+static int StatusImpl_getCode(const struct Status* self)
 {
 	return ((struct StatusImpl*) self)->code;
 }
@@ -65,7 +65,7 @@ static void CalculatorImpl_dispose(struct Calculator* self)
 	free(self);
 }
 
-static int CalculatorImpl_sum(struct Calculator* self, struct Status* status, int n1, int n2)
+static int CalculatorImpl_sum(const struct Calculator* self, struct Status* status, int n1, int n2)
 {
 	if (n1 + n2 > 1000)
 	{
@@ -76,7 +76,7 @@ static int CalculatorImpl_sum(struct Calculator* self, struct Status* status, in
 		return n1 + n2;
 }
 
-static int CalculatorImpl_getMemory(struct Calculator* self)
+static int CalculatorImpl_getMemory(const struct Calculator* self)
 {
 	return ((struct CalculatorImpl*) self)->memory;
 }
@@ -86,7 +86,8 @@ static void CalculatorImpl_setMemory(struct Calculator* self, int n)
 	((struct CalculatorImpl*) self)->memory = n;
 }
 
-static void CalculatorImpl_sumAndStore(struct Calculator* self, struct Status* status, int n1, int n2)
+static void CalculatorImpl_sumAndStore(struct Calculator* self, struct Status* status,
+	int n1, int n2)
 {
 	Calculator_setMemory(self, Calculator_sum(self, status, n1, n2));
 }
@@ -127,7 +128,8 @@ static void Calculator2Impl_dispose(struct Calculator2* self)
 	free(self);
 }
 
-static int Calculator2Impl_sum(struct Calculator2* self, struct Status* status, int n1, int n2)
+static int Calculator2Impl_sum(const struct Calculator2* self, struct Status* status,
+	int n1, int n2)
 {
 	if (n1 + n2 > 1000)
 	{
@@ -138,7 +140,7 @@ static int Calculator2Impl_sum(struct Calculator2* self, struct Status* status, 
 		return n1 + n2;
 }
 
-static int Calculator2Impl_getMemory(struct Calculator2* self)
+static int Calculator2Impl_getMemory(const struct Calculator2* self)
 {
 	return ((struct Calculator2Impl*) self)->memory;
 }
@@ -148,12 +150,14 @@ static void Calculator2Impl_setMemory(struct Calculator2* self, int n)
 	((struct Calculator2Impl*) self)->memory = n;
 }
 
-static void Calculator2Impl_sumAndStore(struct Calculator2* self, struct Status* status, int n1, int n2)
+static void Calculator2Impl_sumAndStore(struct Calculator2* self, struct Status* status,
+	int n1, int n2)
 {
 	Calculator2_setMemory(self, Calculator2_sum(self, status, n1, n2));
 }
 
-static int Calculator2Impl_multiply(struct Calculator2* self, struct Status* status, int n1, int n2)
+static int Calculator2Impl_multiply(const struct Calculator2* self, struct Status* status,
+	int n1, int n2)
 {
 	return n1 * n2;
 }
@@ -189,7 +193,8 @@ struct Calculator2* Calculator2Impl_create()
 // BrokenCalculatorImpl
 
 
-static int BrokenCalculatorImpl_sum(struct Calculator* self, struct Status* status, int n1, int n2)
+static int BrokenCalculatorImpl_sum(const struct Calculator* self, struct Status* status,
+	int n1, int n2)
 {
 	return CalculatorImpl_sum(self, status, n1, n2) + 1;
 }
@@ -233,12 +238,14 @@ static struct Calculator* FactoryImpl_createCalculator(struct Factory* self, str
 	return CalculatorImpl_create();
 }
 
-static struct Calculator2* FactoryImpl_createCalculator2(struct Factory* self, struct Status* status)
+static struct Calculator2* FactoryImpl_createCalculator2(struct Factory* self,
+	struct Status* status)
 {
 	return Calculator2Impl_create();
 }
 
-static struct Calculator* FactoryImpl_createBrokenCalculator(struct Factory* self, struct Status* status)
+static struct Calculator* FactoryImpl_createBrokenCalculator(struct Factory* self,
+	struct Status* status)
 {
 	return BrokenCalculatorImpl_create();
 }

@@ -162,7 +162,7 @@ static int Calculator2Impl_multiply(const struct Calculator2* self, struct Statu
 	return n1 * n2;
 }
 
-static void Calculator2Impl_copyMemory(struct Calculator2* self, struct Calculator* calculator)
+static void Calculator2Impl_copyMemory(struct Calculator2* self, const struct Calculator* calculator)
 {
 	Calculator2_setMemory(self, Calculator_getMemory(calculator));
 }

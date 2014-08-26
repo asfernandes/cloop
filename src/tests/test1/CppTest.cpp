@@ -197,7 +197,7 @@ public:
 		return n1 * n2;
 	}
 
-	virtual void copyMemory(calc::Calculator* calculator)
+	virtual void copyMemory(const calc::Calculator* calculator)
 	{
 		setMemory(calculator->getMemory());
 	}

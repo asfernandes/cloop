@@ -50,7 +50,13 @@ struct Token
 
 struct Type
 {
+	Type()
+		: isConst(false)
+	{
+	}
+
 	Token token;
+	bool isConst;
 };
 
 
@@ -390,6 +396,12 @@ private:
 		Type type;
 		lexer->getToken(type.token);
 
+		if (type.token.type == Token::TYPE_CONST)
+		{
+			type.isConst = true;
+			lexer->getToken(type.token);
+		}
+
 		switch (type.token.type)
 		{
 			case Token::TYPE_VOID:
@@ -471,14 +483,20 @@ protected:
 protected:
 	string convertType(const Type& type)
 	{
+		string ret(type.isConst ? "const " : "");
+
 		switch (type.token.type)
 		{
 			case Token::TYPE_IDENTIFIER:
-				return string(cPlusPlus ? "" : "struct ") + type.token.text + "*";
+				ret += string(cPlusPlus ? "" : "struct ") + type.token.text + "*";
+				break;
 
 			default:
-				return type.token.text;
+				ret += type.token.text;
+				break;
 		}
+
+		return ret;
 	}
 
 private:
@@ -1096,9 +1114,7 @@ public:
 					 ++k)
 				{
 					Parameter* parameter = *k;
-
-					fprintf(out, "; %s: %s",
-						parameter->name.c_str(), convertType(parameter->type).c_str());
+					fprintf(out, "; %s", convertParameter(*parameter).c_str());
 				}
 
 				fprintf(out, ")");
@@ -1179,8 +1195,7 @@ public:
 					if (k != method->parameters.begin())
 						fprintf(out, "; ");
 
-					fprintf(out, "%s: %s",
-						parameter->name.c_str(), convertType(parameter->type).c_str());
+					fprintf(out, "%s", convertParameter(*parameter).c_str());
 				}
 
 				fprintf(out, ")");
@@ -1219,8 +1234,7 @@ public:
 					if (k != method->parameters.begin())
 						fprintf(out, "; ");
 
-					fprintf(out, "%s: %s",
-						parameter->name.c_str(), convertType(parameter->type).c_str());
+					fprintf(out, "%s", convertParameter(*parameter).c_str());
 				}
 
 				fprintf(out, ")");
@@ -1262,8 +1276,7 @@ public:
 					if (k != method->parameters.begin())
 						fprintf(out, "; ");
 
-					fprintf(out, "%s: %s",
-						parameter->name.c_str(), convertType(parameter->type).c_str());
+					fprintf(out, "%s", convertParameter(*parameter).c_str());
 				}
 
 				fprintf(out, ")");
@@ -1321,8 +1334,7 @@ public:
 				{
 					Parameter* parameter = *k;
 
-					fprintf(out, "; %s: %s",
-						parameter->name.c_str(), convertType(parameter->type).c_str());
+					fprintf(out, "; %s", convertParameter(*parameter).c_str());
 				}
 
 				fprintf(out, ")");
@@ -1412,16 +1424,28 @@ public:
 	}
 
 private:
-	string convertType(const Type& type)
+	string convertParameter(const Parameter& parameter)
 	{
+		return string(parameter.type.isConst ? "const " : "") + parameter.name + ": " +
+			convertType(parameter.type, true);
+	}
+
+	string convertType(const Type& type, bool avoidConst = false)
+	{
+		string ret(type.isConst && !avoidConst ? "const " : "");
+
 		switch (type.token.type)
 		{
 			case Token::TYPE_INT:
-				return "Integer";
+				ret += "Integer";
+				break;
 
 			default:
-				return type.token.text;
+				ret += type.token.text;
+				break;
 		}
+
+		return ret;
 	}
 
 private:

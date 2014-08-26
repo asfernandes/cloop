@@ -38,7 +38,7 @@ type
 		procedure setMemory(n: Integer); override;
 		procedure sumAndStore(status: Status; n1: Integer; n2: Integer); override;
 		function multiply(status: Status; n1: Integer; n2: Integer): Integer; override;
-		procedure copyMemory(calculator: Calculator); override;
+		procedure copyMemory(const calculator: Calculator); override;
 
 	private
 		memory: Integer;
@@ -175,7 +175,7 @@ begin
 	Result := n1 * n2;
 end;
 
-procedure MyCalculator2Impl.copyMemory(calculator: Calculator);
+procedure MyCalculator2Impl.copyMemory(const calculator: Calculator);
 begin
 	setMemory(calculator.getMemory());
 end;

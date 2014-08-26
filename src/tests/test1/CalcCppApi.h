@@ -111,7 +111,7 @@ public:
 		struct VTable : public Calculator::VTable
 		{
 			int (*multiply)(const Calculator2* self, Status* status, int n1, int n2);
-			void (*copyMemory)(Calculator2* self, Calculator* calculator);
+			void (*copyMemory)(Calculator2* self, const Calculator* calculator);
 		};
 
 	public:
@@ -125,7 +125,7 @@ public:
 			return ret;
 		}
 
-		void copyMemory(Calculator* calculator)
+		void copyMemory(const Calculator* calculator)
 		{
 			Policy::template checkVersion<6>(this);
 			static_cast<VTable*>(this->cloopVTable)->copyMemory(this, calculator);
@@ -428,7 +428,7 @@ public:
 			}
 		}
 
-		static void cloopcopyMemoryDispatcher(Calculator2* self, Calculator* calculator) throw()
+		static void cloopcopyMemoryDispatcher(Calculator2* self, const Calculator* calculator) throw()
 		{
 			try
 			{
@@ -512,7 +512,7 @@ public:
 		}
 
 		virtual int multiply(Status* status, int n1, int n2) const = 0;
-		virtual void copyMemory(Calculator* calculator) = 0;
+		virtual void copyMemory(const Calculator* calculator) = 0;
 	};
 
 	template <typename Name, typename Base>

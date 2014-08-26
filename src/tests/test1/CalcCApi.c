@@ -78,7 +78,7 @@ CLOOP_EXTERN_C int Calculator2_multiply(const struct Calculator2* self, struct S
 	return self->vtable->multiply(self, status, n1, n2);
 }
 
-CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, struct Calculator* calculator)
+CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, const struct Calculator* calculator)
 {
 	self->vtable->copyMemory(self, calculator);
 }

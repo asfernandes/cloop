@@ -12,6 +12,7 @@ var
 	stat: Status;
 	calc: Calculator;
 	calc2: Calculator2;
+	address: Integer;
 begin
 	lib := LoadLibrary(ParamStr(1));
 
@@ -31,6 +32,10 @@ begin
 	calc2 := fact.createCalculator2(stat);
 
 	calc2.copyMemory(calc);
+	WriteLn(calc2.getMemory());	// 35
+
+	address := 40;
+	calc2.copyMemory2(@address);
 	WriteLn(calc2.getMemory());	// 35
 
 	calc.dispose();

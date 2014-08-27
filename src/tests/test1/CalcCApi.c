@@ -83,6 +83,11 @@ CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, const struc
 	self->vtable->copyMemory(self, calculator);
 }
 
+CLOOP_EXTERN_C void Calculator2_copyMemory2(struct Calculator2* self, const int* address)
+{
+	self->vtable->copyMemory2(self, address);
+}
+
 CLOOP_EXTERN_C void Factory_dispose(struct Factory* self)
 {
 	self->vtable->dispose(self);

@@ -13,6 +13,8 @@ type
 	Calculator2 = class;
 	Factory = class;
 
+	IntegerPtr = ^Integer;
+
 	Disposable_disposePtr = procedure(this: Disposable); cdecl;
 	Status_getCodePtr = function(this: Status): Integer; cdecl;
 	Status_setCodePtr = procedure(this: Status; code: Integer); cdecl;
@@ -22,6 +24,7 @@ type
 	Calculator_sumAndStorePtr = procedure(this: Calculator; status: Status; n1: Integer; n2: Integer); cdecl;
 	Calculator2_multiplyPtr = function(this: Calculator2; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 	Calculator2_copyMemoryPtr = procedure(this: Calculator2; const calculator: Calculator); cdecl;
+	Calculator2_copyMemory2Ptr = procedure(this: Calculator2; const address: IntegerPtr); cdecl;
 	Factory_createStatusPtr = function(this: Factory): Status; cdecl;
 	Factory_createCalculatorPtr = function(this: Factory; status: Status): Calculator; cdecl;
 	Factory_createCalculator2Ptr = function(this: Factory; status: Status): Calculator2; cdecl;
@@ -94,11 +97,13 @@ type
 	Calculator2VTable = class(CalculatorVTable)
 		multiply: Calculator2_multiplyPtr;
 		copyMemory: Calculator2_copyMemoryPtr;
+		copyMemory2: Calculator2_copyMemory2Ptr;
 	end;
 
 	Calculator2 = class(Calculator)
 		function multiply(status: Status; n1: Integer; n2: Integer): Integer;
 		procedure copyMemory(const calculator: Calculator);
+		procedure copyMemory2(const address: IntegerPtr);
 	end;
 
 	Calculator2Impl = class(Calculator2)
@@ -111,6 +116,7 @@ type
 		procedure sumAndStore(status: Status; n1: Integer; n2: Integer); virtual; abstract;
 		function multiply(status: Status; n1: Integer; n2: Integer): Integer; virtual; abstract;
 		procedure copyMemory(const calculator: Calculator); virtual; abstract;
+		procedure copyMemory2(const address: IntegerPtr); virtual; abstract;
 	end;
 
 	FactoryVTable = class(DisposableVTable)
@@ -182,6 +188,11 @@ end;
 procedure Calculator2.copyMemory(const calculator: Calculator);
 begin
 	Calculator2VTable(vTable).copyMemory(Self, calculator);
+end;
+
+procedure Calculator2.copyMemory2(const address: IntegerPtr);
+begin
+	Calculator2VTable(vTable).copyMemory2(Self, address);
 end;
 
 function Factory.createStatus(): Status;
@@ -308,6 +319,11 @@ begin
 	Calculator2Impl(this).copyMemory(calculator);
 end;
 
+procedure Calculator2Impl_copyMemory2Dispatcher(this: Calculator2; const address: IntegerPtr); cdecl;
+begin
+	Calculator2Impl(this).copyMemory2(address);
+end;
+
 var
 	Calculator2Impl_vTable: Calculator2VTable;
 
@@ -369,7 +385,7 @@ initialization
 	CalculatorImpl_vTable.sumAndStore := @CalculatorImpl_sumAndStoreDispatcher;
 
 	Calculator2Impl_vTable := Calculator2VTable.create;
-	Calculator2Impl_vTable.version := 7;
+	Calculator2Impl_vTable.version := 8;
 	Calculator2Impl_vTable.dispose := @Calculator2Impl_disposeDispatcher;
 	Calculator2Impl_vTable.sum := @Calculator2Impl_sumDispatcher;
 	Calculator2Impl_vTable.getMemory := @Calculator2Impl_getMemoryDispatcher;
@@ -377,6 +393,7 @@ initialization
 	Calculator2Impl_vTable.sumAndStore := @Calculator2Impl_sumAndStoreDispatcher;
 	Calculator2Impl_vTable.multiply := @Calculator2Impl_multiplyDispatcher;
 	Calculator2Impl_vTable.copyMemory := @Calculator2Impl_copyMemoryDispatcher;
+	Calculator2Impl_vTable.copyMemory2 := @Calculator2Impl_copyMemory2Dispatcher;
 
 	FactoryImpl_vTable := FactoryVTable.create;
 	FactoryImpl_vTable.version := 5;

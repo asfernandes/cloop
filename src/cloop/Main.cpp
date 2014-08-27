@@ -2,6 +2,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <set>
 #include <stack>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@ using std::auto_ptr;
 using std::deque;
 using std::map;
 using std::pair;
+using std::set;
 using std::stack;
 using std::string;
 using std::vector;
@@ -51,12 +53,14 @@ struct Token
 struct Type
 {
 	Type()
-		: isConst(false)
+		: isConst(false),
+		  isPointer(false)
 	{
 	}
 
 	Token token;
 	bool isConst;
+	bool isPointer;
 };
 
 
@@ -415,6 +419,13 @@ private:
 				break;
 		}
 
+		Token token2;
+		lexer->getToken(token2);
+		if (token2.type == TOKEN('*'))
+			type.isPointer = true;
+		else
+			lexer->pushToken(token2);
+
 		return type;
 	}
 
@@ -495,6 +506,9 @@ protected:
 				ret += type.token.text;
 				break;
 		}
+
+		if (type.isPointer)
+			ret += "*";
 
 		return ret;
 	}
@@ -1092,6 +1106,41 @@ public:
 
 		fprintf(out, "\n");
 
+		// Pass at every type to fill pointerTypes. We need it in advance.
+
+		for (vector<Interface*>::iterator i = parser->interfaces.begin();
+			 i != parser->interfaces.end();
+			 ++i)
+		{
+			Interface* interface = *i;
+
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
+			{
+				Method* method = *j;
+
+				convertType(method->returnType);
+
+				for (vector<Parameter*>::iterator k = method->parameters.begin();
+					 k != method->parameters.end();
+					 ++k)
+				{
+					Parameter* parameter = *k;
+					convertParameter(*parameter);
+				}
+			}
+		}
+
+		for (set<string>::iterator i = pointerTypes.begin(); i != pointerTypes.end(); ++i)
+		{
+			string type = *i;
+			fprintf(out, "\t%sPtr = ^%s;\n", type.c_str(), type.c_str());
+		}
+
+		if (!pointerTypes.empty())
+			fprintf(out, "\n");
+
 		for (vector<Interface*>::iterator i = parser->interfaces.begin();
 			 i != parser->interfaces.end();
 			 ++i)
@@ -1432,25 +1481,34 @@ private:
 
 	string convertType(const Type& type, bool avoidConst = false)
 	{
-		string ret(type.isConst && !avoidConst ? "const " : "");
+		string name;
 
 		switch (type.token.type)
 		{
 			case Token::TYPE_INT:
-				ret += "Integer";
+				name = "Integer";
 				break;
 
 			default:
-				ret += type.token.text;
+				name = type.token.text;
 				break;
 		}
 
-		return ret;
+		if (type.isPointer)
+		{
+			if (pointerTypes.find(name) == pointerTypes.end())
+				pointerTypes.insert(name);
+
+			name += "Ptr";
+		}
+
+		return string(type.isConst && !avoidConst ? "const " : "") + name;
 	}
 
 private:
 	Parser* parser;
 	string unitName;
+	set<string> pointerTypes;
 };
 
 

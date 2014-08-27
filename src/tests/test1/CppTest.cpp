@@ -202,6 +202,11 @@ public:
 		setMemory(calculator->getMemory());
 	}
 
+	virtual void copyMemory2(const int* address)
+	{
+		setMemory(*address);
+	}
+
 private:
 	int memory;
 };
@@ -288,6 +293,10 @@ static void test(calc::Factory* (*createFactory)())
 
 	calculator2->copyMemory(calculator);
 	printf("%d\n", calculator2->getMemory());	// 35
+
+	int address = 40;
+	calculator2->copyMemory2(&address);
+	printf("%d\n", calculator2->getMemory());	// 40
 
 	calculator->dispose();
 	calculator = calculator2;

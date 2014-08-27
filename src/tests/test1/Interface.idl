@@ -24,6 +24,7 @@ interface Calculator2 : Calculator
 {
 	int multiply(Status status, int n1, int n2) const;
 	void copyMemory(const Calculator calculator);
+	void copyMemory2(const int* address);
 }
 
 interface Factory : Disposable

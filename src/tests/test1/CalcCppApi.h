@@ -112,10 +112,11 @@ public:
 		{
 			int (*multiply)(const Calculator2* self, Status* status, int n1, int n2);
 			void (*copyMemory)(Calculator2* self, const Calculator* calculator);
+			void (*copyMemory2)(Calculator2* self, const int* address);
 		};
 
 	public:
-		static const int VERSION = 7;
+		static const int VERSION = 8;
 
 		int multiply(Status* status, int n1, int n2) const
 		{
@@ -129,6 +130,12 @@ public:
 		{
 			Policy::template checkVersion<6>(this);
 			static_cast<VTable*>(this->cloopVTable)->copyMemory(this, calculator);
+		}
+
+		void copyMemory2(const int* address)
+		{
+			Policy::template checkVersion<7>(this);
+			static_cast<VTable*>(this->cloopVTable)->copyMemory2(this, address);
 		}
 	};
 
@@ -409,6 +416,7 @@ public:
 					this->sumAndStore = &Name::cloopsumAndStoreDispatcher;
 					this->multiply = &Name::cloopmultiplyDispatcher;
 					this->copyMemory = &Name::cloopcopyMemoryDispatcher;
+					this->copyMemory2 = &Name::cloopcopyMemory2Dispatcher;
 				}
 			} vTable;
 
@@ -433,6 +441,18 @@ public:
 			try
 			{
 				static_cast<Name*>(self)->Name::copyMemory(calculator);
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
+		}
+
+		static void cloopcopyMemory2Dispatcher(Calculator2* self, const int* address) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::copyMemory2(address);
 			}
 			catch (...)
 			{
@@ -513,6 +533,7 @@ public:
 
 		virtual int multiply(Status* status, int n1, int n2) const = 0;
 		virtual void copyMemory(const Calculator* calculator) = 0;
+		virtual void copyMemory2(const int* address) = 0;
 	};
 
 	template <typename Name, typename Base>

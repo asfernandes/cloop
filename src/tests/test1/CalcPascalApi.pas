@@ -23,8 +23,8 @@ type
 	Calculator_setMemoryPtr = procedure(this: Calculator; n: Integer); cdecl;
 	Calculator_sumAndStorePtr = procedure(this: Calculator; status: Status; n1: Integer; n2: Integer); cdecl;
 	Calculator2_multiplyPtr = function(this: Calculator2; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
-	Calculator2_copyMemoryPtr = procedure(this: Calculator2; const calculator: Calculator); cdecl;
-	Calculator2_copyMemory2Ptr = procedure(this: Calculator2; const address: IntegerPtr); cdecl;
+	Calculator2_copyMemoryPtr = procedure(this: Calculator2; calculator: Calculator); cdecl;
+	Calculator2_copyMemory2Ptr = procedure(this: Calculator2; address: IntegerPtr); cdecl;
 	Factory_createStatusPtr = function(this: Factory): Status; cdecl;
 	Factory_createCalculatorPtr = function(this: Factory; status: Status): Calculator; cdecl;
 	Factory_createCalculator2Ptr = function(this: Factory; status: Status): Calculator2; cdecl;
@@ -102,8 +102,8 @@ type
 
 	Calculator2 = class(Calculator)
 		function multiply(status: Status; n1: Integer; n2: Integer): Integer;
-		procedure copyMemory(const calculator: Calculator);
-		procedure copyMemory2(const address: IntegerPtr);
+		procedure copyMemory(calculator: Calculator);
+		procedure copyMemory2(address: IntegerPtr);
 	end;
 
 	Calculator2Impl = class(Calculator2)
@@ -115,8 +115,8 @@ type
 		procedure setMemory(n: Integer); virtual; abstract;
 		procedure sumAndStore(status: Status; n1: Integer; n2: Integer); virtual; abstract;
 		function multiply(status: Status; n1: Integer; n2: Integer): Integer; virtual; abstract;
-		procedure copyMemory(const calculator: Calculator); virtual; abstract;
-		procedure copyMemory2(const address: IntegerPtr); virtual; abstract;
+		procedure copyMemory(calculator: Calculator); virtual; abstract;
+		procedure copyMemory2(address: IntegerPtr); virtual; abstract;
 	end;
 
 	FactoryVTable = class(DisposableVTable)
@@ -185,12 +185,12 @@ begin
 	Result := Calculator2VTable(vTable).multiply(Self, status, n1, n2);
 end;
 
-procedure Calculator2.copyMemory(const calculator: Calculator);
+procedure Calculator2.copyMemory(calculator: Calculator);
 begin
 	Calculator2VTable(vTable).copyMemory(Self, calculator);
 end;
 
-procedure Calculator2.copyMemory2(const address: IntegerPtr);
+procedure Calculator2.copyMemory2(address: IntegerPtr);
 begin
 	Calculator2VTable(vTable).copyMemory2(Self, address);
 end;
@@ -314,12 +314,12 @@ begin
 	Result := Calculator2Impl(this).multiply(status, n1, n2);
 end;
 
-procedure Calculator2Impl_copyMemoryDispatcher(this: Calculator2; const calculator: Calculator); cdecl;
+procedure Calculator2Impl_copyMemoryDispatcher(this: Calculator2; calculator: Calculator); cdecl;
 begin
 	Calculator2Impl(this).copyMemory(calculator);
 end;
 
-procedure Calculator2Impl_copyMemory2Dispatcher(this: Calculator2; const address: IntegerPtr); cdecl;
+procedure Calculator2Impl_copyMemory2Dispatcher(this: Calculator2; address: IntegerPtr); cdecl;
 begin
 	Calculator2Impl(this).copyMemory2(address);
 end;

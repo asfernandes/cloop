@@ -1475,11 +1475,10 @@ public:
 private:
 	string convertParameter(const Parameter& parameter)
 	{
-		return string(parameter.type.isConst ? "const " : "") + parameter.name + ": " +
-			convertType(parameter.type, true);
+		return parameter.name + ": " + convertType(parameter.type);
 	}
 
-	string convertType(const Type& type, bool avoidConst = false)
+	string convertType(const Type& type)
 	{
 		string name;
 
@@ -1502,7 +1501,7 @@ private:
 			name += "Ptr";
 		}
 
-		return string(type.isConst && !avoidConst ? "const " : "") + name;
+		return name;
 	}
 
 private:

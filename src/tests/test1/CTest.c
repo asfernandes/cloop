@@ -69,7 +69,7 @@ static int CalculatorImpl_sum(const struct Calculator* self, struct Status* stat
 {
 	if (n1 + n2 > 1000)
 	{
-		Status_setCode(status, 1);
+		Status_setCode(status, Status_ERROR_1);
 		return 0;
 	}
 	else
@@ -133,7 +133,7 @@ static int Calculator2Impl_sum(const struct Calculator2* self, struct Status* st
 {
 	if (n1 + n2 > 1000)
 	{
-		Status_setCode(status, 1);
+		Status_setCode(status, Status_ERROR_1);
 		return 0;
 	}
 	else

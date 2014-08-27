@@ -35,6 +35,9 @@ CLOOP_EXTERN_C void Disposable_dispose(struct Disposable* self);
 
 #define Status_VERSION 3
 
+#define Status_ERROR_1 ((int) (1))
+#define Status_ERROR_2 ((int) (2))
+
 struct Status;
 
 struct StatusVTable

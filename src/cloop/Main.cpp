@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <utility>
 #include <stdio.h>
+#include <stdlib.h>
 
 using std::auto_ptr;
 using std::deque;
@@ -34,6 +35,8 @@ struct Token
 	{
 		TYPE_EOF = 256,
 		TYPE_IDENTIFIER,
+		// literals
+		TYPE_INT_LITERAL,
 		// keywords
 		TYPE_CONST,
 		TYPE_EXCEPTION,
@@ -137,6 +140,18 @@ public:
 				token.type = Token::TYPE_INT;
 			else
 				token.type = Token::TYPE_IDENTIFIER;
+		}
+		else if (ch.c >= '0' && ch.c <= '9')
+		{
+			token.type = Token::TYPE_INT_LITERAL;
+
+			while (ch.c >= '0' && ch.c <= '9')
+			{
+				token.text += ch.c;
+				getChar(ch);
+			}
+
+			ungetChar(ch);
 		}
 		else
 		{
@@ -250,10 +265,59 @@ private:
 };
 
 
+enum Language
+{
+	LANGUAGE_C,
+	LANGUAGE_CPP,
+	LANGUAGE_PASCAL
+};
+
+
+class Expr
+{
+public:
+	virtual ~Expr()
+	{
+	}
+
+public:
+	virtual string generate(Language language) = 0;
+};
+
+
+class IntLiteralExpr : public Expr
+{
+public:
+	IntLiteralExpr(int value)
+		: value(value)
+	{
+	}
+
+public:
+	virtual string generate(Language language)
+	{
+		char buffer[64];
+		sprintf(buffer, "%d", value);
+		return buffer;
+	}
+
+private:
+	int value;
+};
+
+
 struct Parameter
 {
 	string name;
 	Type type;
+};
+
+
+struct Constant
+{
+	string name;
+	Type type;
+	Expr* expr;
 };
 
 
@@ -280,6 +344,7 @@ struct Interface
 
 	string name;
 	Interface* super;
+	vector<Constant*> constants;
 	vector<Method*> methods;
 };
 
@@ -349,12 +414,55 @@ public:
 
 	void parseItem(Token& token, Interface* interface)
 	{
+		Type type(parseType());
+		string name(getToken(token, Token::TYPE_IDENTIFIER).text);
+
+		if (type.isConst)
+		{
+			if (lexer->getToken(token).type == TOKEN('='))
+			{
+				type.isConst = false;
+				parseConstant(token, interface, type, name);
+				return;
+			}
+			else
+				lexer->pushToken(token);
+		}
+
+		getToken(token, TOKEN('('));
+		parseMethod(token, interface, type, name);
+	}
+
+	void parseConstant(Token& token, Interface* interface, const Type& type, const string& name)
+	{
+		Constant* constant = new Constant();
+		interface->constants.push_back(constant);
+
+		constant->type = type;
+		constant->name = name;
+		constant->expr = parseExpr(token);
+
+		getToken(token, TOKEN(';'));
+	}
+
+	Expr* parseExpr(Token& token)
+	{
+		return parseLiteralExpr(token);
+	}
+
+	Expr* parseLiteralExpr(Token& token)
+	{
+		getToken(token, Token::TYPE_INT_LITERAL);
+		return new IntLiteralExpr(atoi(token.text.c_str()));
+	}
+
+	void parseMethod(Token& token, Interface* interface, const Type& returnType, const string& name)
+	{
 		Method* method = new Method();
 		interface->methods.push_back(method);
 
-		method->returnType = parseType();
-		method->name = getToken(token, Token::TYPE_IDENTIFIER).text;
-		getToken(token, TOKEN('('));
+		method->returnType = returnType;
+		method->name = name;
 
 		if (lexer->getToken(token).type != TOKEN(')'))
 		{
@@ -624,6 +732,21 @@ public:
 
 			fprintf(out, "\tpublic:\n");
 			fprintf(out, "\t\tstatic const int VERSION = %d;\n", (int) methods.size());
+
+			if (!interface->constants.empty())
+				fprintf(out, "\n");
+
+			for (vector<Constant*>::iterator j = interface->constants.begin();
+				 j != interface->constants.end();
+				 ++j)
+			{
+				Constant* constant = *j;
+
+				fprintf(out, "\t\tstatic const %s %s = %s;\n",
+					convertType(constant->type).c_str(),
+					constant->name.c_str(),
+					constant->expr->generate(LANGUAGE_CPP).c_str());
+			}
 
 			unsigned methodNumber = (interface->super ? interface->super->methods.size() : 0);
 			for (vector<Method*>::iterator j = interface->methods.begin();
@@ -927,6 +1050,22 @@ public:
 			fprintf(out, "#define %s_VERSION %d\n\n",
 				interface->name.c_str(), (int) methods.size());
 
+			for (vector<Constant*>::iterator j = interface->constants.begin();
+				 j != interface->constants.end();
+				 ++j)
+			{
+				Constant* constant = *j;
+
+				fprintf(out, "#define %s_%s ((%s) (%s))\n",
+					interface->name.c_str(),
+					constant->name.c_str(),
+					convertType(constant->type).c_str(),
+					constant->expr->generate(LANGUAGE_C).c_str());
+			}
+
+			if (!interface->constants.empty())
+				fprintf(out, "\n");
+
 			fprintf(out, "struct %s;\n\n", interface->name.c_str());
 
 			fprintf(out, "struct %sVTable\n", interface->name.c_str());
@@ -1080,6 +1219,7 @@ private:
 };
 
 
+//// TODO: Generate constants (including VERSION).
 class PascalGenerator : public FileGenerator
 {
 public:

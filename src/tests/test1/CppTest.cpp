@@ -126,7 +126,7 @@ public:
 	virtual int sum(calc::Status* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
-			throw CalcException(1);
+			throw CalcException(calc::Status::ERROR_1);
 		else
 			return n1 + n2;
 	}
@@ -172,7 +172,7 @@ public:
 	virtual int sum(calc::Status* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
-			throw CalcException(1);
+			throw CalcException(calc::Status::ERROR_1);
 		else
 			return n1 + n2;
 	}

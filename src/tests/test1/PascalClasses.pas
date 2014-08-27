@@ -106,7 +106,7 @@ function MyCalculatorImpl.sum(status: Status; n1: Integer; n2: Integer): Integer
 begin
 	if (n1 + n2 > 1000) then
 	begin
-		status.setCode(1);
+		status.setCode(1);	//// TODO: constant
 		Result := 0;
 	end
 	else
@@ -149,7 +149,7 @@ function MyCalculator2Impl.sum(status: Status; n1: Integer; n2: Integer): Intege
 begin
 	if (n1 + n2 > 1000) then
 	begin
-		status.setCode(1);
+		status.setCode(1);	//// TODO: constant
 		Result := 0;
 	end
 	else

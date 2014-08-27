@@ -8,6 +8,9 @@ interface Disposable
 [exception]
 interface Status : Disposable
 {
+	const int ERROR_1 = 1;
+	const int ERROR_2 = 2;
+
 	int getCode() const;
 	void setCode(int code);
 }

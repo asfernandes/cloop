@@ -48,6 +48,9 @@ public:
 	public:
 		static const int VERSION = 3;
 
+		static const int ERROR_1 = 1;
+		static const int ERROR_2 = 2;
+
 		int getCode() const
 		{
 			Policy::template checkVersion<2>(this);

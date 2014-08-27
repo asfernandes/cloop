@@ -342,46 +342,50 @@ public:
 			while (lexer->getToken(token).type != TOKEN('}'))
 			{
 				lexer->pushToken(token);
-
-				Method* method = new Method();
-				interface->methods.push_back(method);
-
-				method->returnType = parseType();
-				method->name = getToken(token, Token::TYPE_IDENTIFIER).text;
-				getToken(token, TOKEN('('));
-
-				if (lexer->getToken(token).type != TOKEN(')'))
-				{
-					lexer->pushToken(token);
-
-					while (true)
-					{
-						Parameter* parameter = new Parameter();
-						method->parameters.push_back(parameter);
-
-						parameter->type = parseType();
-						parameter->name = getToken(token, Token::TYPE_IDENTIFIER).text;
-
-						lexer->getToken(token);
-						lexer->pushToken(token);
-
-						if (token.type == TOKEN(')'))
-							break;
-
-						getToken(token, TOKEN(','));
-					}
-
-					getToken(token, TOKEN(')'));
-				}
-
-				if (lexer->getToken(token).type == Token::TYPE_CONST)
-					method->isConst = true;
-				else
-					lexer->pushToken(token);
-
-				getToken(token, TOKEN(';'));
+				parseItem(token, interface);
 			}
 		}
+	}
+
+	void parseItem(Token& token, Interface* interface)
+	{
+		Method* method = new Method();
+		interface->methods.push_back(method);
+
+		method->returnType = parseType();
+		method->name = getToken(token, Token::TYPE_IDENTIFIER).text;
+		getToken(token, TOKEN('('));
+
+		if (lexer->getToken(token).type != TOKEN(')'))
+		{
+			lexer->pushToken(token);
+
+			while (true)
+			{
+				Parameter* parameter = new Parameter();
+				method->parameters.push_back(parameter);
+
+				parameter->type = parseType();
+				parameter->name = getToken(token, Token::TYPE_IDENTIFIER).text;
+
+				lexer->getToken(token);
+				lexer->pushToken(token);
+
+				if (token.type == TOKEN(')'))
+					break;
+
+				getToken(token, TOKEN(','));
+			}
+
+			getToken(token, TOKEN(')'));
+		}
+
+		if (lexer->getToken(token).type == Token::TYPE_CONST)
+			method->isConst = true;
+		else
+			lexer->pushToken(token);
+
+		getToken(token, TOKEN(';'));
 	}
 
 private:

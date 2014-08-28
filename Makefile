@@ -73,6 +73,10 @@ $(foreach bdir,$(OBJ_DIRS),$(eval $(call compile,$(bdir))))
 -include $(addsuffix .d,$(basename $(OBJS_CPP)))
 
 $(BIN_DIR)/cloop: \
+	$(OBJ_DIR)/cloop/Expr.o \
+	$(OBJ_DIR)/cloop/Generator.o \
+	$(OBJ_DIR)/cloop/Lexer.o \
+	$(OBJ_DIR)/cloop/Parser.o \
 	$(OBJ_DIR)/cloop/Main.o \
 
 	$(LD) $^ -o $@

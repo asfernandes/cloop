@@ -288,21 +288,43 @@ public:
 class IntLiteralExpr : public Expr
 {
 public:
-	IntLiteralExpr(int value)
-		: value(value)
-	{
-	}
+	IntLiteralExpr(int value);
 
 public:
-	virtual string generate(Language language)
-	{
-		char buffer[64];
-		sprintf(buffer, "%d", value);
-		return buffer;
-	}
+	virtual string generate(Language language);
 
 private:
 	int value;
+};
+
+
+struct Interface;
+
+class ConstantExpr : public Expr
+{
+public:
+	ConstantExpr(Interface* interface, string name);
+
+public:
+	virtual string generate(Language language);
+
+private:
+	Interface* interface;
+	string name;
+};
+
+
+class BitwiseOrExpr : public Expr
+{
+public:
+	BitwiseOrExpr(Expr* expr1, Expr* expr2);
+
+public:
+	virtual string generate(Language language);
+
+private:
+	Expr* expr1;
+	Expr* expr2;
 };
 
 
@@ -349,18 +371,57 @@ struct Interface
 };
 
 
+IntLiteralExpr::IntLiteralExpr(int value)
+	: value(value)
+{
+}
+
+string IntLiteralExpr::generate(Language language)
+{
+	char buffer[64];
+	sprintf(buffer, "%d", value);
+	return buffer;
+}
+
+
+ConstantExpr::ConstantExpr(Interface* interface, string name)
+	: interface(interface),
+	  name(name)
+{
+}
+
+string ConstantExpr::generate(Language language)
+{
+	//// TODO: LANGUAGE_PASCAL
+	return (language == LANGUAGE_C ? interface->name + "_" : "") + name;
+}
+
+
+BitwiseOrExpr::BitwiseOrExpr(Expr* expr1, Expr* expr2)
+	: expr1(expr1),
+	  expr2(expr2)
+{
+}
+
+string BitwiseOrExpr::generate(Language language)
+{
+	return expr1->generate(language) + " | " + expr2->generate(language);
+}
+
+
 class Parser
 {
 public:
 	Parser(Lexer* lexer)
 		: exceptionInterface(NULL),
-		  lexer(lexer)
+		  lexer(lexer),
+		  interface(NULL)
 	{
 	}
 
 	void parse()
 	{
-		Token token;
+		interface = NULL;
 
 		while (true)
 		{
@@ -380,7 +441,7 @@ public:
 
 			getToken(token, Token::TYPE_INTERFACE);
 
-			Interface* interface = new Interface();
+			interface = new Interface();
 			interfaces.push_back(interface);
 
 			interface->name = getToken(token, Token::TYPE_IDENTIFIER).text;
@@ -407,12 +468,12 @@ public:
 			while (lexer->getToken(token).type != TOKEN('}'))
 			{
 				lexer->pushToken(token);
-				parseItem(token, interface);
+				parseItem();
 			}
 		}
 	}
 
-	void parseItem(Token& token, Interface* interface)
+	void parseItem()
 	{
 		Type type(parseType());
 		string name(getToken(token, Token::TYPE_IDENTIFIER).text);
@@ -422,7 +483,7 @@ public:
 			if (lexer->getToken(token).type == TOKEN('='))
 			{
 				type.isConst = false;
-				parseConstant(token, interface, type, name);
+				parseConstant(type, name);
 				return;
 			}
 			else
@@ -430,10 +491,10 @@ public:
 		}
 
 		getToken(token, TOKEN('('));
-		parseMethod(token, interface, type, name);
+		parseMethod(type, name);
 	}
 
-	void parseConstant(Token& token, Interface* interface, const Type& type, const string& name)
+	void parseConstant(const Type& type, const string& name)
 	{
 		Constant* constant = new Constant();
 		interface->constants.push_back(constant);
@@ -447,7 +508,37 @@ public:
 
 	Expr* parseExpr(Token& token)
 	{
-		return parseLiteralExpr(token);
+		return parseLogicalExpr(token);
+	}
+
+	Expr* parseLogicalExpr(Token& token)
+	{
+		Expr* expr = parsePrimaryExpr(token);
+
+		if (lexer->getToken(token).type == TOKEN('|'))
+			expr = new BitwiseOrExpr(expr, parseExpr(token));
+		else
+			lexer->pushToken(token);
+
+		return expr;
+	}
+
+	Expr* parsePrimaryExpr(Token& token)
+	{
+		lexer->getToken(token);
+
+		switch (token.type)
+		{
+			case Token::TYPE_INT_LITERAL:
+				return new IntLiteralExpr(atoi(token.text.c_str()));
+
+			case Token::TYPE_IDENTIFIER:
+				return new ConstantExpr(interface, token.text);
+
+			default:
+				syntaxError(token);
+				return NULL;	// warning
+		}
 	}
 
 	Expr* parseLiteralExpr(Token& token)
@@ -456,7 +547,7 @@ public:
 		return new IntLiteralExpr(atoi(token.text.c_str()));
 	}
 
-	void parseMethod(Token& token, Interface* interface, const Type& returnType, const string& name)
+	void parseMethod(const Type& returnType, const string& name)
 	{
 		Method* method = new Method();
 		interface->methods.push_back(method);
@@ -502,7 +593,7 @@ private:
 		lexer->getToken(token);
 
 		if (token.type != expected && !(allowEof && token.type == Token::TYPE_EOF))
-			error(token, string("Syntax error at '") + token.text + "'.");
+			syntaxError(token);
 
 		return token;
 	}
@@ -541,6 +632,11 @@ private:
 		return type;
 	}
 
+	void syntaxError(const Token& token)
+	{
+		error(token, string("Syntax error at '") + token.text + "'.");
+	}
+
 	void error(const Token& token, const string& msg)
 	{
 		char buffer[1024];
@@ -556,6 +652,8 @@ public:
 
 private:
 	Lexer* lexer;
+	Token token;
+	Interface* interface;
 };
 
 

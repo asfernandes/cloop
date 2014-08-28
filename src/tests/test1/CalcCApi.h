@@ -37,6 +37,7 @@ CLOOP_EXTERN_C void Disposable_dispose(struct Disposable* self);
 
 #define Status_ERROR_1 ((int) (1))
 #define Status_ERROR_2 ((int) (2))
+#define Status_ERROR_12 ((int) (Status_ERROR_1 | Status_ERROR_2))
 
 struct Status;
 

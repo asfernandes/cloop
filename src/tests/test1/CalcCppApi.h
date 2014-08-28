@@ -50,6 +50,7 @@ public:
 
 		static const int ERROR_1 = 1;
 		static const int ERROR_2 = 2;
+		static const int ERROR_12 = ERROR_1 | ERROR_2;
 
 		int getCode() const
 		{

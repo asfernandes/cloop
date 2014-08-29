@@ -203,12 +203,6 @@ Expr* Parser::parsePrimaryExpr()
 	}
 }
 
-Expr* Parser::parseLiteralExpr()
-{
-	getToken(token, Token::TYPE_INT_LITERAL);
-	return new IntLiteralExpr(atoi(token.text.c_str()));
-}
-
 Token& Parser::getToken(Token& token, Token::Type expected, bool allowEof)
 {
 	lexer->getToken(token);

@@ -106,7 +106,6 @@ public:
 	Expr* parseExpr();
 	Expr* parseLogicalExpr();
 	Expr* parsePrimaryExpr();
-	Expr* parseLiteralExpr();
 
 private:
 	Token& getToken(Token& token, Token::Type expected, bool allowEof = false);

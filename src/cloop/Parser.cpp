@@ -23,6 +23,7 @@
 #include "Expr.h"
 #include <stdexcept>
 #include <stdlib.h>
+#include <string.h>
 
 using std::map;
 using std::pair;
@@ -192,7 +193,14 @@ Expr* Parser::parsePrimaryExpr()
 	switch (token.type)
 	{
 		case Token::TYPE_INT_LITERAL:
-			return new IntLiteralExpr(atoi(token.text.c_str()));
+		{
+			const char* p = token.text.c_str();
+			size_t len = strlen(p);
+			int base = len > 2 && tolower(p[1]) == 'x' ? 16 : 10;
+			long val = strtol(p, NULL, base);
+
+			return new IntLiteralExpr((int) val);
+		}
 
 		case Token::TYPE_IDENTIFIER:
 			return new ConstantExpr(interface, token.text);

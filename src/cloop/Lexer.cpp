@@ -94,11 +94,32 @@ Token& Lexer::getToken(Token& token)
 	else if (ch.c >= '0' && ch.c <= '9')
 	{
 		token.type = Token::TYPE_INT_LITERAL;
+		token.text += ch.c;
 
-		while (ch.c >= '0' && ch.c <= '9')
+		if ((getChar(ch).c == 'x' || ch.c == 'X') && token.text[0] == '0')
 		{
 			token.text += ch.c;
-			getChar(ch);
+
+			while ((getChar(ch).c >= '0' && ch.c <= '9') ||
+				(tolower(ch.c) >= 'a' && tolower(ch.c) <= 'f'))
+			{
+				token.text += ch.c;
+			}
+
+			if (token.text.length() == 2)
+			{
+				char buffer[1024];
+				sprintf(buffer, "%s:%i:%i: error: Invalid hexadecimal prefix.",
+					filename.c_str(), line, column);
+				throw runtime_error(buffer);
+			}
+		}
+		else
+		{
+			ungetChar(ch);
+
+			while (getChar(ch).c >= '0' && ch.c <= '9')
+				token.text += ch.c;
 		}
 
 		ungetChar(ch);

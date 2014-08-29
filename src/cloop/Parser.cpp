@@ -176,7 +176,7 @@ Expr* Parser::parseExpr()
 
 Expr* Parser::parseLogicalExpr()
 {
-	Expr* expr = parsePrimaryExpr();
+	Expr* expr = parseUnaryExpr();
 
 	if (lexer->getToken(token).type == TOKEN('|'))
 		expr = new BitwiseOrExpr(expr, parseExpr());
@@ -184,6 +184,19 @@ Expr* Parser::parseLogicalExpr()
 		lexer->pushToken(token);
 
 	return expr;
+}
+
+Expr* Parser::parseUnaryExpr()
+{
+	lexer->getToken(token);
+
+	if (token.type == TOKEN('-'))
+		return new NegateExpr(parsePrimaryExpr());
+	else
+	{
+		lexer->pushToken(token);
+		return parsePrimaryExpr();
+	}
 }
 
 Expr* Parser::parsePrimaryExpr()

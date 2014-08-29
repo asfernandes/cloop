@@ -105,6 +105,7 @@ public:
 
 	Expr* parseExpr();
 	Expr* parseLogicalExpr();
+	Expr* parseUnaryExpr();
 	Expr* parsePrimaryExpr();
 
 private:

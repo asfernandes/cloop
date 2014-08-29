@@ -61,6 +61,19 @@ private:
 };
 
 
+class NegateExpr : public Expr
+{
+public:
+	NegateExpr(Expr* expr);
+
+public:
+	virtual std::string generate(Language language);
+
+private:
+	Expr* expr;
+};
+
+
 class ConstantExpr : public Expr
 {
 public:

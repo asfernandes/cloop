@@ -45,6 +45,20 @@ string IntLiteralExpr::generate(Language language)
 //--------------------------------------
 
 
+NegateExpr::NegateExpr(Expr* expr)
+	: expr(expr)
+{
+}
+
+std::string NegateExpr::generate(Language language)
+{
+	return "-" + expr->generate(language);
+}
+
+
+//--------------------------------------
+
+
 ConstantExpr::ConstantExpr(Interface* interface, string name)
 	: interface(interface),
 	  name(name)

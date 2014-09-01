@@ -109,6 +109,8 @@ public:
 	Expr* parsePrimaryExpr();
 
 private:
+	void checkType(const Type& type);
+
 	Token& getToken(Token& token, Token::Type expected, bool allowEof = false);
 
 	Type parseType();

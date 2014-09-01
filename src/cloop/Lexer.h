@@ -44,7 +44,14 @@ struct Token
 		TYPE_INTERFACE,
 		// types
 		TYPE_VOID,
-		TYPE_INT
+		TYPE_BOOLEAN,
+		TYPE_INT,
+		TYPE_INT64,
+		TYPE_INTPTR,
+		TYPE_STRING,
+		TYPE_UCHAR,
+		TYPE_UINT,
+		TYPE_UINT64
 	};
 
 	Type type;

@@ -94,6 +94,30 @@ void Parser::parse()
 			parseItem();
 		}
 	}
+
+	// Check types.
+
+	for (vector<Interface*>::iterator i = interfaces.begin(); i != interfaces.end(); ++i)
+	{
+		Interface* interface = *i;
+
+		for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+		{
+			Method* method = *j;
+
+			checkType(method->returnType);
+
+			for (vector<Parameter*>::iterator k = method->parameters.begin();
+				 k != method->parameters.end();
+				 ++k)
+			{
+				Parameter* parameter = *k;
+				checkType(parameter->type);
+			}
+		}
+	}
 }
 
 void Parser::parseItem()
@@ -224,6 +248,15 @@ Expr* Parser::parsePrimaryExpr()
 	}
 }
 
+void Parser::checkType(const Type& type)
+{
+	if (type.token.type == Token::TYPE_IDENTIFIER)
+	{
+		if (interfacesByName.find(type.token.text) == interfacesByName.end())
+			error(type.token, string("Interface '") + type.token.text + "' not found.");
+	}
+}
+
 Token& Parser::getToken(Token& token, Token::Type expected, bool allowEof)
 {
 	lexer->getToken(token);
@@ -248,7 +281,14 @@ Type Parser::parseType()
 	switch (type.token.type)
 	{
 		case Token::TYPE_VOID:
+		case Token::TYPE_BOOLEAN:
 		case Token::TYPE_INT:
+		case Token::TYPE_INT64:
+		case Token::TYPE_INTPTR:
+		case Token::TYPE_STRING:
+		case Token::TYPE_UCHAR:
+		case Token::TYPE_UINT:
+		case Token::TYPE_UINT64:
 		case Token::TYPE_IDENTIFIER:
 			break;
 

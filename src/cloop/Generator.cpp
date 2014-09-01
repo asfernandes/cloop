@@ -68,6 +68,38 @@ string CBasedGenerator::convertType(const Type& type)
 
 	switch (type.token.type)
 	{
+		case Token::TYPE_BOOLEAN:
+			ret += "int";	// seems to be more portable than bool, specially thinking on pointers
+			break;
+
+		case Token::TYPE_INT:
+			ret += "int";
+			break;
+
+		case Token::TYPE_INT64:
+			ret += "int64_t";
+			break;
+
+		case Token::TYPE_INTPTR:
+			ret += "intptr_t";
+			break;
+
+		case Token::TYPE_STRING:
+			ret += "char*";
+			break;
+
+		case Token::TYPE_UCHAR:
+			ret += "unsigned char";
+			break;
+
+		case Token::TYPE_UINT:
+			ret += "unsigned";
+			break;
+
+		case Token::TYPE_UINT64:
+			ret += "uint64_t";
+			break;
+
 		case Token::TYPE_IDENTIFIER:
 			ret += string(cPlusPlus ? "" : "struct ") + type.token.text + "*";
 			break;
@@ -1063,8 +1095,36 @@ string PascalGenerator::convertType(const Type& type)
 
 	switch (type.token.type)
 	{
+		case Token::TYPE_BOOLEAN:
+			name = "Boolean";
+			break;
+
 		case Token::TYPE_INT:
 			name = "Integer";
+			break;
+
+		case Token::TYPE_INT64:
+			name = "Int64";
+			break;
+
+		case Token::TYPE_INTPTR:
+			name = "PtrInt";
+			break;
+
+		case Token::TYPE_STRING:
+			name = "PChar";
+			break;
+
+		case Token::TYPE_UCHAR:
+			name = "Byte";
+			break;
+
+		case Token::TYPE_UINT:
+			name = "Cardinal";
+			break;
+
+		case Token::TYPE_UINT64:
+			name = "QWord";
 			break;
 
 		default:

@@ -78,16 +78,32 @@ Token& Lexer::getToken(Token& token)
 
 		ungetChar(ch);
 
+		// keywords
 		if (token.text == "const")
 			token.type = Token::TYPE_CONST;
 		else if (token.text == "exception")
 			token.type = Token::TYPE_EXCEPTION;
 		else if (token.text == "interface")
 			token.type = Token::TYPE_INTERFACE;
+		// types
 		else if (token.text == "void")
 			token.type = Token::TYPE_VOID;
+		else if (token.text == "boolean")
+			token.type = Token::TYPE_BOOLEAN;
 		else if (token.text == "int")
 			token.type = Token::TYPE_INT;
+		else if (token.text == "int64")
+			token.type = Token::TYPE_INT64;
+		else if (token.text == "intptr")
+			token.type = Token::TYPE_INTPTR;
+		else if (token.text == "string")
+			token.type = Token::TYPE_STRING;
+		else if (token.text == "uchar")
+			token.type = Token::TYPE_UCHAR;
+		else if (token.text == "uint")
+			token.type = Token::TYPE_UINT;
+		else if (token.text == "uint64")
+			token.type = Token::TYPE_UINT64;
 		else
 			token.type = Token::TYPE_IDENTIFIER;
 	}

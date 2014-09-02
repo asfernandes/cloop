@@ -36,13 +36,15 @@ class Type
 public:
 	Type()
 		: isConst(false),
-		  isPointer(false)
+		  isPointer(false),
+		  isStruct(false)
 	{
 	}
 
 	Token token;
 	bool isConst;
 	bool isPointer;
+	bool isStruct;
 };
 
 
@@ -93,12 +95,21 @@ public:
 };
 
 
+class Struct
+{
+public:
+	std::string name;
+};
+
+
 class Parser
 {
 public:
 	Parser(Lexer* lexer);
 
 	void parse();
+	void parseInterface(bool exception);
+	void parseStruct();
 	void parseItem();
 	void parseConstant(const Type& type, const std::string& name);
 	void parseMethod(const Type& returnType, const std::string& name);
@@ -109,7 +120,7 @@ public:
 	Expr* parsePrimaryExpr();
 
 private:
-	void checkType(const Type& type);
+	void checkType(Type& type);
 
 	Token& getToken(Token& token, Token::Type expected, bool allowEof = false);
 
@@ -121,6 +132,7 @@ private:
 public:
 	std::vector<Interface*> interfaces;
 	std::map<std::string, Interface*> interfacesByName;
+	std::map<std::string, Struct*> structsByName;
 	Interface* exceptionInterface;
 
 private:

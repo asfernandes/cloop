@@ -62,36 +62,23 @@ void Parser::parse()
 		else
 			lexer->pushToken(token);
 
-		getToken(token, Token::TYPE_INTERFACE);
+		lexer->getToken(token);
 
-		interface = new Interface();
-		interfaces.push_back(interface);
-
-		interface->name = getToken(token, Token::TYPE_IDENTIFIER).text;
-		interfacesByName.insert(pair<string, Interface*>(interface->name, interface));
-
-		if (exception)
-			exceptionInterface = interface;
-
-		if (lexer->getToken(token).type == TOKEN(':'))
+		switch (token.type)
 		{
-			string superName = getToken(token, Token::TYPE_IDENTIFIER).text;
-			map<string, Interface*>::iterator it = interfacesByName.find(superName);
+			case Token::TYPE_INTERFACE:
+				parseInterface(exception);
+				break;
 
-			if (it == interfacesByName.end())
-				error(token, string("Super interface '") + superName + "' not found.");
+			case Token::TYPE_STRUCT:
+				if (exception)
+					error(token, "Cannot use attribute exception in struct.");
+				parseStruct();
+				break;
 
-			interface->super = it->second;
-		}
-		else
-			lexer->pushToken(token);
-
-		getToken(token, TOKEN('{'));
-
-		while (lexer->getToken(token).type != TOKEN('}'))
-		{
-			lexer->pushToken(token);
-			parseItem();
+			default:
+				syntaxError(token);
+				break;
 		}
 	}
 
@@ -118,6 +105,49 @@ void Parser::parse()
 			}
 		}
 	}
+}
+
+void Parser::parseInterface(bool exception)
+{
+	interface = new Interface();
+	interfaces.push_back(interface);
+
+	interface->name = getToken(token, Token::TYPE_IDENTIFIER).text;
+	interfacesByName.insert(pair<string, Interface*>(interface->name, interface));
+
+	if (exception)
+		exceptionInterface = interface;
+
+	if (lexer->getToken(token).type == TOKEN(':'))
+	{
+		string superName = getToken(token, Token::TYPE_IDENTIFIER).text;
+		map<string, Interface*>::iterator it = interfacesByName.find(superName);
+
+		if (it == interfacesByName.end())
+			error(token, string("Super interface '") + superName + "' not found.");
+
+		interface->super = it->second;
+	}
+	else
+		lexer->pushToken(token);
+
+	getToken(token, TOKEN('{'));
+
+	while (lexer->getToken(token).type != TOKEN('}'))
+	{
+		lexer->pushToken(token);
+		parseItem();
+	}
+}
+
+void Parser::parseStruct()
+{
+	Struct* ztruct = new Struct();
+
+	ztruct->name = getToken(token, Token::TYPE_IDENTIFIER).text;
+	structsByName.insert(pair<string, Struct*>(ztruct->name, ztruct));
+
+	getToken(token, TOKEN(';'));
 }
 
 void Parser::parseItem()
@@ -248,12 +278,17 @@ Expr* Parser::parsePrimaryExpr()
 	}
 }
 
-void Parser::checkType(const Type& type)
+void Parser::checkType(Type& type)
 {
 	if (type.token.type == Token::TYPE_IDENTIFIER)
 	{
 		if (interfacesByName.find(type.token.text) == interfacesByName.end())
-			error(type.token, string("Interface '") + type.token.text + "' not found.");
+		{
+			if (structsByName.find(type.token.text) == structsByName.end())
+				error(type.token, string("Interface/struct '") + type.token.text + "' not found.");
+			else
+				type.isStruct = true;
+		}
 	}
 }
 

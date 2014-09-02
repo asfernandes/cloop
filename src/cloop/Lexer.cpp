@@ -85,6 +85,8 @@ Token& Lexer::getToken(Token& token)
 			token.type = Token::TYPE_EXCEPTION;
 		else if (token.text == "interface")
 			token.type = Token::TYPE_INTERFACE;
+		else if (token.text == "struct")
+			token.type = Token::TYPE_STRUCT;
 		// types
 		else if (token.text == "void")
 			token.type = Token::TYPE_VOID;

@@ -42,6 +42,7 @@ struct Token
 		TYPE_CONST,
 		TYPE_EXCEPTION,
 		TYPE_INTERFACE,
+		TYPE_STRUCT,
 		// types
 		TYPE_VOID,
 		TYPE_BOOLEAN,

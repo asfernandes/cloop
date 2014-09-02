@@ -19,6 +19,8 @@
  *  Contributor(s): ______________________________________.
  */
 
+//// TODO: test structs
+
 // Base for all interfaces.
 interface Disposable
 {

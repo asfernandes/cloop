@@ -268,7 +268,12 @@ void CppGenerator::generate()
 			if (method->returnType.token.type != Token::TYPE_VOID)
 			{
 				fprintf(out, "%s ret = ", convertType(method->returnType).c_str());
-				//// TODO: Policy::upgrade
+
+				if (method->returnType.token.type == Token::TYPE_IDENTIFIER &&
+					!method->returnType.isStruct)
+				{
+					fprintf(out, "Policy::upgrade(");
+				}
 			}
 
 			fprintf(out, "static_cast<VTable*>(this->cloopVTable)->%s(this",
@@ -282,7 +287,15 @@ void CppGenerator::generate()
 				fprintf(out, ", %s", parameter->name.c_str());
 			}
 
-			fprintf(out, ");\n");
+			fprintf(out, ")");
+
+			if (method->returnType.token.type == Token::TYPE_IDENTIFIER &&
+				!method->returnType.isStruct)
+			{
+				fprintf(out, ")");
+			}
+
+			fprintf(out, ";\n");
 
 			if (!method->parameters.empty() &&
 				parser->exceptionInterface &&
@@ -392,7 +405,19 @@ void CppGenerator::generate()
 					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
+					if (parameter->type.token.type == Token::TYPE_IDENTIFIER &&
+						!parameter->type.isStruct)
+					{
+						fprintf(out, "Policy::upgrade(");
+					}
+
 					fprintf(out, "%s", parameter->name.c_str());
+
+					if (parameter->type.token.type == Token::TYPE_IDENTIFIER &&
+						!parameter->type.isStruct)
+					{
+						fprintf(out, ")");
+					}
 				}
 
 				fprintf(out, ");\n");

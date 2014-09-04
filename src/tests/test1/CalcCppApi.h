@@ -24,6 +24,8 @@ public:
 
 	protected:
 		void* cloopDummy[1];
+
+	public:
 		VTable* cloopVTable;
 
 	public:

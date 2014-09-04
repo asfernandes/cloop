@@ -213,6 +213,8 @@ void CppGenerator::generate()
 		{
 			fprintf(out, "\tprotected:\n");
 			fprintf(out, "\t\tvoid* cloopDummy[%d];\n", DUMMY_INSTANCE);
+			fprintf(out, "\n");
+			fprintf(out, "\tpublic:\n");
 			fprintf(out, "\t\tVTable* cloopVTable;\n");
 			fprintf(out, "\n");
 		}

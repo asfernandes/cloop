@@ -10,6 +10,14 @@ template <typename Policy>
 class CalcApi
 {
 public:
+	// Forward interfaces declarations
+
+	class Disposable;
+	class Status;
+	class Factory;
+	class Calculator;
+	class Calculator2;
+
 	// Interfaces declarations
 
 	class Disposable
@@ -65,6 +73,52 @@ public:
 		{
 			Policy::template checkVersion<3>(this);
 			static_cast<VTable*>(this->cloopVTable)->setCode(this, code);
+		}
+	};
+
+	class Factory : public Disposable
+	{
+	protected:
+		struct VTable : public Disposable::VTable
+		{
+			Status* (*createStatus)(Factory* self);
+			Calculator* (*createCalculator)(Factory* self, Status* status);
+			Calculator2* (*createCalculator2)(Factory* self, Status* status);
+			Calculator* (*createBrokenCalculator)(Factory* self, Status* status);
+		};
+
+	public:
+		static const int VERSION = 5;
+
+		Status* createStatus()
+		{
+			Policy::template checkVersion<2>(this);
+			Status* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createStatus(this));
+			return ret;
+		}
+
+		Calculator* createCalculator(Status* status)
+		{
+			Policy::template checkVersion<3>(this);
+			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator(this, status));
+			Policy::checkException(status);
+			return ret;
+		}
+
+		Calculator2* createCalculator2(Status* status)
+		{
+			Policy::template checkVersion<4>(this);
+			Calculator2* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator2(this, status));
+			Policy::checkException(status);
+			return ret;
+		}
+
+		Calculator* createBrokenCalculator(Status* status)
+		{
+			Policy::template checkVersion<5>(this);
+			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createBrokenCalculator(this, status));
+			Policy::checkException(status);
+			return ret;
 		}
 	};
 
@@ -142,52 +196,6 @@ public:
 		{
 			Policy::template checkVersion<7>(this);
 			static_cast<VTable*>(this->cloopVTable)->copyMemory2(this, address);
-		}
-	};
-
-	class Factory : public Disposable
-	{
-	protected:
-		struct VTable : public Disposable::VTable
-		{
-			Status* (*createStatus)(Factory* self);
-			Calculator* (*createCalculator)(Factory* self, Status* status);
-			Calculator2* (*createCalculator2)(Factory* self, Status* status);
-			Calculator* (*createBrokenCalculator)(Factory* self, Status* status);
-		};
-
-	public:
-		static const int VERSION = 5;
-
-		Status* createStatus()
-		{
-			Policy::template checkVersion<2>(this);
-			Status* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createStatus(this));
-			return ret;
-		}
-
-		Calculator* createCalculator(Status* status)
-		{
-			Policy::template checkVersion<3>(this);
-			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator(this, status));
-			Policy::checkException(status);
-			return ret;
-		}
-
-		Calculator2* createCalculator2(Status* status)
-		{
-			Policy::template checkVersion<4>(this);
-			Calculator2* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator2(this, status));
-			Policy::checkException(status);
-			return ret;
-		}
-
-		Calculator* createBrokenCalculator(Status* status)
-		{
-			Policy::template checkVersion<5>(this);
-			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createBrokenCalculator(this, status));
-			Policy::checkException(status);
-			return ret;
 		}
 	};
 
@@ -303,6 +311,107 @@ public:
 
 		virtual int getCode() const = 0;
 		virtual void setCode(int code) = 0;
+	};
+
+	template <typename Name, typename Base>
+	class FactoryBaseImpl : public Base
+	{
+	public:
+		FactoryBaseImpl()
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
+					this->createStatus = &Name::cloopcreateStatusDispatcher;
+					this->createCalculator = &Name::cloopcreateCalculatorDispatcher;
+					this->createCalculator2 = &Name::cloopcreateCalculator2Dispatcher;
+					this->createBrokenCalculator = &Name::cloopcreateBrokenCalculatorDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static Status* cloopcreateStatusDispatcher(Factory* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::createStatus();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+				return static_cast<Status*>(0);
+			}
+		}
+
+		static Calculator* cloopcreateCalculatorDispatcher(Factory* self, Status* status) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::createCalculator(Policy::upgrade(status));
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<Calculator*>(0);
+			}
+		}
+
+		static Calculator2* cloopcreateCalculator2Dispatcher(Factory* self, Status* status) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::createCalculator2(Policy::upgrade(status));
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<Calculator2*>(0);
+			}
+		}
+
+		static Calculator* cloopcreateBrokenCalculatorDispatcher(Factory* self, Status* status) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::createBrokenCalculator(Policy::upgrade(status));
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<Calculator*>(0);
+			}
+		}
+
+		static void cloopdisposeDispatcher(Disposable* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
+		}
+	};
+
+	template <typename Name, typename Base = DisposableImpl<Name, Factory> >
+	class FactoryImpl : public FactoryBaseImpl<Name, Base>
+	{
+	public:
+		virtual ~FactoryImpl()
+		{
+		}
+
+		virtual Status* createStatus() = 0;
+		virtual Calculator* createCalculator(Status* status) = 0;
+		virtual Calculator2* createCalculator2(Status* status) = 0;
+		virtual Calculator* createBrokenCalculator(Status* status) = 0;
 	};
 
 	template <typename Name, typename Base>
@@ -540,107 +649,6 @@ public:
 		virtual int multiply(Status* status, int n1, int n2) const = 0;
 		virtual void copyMemory(const Calculator* calculator) = 0;
 		virtual void copyMemory2(const int* address) = 0;
-	};
-
-	template <typename Name, typename Base>
-	class FactoryBaseImpl : public Base
-	{
-	public:
-		FactoryBaseImpl()
-		{
-			static struct VTableImpl : Base::VTable
-			{
-				VTableImpl()
-				{
-					this->version = Base::VERSION;
-					this->dispose = &Name::cloopdisposeDispatcher;
-					this->createStatus = &Name::cloopcreateStatusDispatcher;
-					this->createCalculator = &Name::cloopcreateCalculatorDispatcher;
-					this->createCalculator2 = &Name::cloopcreateCalculator2Dispatcher;
-					this->createBrokenCalculator = &Name::cloopcreateBrokenCalculatorDispatcher;
-				}
-			} vTable;
-
-			this->cloopVTable = &vTable;
-		}
-
-		static Status* cloopcreateStatusDispatcher(Factory* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::createStatus();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<Status*>(0);
-			}
-		}
-
-		static Calculator* cloopcreateCalculatorDispatcher(Factory* self, Status* status) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::createCalculator(Policy::upgrade(status));
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-				return static_cast<Calculator*>(0);
-			}
-		}
-
-		static Calculator2* cloopcreateCalculator2Dispatcher(Factory* self, Status* status) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::createCalculator2(Policy::upgrade(status));
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-				return static_cast<Calculator2*>(0);
-			}
-		}
-
-		static Calculator* cloopcreateBrokenCalculatorDispatcher(Factory* self, Status* status) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::createBrokenCalculator(Policy::upgrade(status));
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-				return static_cast<Calculator*>(0);
-			}
-		}
-
-		static void cloopdisposeDispatcher(Disposable* self) throw()
-		{
-			try
-			{
-				static_cast<Name*>(self)->Name::dispose();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-			}
-		}
-	};
-
-	template <typename Name, typename Base = DisposableImpl<Name, Factory> >
-	class FactoryImpl : public FactoryBaseImpl<Name, Base>
-	{
-	public:
-		virtual ~FactoryImpl()
-		{
-		}
-
-		virtual Status* createStatus() = 0;
-		virtual Calculator* createCalculator(Status* status) = 0;
-		virtual Calculator2* createCalculator2(Status* status) = 0;
-		virtual Calculator* createBrokenCalculator(Status* status) = 0;
 	};
 };
 

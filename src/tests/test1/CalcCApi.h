@@ -14,6 +14,13 @@
 #endif
 
 
+struct Disposable;
+struct Status;
+struct Factory;
+struct Calculator;
+struct Calculator2;
+
+
 #define Disposable_VERSION 1
 
 struct Disposable;
@@ -59,6 +66,33 @@ struct Status
 CLOOP_EXTERN_C void Status_dispose(struct Status* self);
 CLOOP_EXTERN_C int Status_getCode(const struct Status* self);
 CLOOP_EXTERN_C void Status_setCode(struct Status* self, int code);
+
+#define Factory_VERSION 5
+
+struct Factory;
+
+struct FactoryVTable
+{
+	void* cloopDummy[1];
+	uintptr_t version;
+	void (*dispose)(struct Factory* self);
+	struct Status* (*createStatus)(struct Factory* self);
+	struct Calculator* (*createCalculator)(struct Factory* self, struct Status* status);
+	struct Calculator2* (*createCalculator2)(struct Factory* self, struct Status* status);
+	struct Calculator* (*createBrokenCalculator)(struct Factory* self, struct Status* status);
+};
+
+struct Factory
+{
+	void* cloopDummy[1];
+	struct FactoryVTable* vtable;
+};
+
+CLOOP_EXTERN_C void Factory_dispose(struct Factory* self);
+CLOOP_EXTERN_C struct Status* Factory_createStatus(struct Factory* self);
+CLOOP_EXTERN_C struct Calculator* Factory_createCalculator(struct Factory* self, struct Status* status);
+CLOOP_EXTERN_C struct Calculator2* Factory_createCalculator2(struct Factory* self, struct Status* status);
+CLOOP_EXTERN_C struct Calculator* Factory_createBrokenCalculator(struct Factory* self, struct Status* status);
 
 #define Calculator_VERSION 5
 
@@ -119,33 +153,6 @@ CLOOP_EXTERN_C void Calculator2_sumAndStore(struct Calculator2* self, struct Sta
 CLOOP_EXTERN_C int Calculator2_multiply(const struct Calculator2* self, struct Status* status, int n1, int n2);
 CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, const struct Calculator* calculator);
 CLOOP_EXTERN_C void Calculator2_copyMemory2(struct Calculator2* self, const int* address);
-
-#define Factory_VERSION 5
-
-struct Factory;
-
-struct FactoryVTable
-{
-	void* cloopDummy[1];
-	uintptr_t version;
-	void (*dispose)(struct Factory* self);
-	struct Status* (*createStatus)(struct Factory* self);
-	struct Calculator* (*createCalculator)(struct Factory* self, struct Status* status);
-	struct Calculator2* (*createCalculator2)(struct Factory* self, struct Status* status);
-	struct Calculator* (*createBrokenCalculator)(struct Factory* self, struct Status* status);
-};
-
-struct Factory
-{
-	void* cloopDummy[1];
-	struct FactoryVTable* vtable;
-};
-
-CLOOP_EXTERN_C void Factory_dispose(struct Factory* self);
-CLOOP_EXTERN_C struct Status* Factory_createStatus(struct Factory* self);
-CLOOP_EXTERN_C struct Calculator* Factory_createCalculator(struct Factory* self, struct Status* status);
-CLOOP_EXTERN_C struct Calculator2* Factory_createCalculator2(struct Factory* self, struct Status* status);
-CLOOP_EXTERN_C struct Calculator* Factory_createBrokenCalculator(struct Factory* self, struct Status* status);
 
 
 #endif	// CALC_C_API_H

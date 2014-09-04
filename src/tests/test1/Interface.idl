@@ -39,6 +39,14 @@ interface Status : Disposable
 	void setCode(int code);
 }
 
+interface Factory : Disposable
+{
+	Status createStatus();
+	Calculator createCalculator(Status status);
+	Calculator2 createCalculator2(Status status);
+	Calculator createBrokenCalculator(Status status);
+}
+
 interface Calculator : Disposable
 {
 	int sum(Status status, int n1, int n2) const;
@@ -52,12 +60,4 @@ interface Calculator2 : Calculator
 	int multiply(Status status, int n1, int n2) const;
 	void copyMemory(const Calculator calculator);
 	void copyMemory2(const int* address);
-}
-
-interface Factory : Disposable
-{
-	Status createStatus();
-	Calculator createCalculator(Status status);
-	Calculator2 createCalculator2(Status status);
-	Calculator createBrokenCalculator(Status status);
 }

@@ -143,6 +143,18 @@ void CppGenerator::generate()
 	fprintf(out, "{\n");
 	fprintf(out, "public:\n");
 
+	fprintf(out, "\t// Forward interfaces declarations\n\n");
+
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		Interface* interface = *i;
+
+		fprintf(out, "\tclass %s;\n", interface->name.c_str());
+	}
+
+	fprintf(out, "\n");
 	fprintf(out, "\t// Interfaces declarations\n\n");
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
@@ -267,7 +279,7 @@ void CppGenerator::generate()
 
 			fprintf(out, "\t\t\t");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
+			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 			{
 				fprintf(out, "%s ret = ", convertType(method->returnType).c_str());
 
@@ -307,7 +319,7 @@ void CppGenerator::generate()
 					method->parameters.front()->name.c_str());
 			}
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
+			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				fprintf(out, "\t\t\treturn ret;\n");
 
 			fprintf(out, "\t\t}\n");
@@ -391,7 +403,7 @@ void CppGenerator::generate()
 
 				fprintf(out, "\t\t\t\t");
 
-				if (method->returnType.token.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 					fprintf(out, "return ");
 
 				fprintf(out, "static_cast<%sName*>(self)->Name::%s(",
@@ -436,7 +448,7 @@ void CppGenerator::generate()
 				fprintf(out, "\t\t\t\tPolicy::catchException(%s);\n",
 					(exceptionParameter ? exceptionParameter->name.c_str() : "0"));
 
-				if (method->returnType.token.type != Token::TYPE_VOID)
+				if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				{
 					fprintf(out, "\t\t\t\treturn static_cast<%s>(0);\n",
 						convertType(method->returnType).c_str());
@@ -543,6 +555,17 @@ void CHeaderGenerator::generate()
 	fprintf(out, "#define CLOOP_EXTERN_C\n");
 	fprintf(out, "#endif\n");
 	fprintf(out, "#endif\n\n\n");
+
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		Interface* interface = *i;
+
+		fprintf(out, "struct %s;\n", interface->name.c_str());
+	}
+
+	fprintf(out, "\n\n");
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
 		 i != parser->interfaces.end();
@@ -697,7 +720,7 @@ void CImplGenerator::generate()
 			fprintf(out, "{\n");
 			fprintf(out, "\t");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
+			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				fprintf(out, "return ");
 
 			fprintf(out, "self->vtable->%s(self", method->name.c_str());
@@ -978,7 +1001,7 @@ void PascalGenerator::generate()
 			fprintf(out, "begin\n");
 			fprintf(out, "\t");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
+			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				fprintf(out, "Result := ");
 
 			fprintf(out, "%sVTable(vTable).%s(Self",
@@ -1036,7 +1059,7 @@ void PascalGenerator::generate()
 			fprintf(out, "begin\n");
 			fprintf(out, "\t");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
+			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				fprintf(out, "Result := ");
 
 			fprintf(out, "%sImpl(this).%s(", interface->name.c_str(), method->name.c_str());

@@ -4,7 +4,7 @@ unit CalcPascalApi;
 
 interface
 
-uses Classes;
+uses Classes, SysUtils;
 
 type
 	Disposable = class;
@@ -143,6 +143,19 @@ type
 		procedure copyMemory2(address: IntegerPtr); virtual; abstract;
 	end;
 
+CalcException = class(Exception)
+public
+	constructor create(code: Integer);
+
+	function getCode: Integer;
+
+	class procedure checkException(status: Status);
+	class procedure catchException(status: Status; e: Exception);
+
+private
+	code: Integer;
+end;
+
 implementation
 
 procedure Disposable.dispose();
@@ -168,21 +181,25 @@ end;
 function Factory.createCalculator(status: Status): Calculator;
 begin
 	Result := FactoryVTable(vTable).createCalculator(Self, status);
+	CalcException.checkException(status);
 end;
 
 function Factory.createCalculator2(status: Status): Calculator2;
 begin
 	Result := FactoryVTable(vTable).createCalculator2(Self, status);
+	CalcException.checkException(status);
 end;
 
 function Factory.createBrokenCalculator(status: Status): Calculator;
 begin
 	Result := FactoryVTable(vTable).createBrokenCalculator(Self, status);
+	CalcException.checkException(status);
 end;
 
 function Calculator.sum(status: Status; n1: Integer; n2: Integer): Integer;
 begin
 	Result := CalculatorVTable(vTable).sum(Self, status, n1, n2);
+	CalcException.checkException(status);
 end;
 
 function Calculator.getMemory(): Integer;
@@ -198,11 +215,13 @@ end;
 procedure Calculator.sumAndStore(status: Status; n1: Integer; n2: Integer);
 begin
 	CalculatorVTable(vTable).sumAndStore(Self, status, n1, n2);
+	CalcException.checkException(status);
 end;
 
 function Calculator2.multiply(status: Status; n1: Integer; n2: Integer): Integer;
 begin
 	Result := Calculator2VTable(vTable).multiply(Self, status, n1, n2);
+	CalcException.checkException(status);
 end;
 
 procedure Calculator2.copyMemory(calculator: Calculator);
@@ -217,7 +236,11 @@ end;
 
 procedure DisposableImpl_disposeDispatcher(this: Disposable); cdecl;
 begin
-	DisposableImpl(this).dispose();
+	try
+		DisposableImpl(this).dispose();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 var
@@ -230,17 +253,29 @@ end;
 
 procedure StatusImpl_disposeDispatcher(this: Status); cdecl;
 begin
-	StatusImpl(this).dispose();
+	try
+		StatusImpl(this).dispose();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 function StatusImpl_getCodeDispatcher(this: Status): Integer; cdecl;
 begin
-	Result := StatusImpl(this).getCode();
+	try
+		Result := StatusImpl(this).getCode();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 procedure StatusImpl_setCodeDispatcher(this: Status; code: Integer); cdecl;
 begin
-	StatusImpl(this).setCode(code);
+	try
+		StatusImpl(this).setCode(code);
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 var
@@ -253,27 +288,47 @@ end;
 
 procedure FactoryImpl_disposeDispatcher(this: Factory); cdecl;
 begin
-	FactoryImpl(this).dispose();
+	try
+		FactoryImpl(this).dispose();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 function FactoryImpl_createStatusDispatcher(this: Factory): Status; cdecl;
 begin
-	Result := FactoryImpl(this).createStatus();
+	try
+		Result := FactoryImpl(this).createStatus();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 function FactoryImpl_createCalculatorDispatcher(this: Factory; status: Status): Calculator; cdecl;
 begin
-	Result := FactoryImpl(this).createCalculator(status);
+	try
+		Result := FactoryImpl(this).createCalculator(status);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 function FactoryImpl_createCalculator2Dispatcher(this: Factory; status: Status): Calculator2; cdecl;
 begin
-	Result := FactoryImpl(this).createCalculator2(status);
+	try
+		Result := FactoryImpl(this).createCalculator2(status);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 function FactoryImpl_createBrokenCalculatorDispatcher(this: Factory; status: Status): Calculator; cdecl;
 begin
-	Result := FactoryImpl(this).createBrokenCalculator(status);
+	try
+		Result := FactoryImpl(this).createBrokenCalculator(status);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 var
@@ -286,27 +341,47 @@ end;
 
 procedure CalculatorImpl_disposeDispatcher(this: Calculator); cdecl;
 begin
-	CalculatorImpl(this).dispose();
+	try
+		CalculatorImpl(this).dispose();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 function CalculatorImpl_sumDispatcher(this: Calculator; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
-	Result := CalculatorImpl(this).sum(status, n1, n2);
+	try
+		Result := CalculatorImpl(this).sum(status, n1, n2);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 function CalculatorImpl_getMemoryDispatcher(this: Calculator): Integer; cdecl;
 begin
-	Result := CalculatorImpl(this).getMemory();
+	try
+		Result := CalculatorImpl(this).getMemory();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 procedure CalculatorImpl_setMemoryDispatcher(this: Calculator; n: Integer); cdecl;
 begin
-	CalculatorImpl(this).setMemory(n);
+	try
+		CalculatorImpl(this).setMemory(n);
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 procedure CalculatorImpl_sumAndStoreDispatcher(this: Calculator; status: Status; n1: Integer; n2: Integer); cdecl;
 begin
-	CalculatorImpl(this).sumAndStore(status, n1, n2);
+	try
+		CalculatorImpl(this).sumAndStore(status, n1, n2);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 var
@@ -319,42 +394,74 @@ end;
 
 procedure Calculator2Impl_disposeDispatcher(this: Calculator2); cdecl;
 begin
-	Calculator2Impl(this).dispose();
+	try
+		Calculator2Impl(this).dispose();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 function Calculator2Impl_sumDispatcher(this: Calculator2; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
-	Result := Calculator2Impl(this).sum(status, n1, n2);
+	try
+		Result := Calculator2Impl(this).sum(status, n1, n2);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 function Calculator2Impl_getMemoryDispatcher(this: Calculator2): Integer; cdecl;
 begin
-	Result := Calculator2Impl(this).getMemory();
+	try
+		Result := Calculator2Impl(this).getMemory();
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 procedure Calculator2Impl_setMemoryDispatcher(this: Calculator2; n: Integer); cdecl;
 begin
-	Calculator2Impl(this).setMemory(n);
+	try
+		Calculator2Impl(this).setMemory(n);
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 procedure Calculator2Impl_sumAndStoreDispatcher(this: Calculator2; status: Status; n1: Integer; n2: Integer); cdecl;
 begin
-	Calculator2Impl(this).sumAndStore(status, n1, n2);
+	try
+		Calculator2Impl(this).sumAndStore(status, n1, n2);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 function Calculator2Impl_multiplyDispatcher(this: Calculator2; status: Status; n1: Integer; n2: Integer): Integer; cdecl;
 begin
-	Result := Calculator2Impl(this).multiply(status, n1, n2);
+	try
+		Result := Calculator2Impl(this).multiply(status, n1, n2);
+	except
+		on e: Exception do CalcException.catchException(status, e);
+	end
 end;
 
 procedure Calculator2Impl_copyMemoryDispatcher(this: Calculator2; calculator: Calculator); cdecl;
 begin
-	Calculator2Impl(this).copyMemory(calculator);
+	try
+		Calculator2Impl(this).copyMemory(calculator);
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 procedure Calculator2Impl_copyMemory2Dispatcher(this: Calculator2; address: IntegerPtr); cdecl;
 begin
-	Calculator2Impl(this).copyMemory2(address);
+	try
+		Calculator2Impl(this).copyMemory2(address);
+	except
+		on e: Exception do CalcException.catchException(nil, e);
+	end
 end;
 
 var
@@ -365,6 +472,33 @@ begin
 	vTable := Calculator2Impl_vTable;
 end;
 
+constructor CalcException.create(code: Integer);
+begin
+	self.code := code;
+end;
+
+function CalcException.getCode: Integer;
+begin
+	Result := code;
+end;
+
+class procedure CalcException.checkException(status: Status);
+var
+	code: Integer;
+begin
+	code := status.getCode();
+
+	if (code <> 0) then
+		raise CalcException.create(code);
+end;
+
+class procedure CalcException.catchException(status: Status; e: Exception);
+begin
+	if (e.inheritsFrom(CalcException)) then
+		status.setCode(CalcException(e).code)
+	else
+		status.setCode(-1);
+end;
 initialization
 	DisposableImpl_vTable := DisposableVTable.create;
 	DisposableImpl_vTable.version := 1;

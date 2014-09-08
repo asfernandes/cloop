@@ -90,8 +90,13 @@ $(SRC_DIR)/tests/test1/CalcCApi.c: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Inter
 $(SRC_DIR)/tests/test1/CalcCppApi.h: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl c++ $@ CALC_CPP_API_H CalcApi
 
-$(SRC_DIR)/tests/test1/CalcPascalApi.pas: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
-	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl pascal $@ CalcPascalApi
+$(SRC_DIR)/tests/test1/CalcPascalApi.pas: $(BIN_DIR)/cloop \
+	$(SRC_DIR)/tests/test1/Interface.idl \
+	$(SRC_DIR)/tests/test1/CalcPascalApi.interface.pas \
+	$(SRC_DIR)/tests/test1/CalcPascalApi.implementation.pas
+	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl pascal $@ CalcPascalApi "SysUtils" \
+		$(SRC_DIR)/tests/test1/CalcPascalApi.interface.pas \
+		$(SRC_DIR)/tests/test1/CalcPascalApi.implementation.pas CalcException
 
 $(SRC_DIR)/tests/test1/CppTest.cpp: $(SRC_DIR)/tests/test1/CalcCppApi.h
 

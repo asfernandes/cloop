@@ -116,7 +116,9 @@ private:
 class PascalGenerator : public FileGenerator
 {
 public:
-	PascalGenerator(const std::string& filename, Parser* parser, const std::string& unitName);
+	PascalGenerator(const std::string& filename, Parser* parser, const std::string& unitName,
+		const std::string& additionalUses, const std::string& interfaceFile,
+		const std::string& implementationFile, const std::string& exceptionClass);
 
 public:
 	virtual void generate();
@@ -125,9 +127,15 @@ private:
 	std::string convertParameter(const Parameter& parameter);
 	std::string convertType(const Type& type);
 
+	void insertFile(const std::string& filename);
+
 private:
 	Parser* parser;
 	std::string unitName;
+	std::string additionalUses;
+	std::string interfaceFile;
+	std::string implementationFile;
+	std::string exceptionClass;
 	std::set<std::string> pointerTypes;
 };
 

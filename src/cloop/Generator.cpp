@@ -23,10 +23,12 @@
 #include "Expr.h"
 #include <deque>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 using std::deque;
+using std::runtime_error;
 using std::set;
 using std::string;
 using std::vector;
@@ -744,10 +746,16 @@ void CImplGenerator::generate()
 
 
 //// TODO: Generate constants (including VERSION).
-PascalGenerator::PascalGenerator(const string& filename, Parser* parser, const string& unitName)
+PascalGenerator::PascalGenerator(const string& filename, Parser* parser, const string& unitName,
+		const std::string& additionalUses, const std::string& interfaceFile,
+		const std::string& implementationFile, const std::string& exceptionClass)
 	: FileGenerator(filename),
 	  parser(parser),
-	  unitName(unitName)
+	  unitName(unitName),
+	  additionalUses(additionalUses),
+	  interfaceFile(interfaceFile),
+	  implementationFile(implementationFile),
+	  exceptionClass(exceptionClass)
 {
 }
 
@@ -757,7 +765,13 @@ void PascalGenerator::generate()
 
 	fprintf(out, "unit %s;\n\n", unitName.c_str());
 	fprintf(out, "interface\n\n");
-	fprintf(out, "uses Classes;\n\n");
+	fprintf(out, "uses Classes");
+
+	if (!additionalUses.empty())
+		fprintf(out, ", %s", additionalUses.c_str());
+
+	fprintf(out, ";\n\n");
+
 	fprintf(out, "type\n");
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
@@ -961,6 +975,8 @@ void PascalGenerator::generate()
 		fprintf(out, "\tend;\n\n");
 	}
 
+	insertFile(interfaceFile);
+
 	fprintf(out, "implementation\n\n");
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
@@ -1016,6 +1032,16 @@ void PascalGenerator::generate()
 			}
 
 			fprintf(out, ");\n");
+
+			if (!method->parameters.empty() &&
+				parser->exceptionInterface &&
+				method->parameters.front()->type.token.text == parser->exceptionInterface->name &&
+				!exceptionClass.empty())
+			{
+				fprintf(out, "\t%s.checkException(%s);\n", exceptionClass.c_str(),
+					method->parameters.front()->name.c_str());
+			}
+
 			fprintf(out, "end;\n\n");
 		}
 	}
@@ -1057,6 +1083,10 @@ void PascalGenerator::generate()
 
 			fprintf(out, "; cdecl;\n");
 			fprintf(out, "begin\n");
+
+			if (!exceptionClass.empty())
+				fprintf(out, "\ttry\n\t");
+
 			fprintf(out, "\t");
 
 			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
@@ -1077,6 +1107,23 @@ void PascalGenerator::generate()
 			}
 
 			fprintf(out, ");\n");
+
+			if (!exceptionClass.empty())
+			{
+				Parameter* exceptionParameter =
+					(!method->parameters.empty() &&
+					 parser->exceptionInterface &&
+					 method->parameters.front()->type.token.text == parser->exceptionInterface->name
+					) ? method->parameters.front() : NULL;
+
+				fprintf(out, "\texcept\n");
+				fprintf(out, "\t\ton e: Exception do %s.catchException(%s, e);\n",
+					exceptionClass.c_str(),
+					(exceptionParameter ? exceptionParameter->name.c_str() : "nil"));
+
+				fprintf(out, "\tend\n");
+			}
+
 			fprintf(out, "end;\n\n");
 		}
 
@@ -1089,6 +1136,8 @@ void PascalGenerator::generate()
 		fprintf(out, "\tvTable := %sImpl_vTable;\n", interface->name.c_str());
 		fprintf(out, "end;\n\n");
 	}
+
+	insertFile(implementationFile);
 
 	fprintf(out, "initialization\n");
 
@@ -1193,4 +1242,23 @@ string PascalGenerator::convertType(const Type& type)
 	}
 
 	return name;
+}
+
+void PascalGenerator::insertFile(const string& filename)
+{
+	if (filename.empty())
+		return;
+
+	FILE* in = fopen(filename.c_str(), "r");
+
+	if (!in)
+		throw runtime_error(string("Error opening input file '") + filename + "'.");
+
+	char buffer[1024];
+	int count;
+
+	while ((count = fread(buffer, 1, sizeof(buffer), in)) > 0)
+		fwrite(buffer, 1, count, out);
+
+	fclose(in);
 }

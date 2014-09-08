@@ -89,8 +89,13 @@ static void run(int argc, const char* argv[])
 			throw runtime_error("Invalid command line parameters for Pascal output.");
 
 		string unitName(argv[4]);
+		string additionalUses(argc > 5 ? argv[5] : "");
+		string interfaceFile(argc > 6 ? argv[6] : "");
+		string implementationFile(argc > 7 ? argv[7] : "");
+		string exceptionClass(argc > 8 ? argv[8] : "");
 
-		generator.reset(new PascalGenerator(outFilename, &parser, unitName));
+		generator.reset(new PascalGenerator(outFilename, &parser, unitName,
+			additionalUses, interfaceFile, implementationFile, exceptionClass));
 	}
 	else
 		throw runtime_error("Invalid output format.");

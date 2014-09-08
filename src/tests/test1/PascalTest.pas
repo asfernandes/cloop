@@ -84,12 +84,11 @@ begin
 	calc.setMemory(calc.sum(stat, 2, 33));
 	WriteLn(calc.getMemory());	// 36
 
-	//// FIXME:
 	try
 		WriteLn(calc.sum(stat, 600, 600));
 	except
-		on e: Exception do
-			WriteLn('exception ', stat.getCode());	// exception 1
+		on e: CalcException do
+			WriteLn('exception ', e.getCode());	// exception 1
 	end;
 
 	calc.dispose();

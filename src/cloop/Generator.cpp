@@ -871,9 +871,9 @@ void PascalGenerator::generate()
 		if (!interface->super)
 		{
 			fprintf(out, "{$ifndef FPC}\n");
-			fprintf(out, "\t\tdummy: PtrInt;\n");
+			fprintf(out, "\t\tdummy: NativeInt;\n");
 			fprintf(out, "{$endif}\n");
-			fprintf(out, "\t\tversion: PtrInt;\n");
+			fprintf(out, "\t\tversion: NativeInt;\n");
 		}
 
 		for (vector<Method*>::iterator j = interface->methods.begin();
@@ -898,7 +898,7 @@ void PascalGenerator::generate()
 		if (!interface->super)
 		{
 			fprintf(out, "{$ifndef FPC}\n");
-			fprintf(out, "\t\tdummy: PtrInt;\n");
+			fprintf(out, "\t\tdummy: NativeInt;\n");
 			fprintf(out, "{$endif}\n");
 			fprintf(out, "\t\tvTable: %sVTable;\n", interface->name.c_str());
 		}
@@ -1209,7 +1209,7 @@ string PascalGenerator::convertType(const Type& type)
 			break;
 
 		case Token::TYPE_INTPTR:
-			name = "PtrInt";
+			name = "NativeInt";
 			break;
 
 		case Token::TYPE_STRING:

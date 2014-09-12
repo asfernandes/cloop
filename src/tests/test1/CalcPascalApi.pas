@@ -32,15 +32,15 @@ type
 
 	DisposableVTable = class
 {$ifndef FPC}
-		dummy: PtrInt;
+		dummy: NativeInt;
 {$endif}
-		version: PtrInt;
+		version: NativeInt;
 		dispose: Disposable_disposePtr;
 	end;
 
 	Disposable = class
 {$ifndef FPC}
-		dummy: PtrInt;
+		dummy: NativeInt;
 {$endif}
 		vTable: DisposableVTable;
 		procedure dispose();

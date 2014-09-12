@@ -21,13 +21,26 @@
 
 program PascalTest;
 
-uses SysUtils, DynLibs, CalcPascalApi, PascalClasses;
+{$ifndef FPC}
+{$APPTYPE CONSOLE}
+{$endif}
+
+uses CalcPascalApi, PascalClasses,
+{$ifndef FPC}
+	System.SysUtils, Windows;
+{$else}
+	SysUtils, DynLibs;
+{$endif}
 
 type
 	CreateFactoryPtr = function(): Factory; cdecl;
 
 var
+{$ifndef FPC}
+	lib: THandle;
+{$else}
 	lib: TLibHandle;
+{$endif}
 	createFactory: CreateFactoryPtr;
 	fact: Factory;
 	stat: Status;
@@ -35,9 +48,17 @@ var
 	calc2: Calculator2;
 	address: Integer;
 begin
+{$ifndef FPC}
+	lib := LoadLibrary(PWideChar(ParamStr(1)));
+{$else}
 	lib := LoadLibrary(ParamStr(1));
+{$endif}
 
+{$ifndef FPC}
+	createFactory := GetProcAddress(lib, 'createFactory');
+{$else}
 	createFactory := GetProcedureAddress(lib, 'createFactory');
+{$endif}
 
 	fact := createFactory();
 	stat := MyStatusImpl.create;
@@ -97,5 +118,9 @@ begin
 
 	WriteLn;
 
+{$ifndef FPC}
+	FreeLibrary(lib);
+{$else}
 	UnloadLibrary(lib);
+{$endif}
 end.

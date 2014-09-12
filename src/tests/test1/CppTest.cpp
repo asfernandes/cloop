@@ -22,7 +22,14 @@
 #include "CalcCppApi.h"
 #include <assert.h>
 #include <stdio.h>
+
+#ifdef WIN32
+#include <windows.h>
+#define DLL_EXPORT __declspec(dllexport)
+#else
 #include <dlfcn.h>
+#define DLL_EXPORT
+#endif
 
 
 class CalcPolice
@@ -288,7 +295,7 @@ public:
 // Library entry point
 
 
-extern "C" calc::Factory* createFactory()
+extern "C" DLL_EXPORT calc::Factory* createFactory()
 {
 	return new FactoryImpl();
 }
@@ -359,22 +366,38 @@ static void test(calc::Factory* (*createFactory)())
 	printf("\n");
 }
 
+#ifdef WIN32
+template <typename T>
+static void loadSymbol(HMODULE library, const char* name, T& symbol)
+{
+	symbol = (T) GetProcAddress(library, name);
+}
+#else
 template <typename T>
 static void loadSymbol(void* library, const char* name, T& symbol)
 {
 	symbol = (T) dlsym(library, name);
 }
+#endif
 
 int main(int argc, char* argv[])
 {
-	void* library = dlopen(argv[1], RTLD_LAZY);
-
 	calc::Factory* (*createFactory)();
-	loadSymbol(library, "createFactory", createFactory);
 
+#ifdef WIN32
+	HMODULE library = LoadLibrary(argv[1]);
+#else
+	void* library = dlopen(argv[1], RTLD_LAZY);
+#endif
+
+	loadSymbol(library, "createFactory", createFactory);
 	test(createFactory);
 
+#ifdef WIN32
+	FreeLibrary(library);
+#else
 	dlclose(library);
+#endif
 
 	return 0;
 }

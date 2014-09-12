@@ -22,7 +22,14 @@
 #include "CalcCApi.h"
 #include <malloc.h>
 #include <stdio.h>
+
+#ifdef WIN32
+#include <windows.h>
+#define DLL_EXPORT __declspec(dllexport)
+#else
 #include <dlfcn.h>
+#define DLL_EXPORT
+#endif
 
 
 //--------------------------------------
@@ -55,10 +62,11 @@ static void StatusImpl_setCode(struct Status* self, int code)
 struct Status* StatusImpl_create()
 {
 	static struct StatusVTable vtable = {
-		.version = Status_VERSION,
-		.dispose = StatusImpl_dispose,
-		.getCode = StatusImpl_getCode,
-		.setCode = StatusImpl_setCode
+		{NULL},
+		Status_VERSION,
+		StatusImpl_dispose,
+		StatusImpl_getCode,
+		StatusImpl_setCode
 	};
 
 	struct StatusImpl* impl = malloc(sizeof(struct StatusImpl));
@@ -116,12 +124,13 @@ static void CalculatorImpl_sumAndStore(struct Calculator* self, struct Status* s
 struct Calculator* CalculatorImpl_create()
 {
 	static struct CalculatorVTable vtable = {
-		.version = Calculator_VERSION,
-		.dispose = CalculatorImpl_dispose,
-		.sum = CalculatorImpl_sum,
-		.getMemory = CalculatorImpl_getMemory,
-		.setMemory = CalculatorImpl_setMemory,
-		.sumAndStore = CalculatorImpl_sumAndStore
+		{NULL},
+		Calculator_VERSION,
+		CalculatorImpl_dispose,
+		CalculatorImpl_sum,
+		CalculatorImpl_getMemory,
+		CalculatorImpl_setMemory,
+		CalculatorImpl_sumAndStore
 	};
 
 	struct CalculatorImpl* impl = malloc(sizeof(struct CalculatorImpl));
@@ -196,15 +205,16 @@ static void Calculator2Impl_copyMemory2(struct Calculator2* self, const int* add
 struct Calculator2* Calculator2Impl_create()
 {
 	static struct Calculator2VTable vtable = {
-		.version = Calculator2_VERSION,
-		.dispose = Calculator2Impl_dispose,
-		.sum = Calculator2Impl_sum,
-		.getMemory = Calculator2Impl_getMemory,
-		.setMemory = Calculator2Impl_setMemory,
-		.sumAndStore = Calculator2Impl_sumAndStore,
-		.multiply = Calculator2Impl_multiply,
-		.copyMemory = Calculator2Impl_copyMemory,
-		.copyMemory2 = Calculator2Impl_copyMemory2
+		{NULL},
+		Calculator2_VERSION,
+		Calculator2Impl_dispose,
+		Calculator2Impl_sum,
+		Calculator2Impl_getMemory,
+		Calculator2Impl_setMemory,
+		Calculator2Impl_sumAndStore,
+		Calculator2Impl_multiply,
+		Calculator2Impl_copyMemory,
+		Calculator2Impl_copyMemory2
 	};
 
 	struct Calculator2Impl* impl = malloc(sizeof(struct Calculator2Impl));
@@ -229,12 +239,13 @@ static int BrokenCalculatorImpl_sum(const struct Calculator* self, struct Status
 struct Calculator* BrokenCalculatorImpl_create()
 {
 	static struct CalculatorVTable vtable = {
-		.version = Calculator_VERSION,
-		.dispose = CalculatorImpl_dispose,
-		.sum = BrokenCalculatorImpl_sum,
-		.getMemory = CalculatorImpl_getMemory,
-		.setMemory = CalculatorImpl_setMemory,
-		.sumAndStore = CalculatorImpl_sumAndStore
+		{NULL},
+		Calculator_VERSION,
+		CalculatorImpl_dispose,
+		BrokenCalculatorImpl_sum,
+		CalculatorImpl_getMemory,
+		CalculatorImpl_setMemory,
+		CalculatorImpl_sumAndStore
 	};
 
 	struct CalculatorImpl* impl = malloc(sizeof(struct CalculatorImpl));
@@ -280,12 +291,13 @@ static struct Calculator* FactoryImpl_createBrokenCalculator(struct Factory* sel
 struct Factory* FactoryImpl_create()
 {
 	static struct FactoryVTable vtable = {
-		.version = Factory_VERSION,
-		.dispose = FactoryImpl_dispose,
-		.createStatus = FactoryImpl_createStatus,
-		.createCalculator = FactoryImpl_createCalculator,
-		.createCalculator2 = FactoryImpl_createCalculator2,
-		.createBrokenCalculator = FactoryImpl_createBrokenCalculator
+		{NULL},
+		Factory_VERSION,
+		FactoryImpl_dispose,
+		FactoryImpl_createStatus,
+		FactoryImpl_createCalculator,
+		FactoryImpl_createCalculator2,
+		FactoryImpl_createBrokenCalculator
 	};
 
 	struct Factory* impl = malloc(sizeof(struct Factory));
@@ -300,7 +312,7 @@ struct Factory* FactoryImpl_create()
 // Library entry point
 
 
-struct Factory* createFactory()
+DLL_EXPORT struct Factory* createFactory()
 {
 	return FactoryImpl_create();
 }
@@ -313,10 +325,13 @@ static void test(struct Factory* (*createFactory)())
 {
 	struct Factory* factory = createFactory();
 	struct Status* status = (struct Status*) StatusImpl_create();
+	struct Calculator* calculator;
+	struct Calculator2* calculator2;
+	int sum, code, address;
 
-	struct Calculator* calculator = Factory_createCalculator(factory, status);
+	calculator = Factory_createCalculator(factory, status);
 
-	int address = 40;
+	address = 40;
 
 	Calculator_sumAndStore(calculator, status, 1, 22);
 	printf("%d\n", Calculator_getMemory(calculator));	// 23
@@ -324,7 +339,7 @@ static void test(struct Factory* (*createFactory)())
 	Calculator_setMemory(calculator, Calculator_sum(calculator, status, 2, 33));
 	printf("%d\n", Calculator_getMemory(calculator));	// 35
 
-	struct Calculator2* calculator2 = Factory_createCalculator2(factory, status);
+	calculator2 = Factory_createCalculator2(factory, status);
 
 	Calculator2_copyMemory(calculator2, calculator);
 	printf("%d\n", Calculator2_getMemory(calculator2));	// 35
@@ -357,8 +372,8 @@ static void test(struct Factory* (*createFactory)())
 	Calculator_setMemory(calculator, Calculator_sum(calculator, status, 2, 33));
 	printf("%d\n", Calculator_getMemory(calculator));	// 36
 
-	int sum = Calculator_sum(calculator, status, 600, 600);
-	int code = Status_getCode(status);
+	sum = Calculator_sum(calculator, status, 600, 600);
+	code = Status_getCode(status);
 	if (code != 0)
 		printf("exception %d\n", code);	// exception 1
 	else
@@ -374,12 +389,27 @@ static void test(struct Factory* (*createFactory)())
 
 int main(int argc, char* argv[])
 {
+#ifdef WIN32
+	HMODULE library = LoadLibrary(argv[1]);
+#else
 	void* library = dlopen(argv[1], RTLD_LAZY);
+#endif
 
-	struct Factory* (*createFactory)() = dlsym(library, "createFactory");
+	struct Factory* (*createFactory)();
+
+#ifdef WIN32
+	createFactory = (struct Factory* (*)()) GetProcAddress(library, "createFactory");
+#else
+	createFactory = dlsym(library, "createFactory");
+#endif
+
 	test(createFactory);
 
+#ifdef WIN32
+	FreeLibrary(library);
+#else
 	dlclose(library);
+#endif
 
 	return 0;
 }

@@ -31,17 +31,11 @@ type
 	Calculator2_copyMemory2Ptr = procedure(this: Calculator2; address: IntegerPtr); cdecl;
 
 	DisposableVTable = class
-{$ifndef FPC}
-		dummy: NativeInt;
-{$endif}
 		version: NativeInt;
 		dispose: Disposable_disposePtr;
 	end;
 
 	Disposable = class
-{$ifndef FPC}
-		dummy: NativeInt;
-{$endif}
 		vTable: DisposableVTable;
 		procedure dispose();
 	end;

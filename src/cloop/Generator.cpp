@@ -869,12 +869,7 @@ void PascalGenerator::generate()
 		fprintf(out, "\n");
 
 		if (!interface->super)
-		{
-			fprintf(out, "{$ifndef FPC}\n");
-			fprintf(out, "\t\tdummy: NativeInt;\n");
-			fprintf(out, "{$endif}\n");
 			fprintf(out, "\t\tversion: NativeInt;\n");
-		}
 
 		for (vector<Method*>::iterator j = interface->methods.begin();
 			 j != interface->methods.end();
@@ -896,12 +891,7 @@ void PascalGenerator::generate()
 		fprintf(out, "\n");
 
 		if (!interface->super)
-		{
-			fprintf(out, "{$ifndef FPC}\n");
-			fprintf(out, "\t\tdummy: NativeInt;\n");
-			fprintf(out, "{$endif}\n");
 			fprintf(out, "\t\tvTable: %sVTable;\n", interface->name.c_str());
-		}
 
 		for (vector<Method*>::iterator j = interface->methods.begin();
 			 j != interface->methods.end();

@@ -100,24 +100,27 @@ public:
 		Calculator* createCalculator(Status* status)
 		{
 			Policy::template checkVersion<3>(this);
-			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator(this, status));
-			Policy::checkException(status);
+			typename Policy::Status status2(status);
+			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator(this, status2));
+			Policy::checkException(status2);
 			return ret;
 		}
 
 		Calculator2* createCalculator2(Status* status)
 		{
 			Policy::template checkVersion<4>(this);
-			Calculator2* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator2(this, status));
-			Policy::checkException(status);
+			typename Policy::Status status2(status);
+			Calculator2* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator2(this, status2));
+			Policy::checkException(status2);
 			return ret;
 		}
 
 		Calculator* createBrokenCalculator(Status* status)
 		{
 			Policy::template checkVersion<5>(this);
-			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createBrokenCalculator(this, status));
-			Policy::checkException(status);
+			typename Policy::Status status2(status);
+			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createBrokenCalculator(this, status2));
+			Policy::checkException(status2);
 			return ret;
 		}
 	};
@@ -139,8 +142,9 @@ public:
 		int sum(Status* status, int n1, int n2) const
 		{
 			Policy::template checkVersion<2>(this);
-			int ret = static_cast<VTable*>(this->cloopVTable)->sum(this, status, n1, n2);
-			Policy::checkException(status);
+			typename Policy::Status status2(status);
+			int ret = static_cast<VTable*>(this->cloopVTable)->sum(this, status2, n1, n2);
+			Policy::checkException(status2);
 			return ret;
 		}
 
@@ -160,8 +164,9 @@ public:
 		void sumAndStore(Status* status, int n1, int n2)
 		{
 			Policy::template checkVersion<5>(this);
-			static_cast<VTable*>(this->cloopVTable)->sumAndStore(this, status, n1, n2);
-			Policy::checkException(status);
+			typename Policy::Status status2(status);
+			static_cast<VTable*>(this->cloopVTable)->sumAndStore(this, status2, n1, n2);
+			Policy::checkException(status2);
 		}
 	};
 
@@ -181,8 +186,9 @@ public:
 		int multiply(Status* status, int n1, int n2) const
 		{
 			Policy::template checkVersion<5>(this);
-			int ret = static_cast<VTable*>(this->cloopVTable)->multiply(this, status, n1, n2);
-			Policy::checkException(status);
+			typename Policy::Status status2(status);
+			int ret = static_cast<VTable*>(this->cloopVTable)->multiply(this, status2, n1, n2);
+			Policy::checkException(status2);
 			return ret;
 		}
 

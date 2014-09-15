@@ -31,10 +31,56 @@
 #define DLL_EXPORT
 #endif
 
+#define NO_VIRTUAL_STATUS
+
 
 class CalcPolice
 {
 public:
+#ifdef NO_VIRTUAL_STATUS
+	class Status : public CalcApi<CalcPolice>::StatusImpl<Status>
+	{
+	public:
+		Status(CalcApi<CalcPolice>::Status* next)
+			: next(next),
+			  dirty(false)
+		{
+		}
+
+		virtual void dispose()
+		{
+			delete this;
+		}
+
+		virtual int getCode() const
+		{
+			return next->getCode();
+		}
+
+		virtual void setCode(int code)
+		{
+			dirty = true;
+			next->setCode(code);
+		}
+
+		operator CalcApi<CalcPolice>::Status*()
+		{
+			return this;
+		}
+
+	public:
+		CalcApi<CalcPolice>::Status* next;
+		bool dirty;
+	};
+
+	static void checkException(Status& status);
+#else
+	typedef CalcApi<CalcPolice>::Status* Status;
+	static void checkException(CalcApi<CalcPolice>::Status* status);
+#endif
+
+	static void catchException(CalcApi<CalcPolice>::Status* status);
+
 	template <unsigned V, typename T>
 	static inline void checkVersion(T*)
 	{
@@ -46,9 +92,6 @@ public:
 		//// TODO:
 		return o;
 	}
-
-	static void checkException(CalcApi<CalcPolice>::Status* status);
-	static void catchException(CalcApi<CalcPolice>::Status* status);
 };
 
 
@@ -73,6 +116,13 @@ public:
 };
 
 
+#ifdef NO_VIRTUAL_STATUS
+void CalcPolice::checkException(CalcPolice::Status& status)
+{
+	if (status.dirty && status.next->getCode() != 0)
+		throw CalcException(status.next);
+}
+#else
 void CalcPolice::checkException(CalcApi<CalcPolice>::Status* status)
 {
 	assert(status);
@@ -80,6 +130,7 @@ void CalcPolice::checkException(CalcApi<CalcPolice>::Status* status)
 	if (status->getCode() != 0)
 		throw CalcException(status);
 }
+#endif
 
 
 void CalcPolice::catchException(CalcApi<CalcPolice>::Status* status)

@@ -279,6 +279,16 @@ void CppGenerator::generate()
 			fprintf(out, "\t\t{\n");
 			fprintf(out, "\t\t\tPolicy::template checkVersion<%d>(this);\n", ++methodNumber);
 
+			if (!method->parameters.empty() &&
+				parser->exceptionInterface &&
+				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
+			{
+				fprintf(out, "\t\t\ttypename Policy::%s %s2(%s);\n",
+					parser->exceptionInterface->name.c_str(),
+					method->parameters.front()->name.c_str(),
+					method->parameters.front()->name.c_str());
+			}
+
 			fprintf(out, "\t\t\t");
 
 			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
@@ -301,6 +311,13 @@ void CppGenerator::generate()
 			{
 				Parameter* parameter = *k;
 				fprintf(out, ", %s", parameter->name.c_str());
+
+				if (k == method->parameters.begin() &&
+					parser->exceptionInterface &&
+					parameter->type.token.text == parser->exceptionInterface->name)
+				{
+					fprintf(out, "2");
+				}
 			}
 
 			fprintf(out, ")");
@@ -317,7 +334,7 @@ void CppGenerator::generate()
 				parser->exceptionInterface &&
 				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
 			{
-				fprintf(out, "\t\t\tPolicy::checkException(%s);\n",
+				fprintf(out, "\t\t\tPolicy::checkException(%s2);\n",
 					method->parameters.front()->name.c_str());
 			}
 

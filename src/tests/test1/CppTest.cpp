@@ -34,14 +34,17 @@
 #define NO_VIRTUAL_STATUS
 
 
+typedef CalcApi<class CalcPolice> calc;
+
+
 class CalcPolice
 {
 public:
 #ifdef NO_VIRTUAL_STATUS
-	class Status : public CalcApi<CalcPolice>::StatusImpl<Status>
+	class Status : public calc::StatusImpl<Status>
 	{
 	public:
-		Status(CalcApi<CalcPolice>::Status* next)
+		Status(calc::Status* next)
 			: next(next),
 			  dirty(false)
 		{
@@ -63,23 +66,23 @@ public:
 			next->setCode(code);
 		}
 
-		operator CalcApi<CalcPolice>::Status*()
+		operator calc::Status*()
 		{
 			return this;
 		}
 
 	public:
-		CalcApi<CalcPolice>::Status* next;
+		calc::Status* next;
 		bool dirty;
 	};
 
 	static void checkException(Status& status);
 #else
-	typedef CalcApi<CalcPolice>::Status* Status;
-	static void checkException(CalcApi<CalcPolice>::Status* status);
+	typedef calc::Status* Status;
+	static void checkException(calc::Status* status);
 #endif
 
-	static void catchException(CalcApi<CalcPolice>::Status* status);
+	static void catchException(calc::Status* status);
 
 	template <unsigned V, typename T>
 	static inline void checkVersion(T*)
@@ -93,9 +96,6 @@ public:
 		return o;
 	}
 };
-
-
-typedef CalcApi<CalcPolice> calc;
 
 
 class CalcException
@@ -123,7 +123,7 @@ void CalcPolice::checkException(CalcPolice::Status& status)
 		throw CalcException(status.next);
 }
 #else
-void CalcPolice::checkException(CalcApi<CalcPolice>::Status* status)
+void CalcPolice::checkException(calc::Status* status)
 {
 	assert(status);
 
@@ -133,7 +133,7 @@ void CalcPolice::checkException(CalcApi<CalcPolice>::Status* status)
 #endif
 
 
-void CalcPolice::catchException(CalcApi<CalcPolice>::Status* status)
+void CalcPolice::catchException(calc::Status* status)
 {
 	try
 	{

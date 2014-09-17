@@ -37,6 +37,9 @@ type
 
 	Disposable = class
 		vTable: DisposableVTable;
+
+		const VERSION = 1;
+
 		procedure dispose();
 	end;
 
@@ -52,6 +55,11 @@ type
 	end;
 
 	Status = class(Disposable)
+		const VERSION = 3;
+		const ERROR_1 = Integer(1);
+		const ERROR_2 = Integer(2);
+		const ERROR_12 = Integer(ERROR_1 or ERROR_2);
+
 		function getCode(): Integer;
 		procedure setCode(code: Integer);
 	end;
@@ -72,6 +80,8 @@ type
 	end;
 
 	Factory = class(Disposable)
+		const VERSION = 5;
+
 		function createStatus(): Status;
 		function createCalculator(status: Status): Calculator;
 		function createCalculator2(status: Status): Calculator2;
@@ -96,6 +106,8 @@ type
 	end;
 
 	Calculator = class(Disposable)
+		const VERSION = 5;
+
 		function sum(status: Status; n1: Integer; n2: Integer): Integer;
 		function getMemory(): Integer;
 		procedure setMemory(n: Integer);
@@ -119,6 +131,8 @@ type
 	end;
 
 	Calculator2 = class(Calculator)
+		const VERSION = 8;
+
 		function multiply(status: Status; n1: Integer; n2: Integer): Integer;
 		procedure copyMemory(calculator: Calculator);
 		procedure copyMemory2(address: IntegerPtr);

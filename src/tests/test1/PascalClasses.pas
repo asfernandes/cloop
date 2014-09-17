@@ -126,7 +126,7 @@ end;
 function MyCalculatorImpl.sum(status: Status; n1: Integer; n2: Integer): Integer;
 begin
 	if (n1 + n2 > 1000) then
-		raise CalcException.create(1)	//// TODO: constant
+		raise CalcException.create(Status.ERROR_1)
 	else
 		Result := n1 + n2;
 end;
@@ -166,7 +166,7 @@ end;
 function MyCalculator2Impl.sum(status: Status; n1: Integer; n2: Integer): Integer;
 begin
 	if (n1 + n2 > 1000) then
-		raise CalcException.create(1)	//// TODO: constant
+		raise CalcException.create(Status.ERROR_1)
 	else
 		Result := n1 + n2;
 end;

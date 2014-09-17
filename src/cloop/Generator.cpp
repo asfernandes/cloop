@@ -762,7 +762,6 @@ void CImplGenerator::generate()
 //--------------------------------------
 
 
-//// TODO: Generate constants (including VERSION).
 PascalGenerator::PascalGenerator(const string& filename, Parser* parser, const string& unitName,
 		const std::string& additionalUses, const std::string& interfaceFile,
 		const std::string& implementationFile, const std::string& exceptionClass)
@@ -908,7 +907,28 @@ void PascalGenerator::generate()
 		fprintf(out, "\n");
 
 		if (!interface->super)
-			fprintf(out, "\t\tvTable: %sVTable;\n", interface->name.c_str());
+			fprintf(out, "\t\tvTable: %sVTable;\n\n", interface->name.c_str());
+
+		unsigned version = 0;
+
+		for (Interface* p = interface; p; p = p->super)
+			version += p->methods.size();
+
+		fprintf(out, "\t\tconst VERSION = %d;\n", version);
+
+		for (vector<Constant*>::iterator j = interface->constants.begin();
+			 j != interface->constants.end();
+			 ++j)
+		{
+			Constant* constant = *j;
+
+			fprintf(out, "\t\tconst %s = %s(%s);\n",
+				constant->name.c_str(),
+				convertType(constant->type).c_str(),
+				constant->expr->generate(LANGUAGE_PASCAL).c_str());
+		}
+
+		fprintf(out, "\n");
 
 		for (vector<Method*>::iterator j = interface->methods.begin();
 			 j != interface->methods.end();

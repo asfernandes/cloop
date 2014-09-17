@@ -67,7 +67,6 @@ ConstantExpr::ConstantExpr(Interface* interface, string name)
 
 string ConstantExpr::generate(Language language)
 {
-	//// TODO: LANGUAGE_PASCAL
 	return (language == LANGUAGE_C ? interface->name + "_" : "") + name;
 }
 
@@ -83,5 +82,7 @@ BitwiseOrExpr::BitwiseOrExpr(Expr* expr1, Expr* expr2)
 
 string BitwiseOrExpr::generate(Language language)
 {
-	return expr1->generate(language) + " | " + expr2->generate(language);
+	return expr1->generate(language) +
+		(language == LANGUAGE_PASCAL ? " or " : " | ") +
+		expr2->generate(language);
 }

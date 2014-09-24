@@ -5,10 +5,29 @@
 
 #include <stdint.h>
 
+#ifndef CLOOP_CARG
+#define CLOOP_CARG
+#endif
+
 
 template <typename Policy>
 class CalcApi
 {
+private:
+	class DoNotInherit
+	{
+	};
+
+	template <typename T>
+	class Inherit : public T
+	{
+	public:
+		Inherit(DoNotInherit = DoNotInherit())
+			: T(DoNotInherit())
+		{
+		}
+	};
+
 public:
 	// Forward interfaces declarations
 
@@ -22,19 +41,25 @@ public:
 
 	class Disposable
 	{
-	protected:
+	public:
 		struct VTable
 		{
 			void* cloopDummy[1];
 			uintptr_t version;
-			void (*dispose)(Disposable* self);
+			void (CLOOP_CARG *dispose)(Disposable* self) throw();
 		};
 
-	protected:
 		void* cloopDummy[1];
-
-	public:
 		VTable* cloopVTable;
+
+	protected:
+		Disposable(DoNotInherit)
+		{
+		}
+
+		~Disposable()
+		{
+		}
 
 	public:
 		static const int VERSION = 1;
@@ -48,12 +73,22 @@ public:
 
 	class Status : public Disposable
 	{
-	protected:
+	public:
 		struct VTable : public Disposable::VTable
 		{
-			int (*getCode)(const Status* self);
-			void (*setCode)(Status* self, int code);
+			int (CLOOP_CARG *getCode)(const Status* self) throw();
+			void (CLOOP_CARG *setCode)(Status* self, int code) throw();
 		};
+
+	protected:
+		Status(DoNotInherit)
+			: Disposable(DoNotInherit())
+		{
+		}
+
+		~Status()
+		{
+		}
 
 	public:
 		static const int VERSION = 3;
@@ -78,14 +113,24 @@ public:
 
 	class Factory : public Disposable
 	{
-	protected:
+	public:
 		struct VTable : public Disposable::VTable
 		{
-			Status* (*createStatus)(Factory* self);
-			Calculator* (*createCalculator)(Factory* self, Status* status);
-			Calculator2* (*createCalculator2)(Factory* self, Status* status);
-			Calculator* (*createBrokenCalculator)(Factory* self, Status* status);
+			Status* (CLOOP_CARG *createStatus)(Factory* self) throw();
+			Calculator* (CLOOP_CARG *createCalculator)(Factory* self, Status* status) throw();
+			Calculator2* (CLOOP_CARG *createCalculator2)(Factory* self, Status* status) throw();
+			Calculator* (CLOOP_CARG *createBrokenCalculator)(Factory* self, Status* status) throw();
 		};
+
+	protected:
+		Factory(DoNotInherit)
+			: Disposable(DoNotInherit())
+		{
+		}
+
+		~Factory()
+		{
+		}
 
 	public:
 		static const int VERSION = 5;
@@ -127,14 +172,24 @@ public:
 
 	class Calculator : public Disposable
 	{
-	protected:
+	public:
 		struct VTable : public Disposable::VTable
 		{
-			int (*sum)(const Calculator* self, Status* status, int n1, int n2);
-			int (*getMemory)(const Calculator* self);
-			void (*setMemory)(Calculator* self, int n);
-			void (*sumAndStore)(Calculator* self, Status* status, int n1, int n2);
+			int (CLOOP_CARG *sum)(const Calculator* self, Status* status, int n1, int n2) throw();
+			int (CLOOP_CARG *getMemory)(const Calculator* self) throw();
+			void (CLOOP_CARG *setMemory)(Calculator* self, int n) throw();
+			void (CLOOP_CARG *sumAndStore)(Calculator* self, Status* status, int n1, int n2) throw();
 		};
+
+	protected:
+		Calculator(DoNotInherit)
+			: Disposable(DoNotInherit())
+		{
+		}
+
+		~Calculator()
+		{
+		}
 
 	public:
 		static const int VERSION = 5;
@@ -172,13 +227,23 @@ public:
 
 	class Calculator2 : public Calculator
 	{
-	protected:
+	public:
 		struct VTable : public Calculator::VTable
 		{
-			int (*multiply)(const Calculator2* self, Status* status, int n1, int n2);
-			void (*copyMemory)(Calculator2* self, const Calculator* calculator);
-			void (*copyMemory2)(Calculator2* self, const int* address);
+			int (CLOOP_CARG *multiply)(const Calculator2* self, Status* status, int n1, int n2) throw();
+			void (CLOOP_CARG *copyMemory)(Calculator2* self, const Calculator* calculator) throw();
+			void (CLOOP_CARG *copyMemory2)(Calculator2* self, const int* address) throw();
 		};
+
+	protected:
+		Calculator2(DoNotInherit)
+			: Calculator(DoNotInherit())
+		{
+		}
+
+		~Calculator2()
+		{
+		}
 
 	public:
 		static const int VERSION = 8;
@@ -211,7 +276,9 @@ public:
 	class DisposableBaseImpl : public Base
 	{
 	public:
-		DisposableBaseImpl()
+		typedef Disposable Declaration;
+
+		DisposableBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -225,7 +292,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
 		{
 			try
 			{
@@ -238,9 +305,14 @@ public:
 		}
 	};
 
-	template <typename Name, typename Base = Disposable>
+	template <typename Name, typename Base = Inherit<Disposable> >
 	class DisposableImpl : public DisposableBaseImpl<Name, Base>
 	{
+	protected:
+		DisposableImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
 	public:
 		virtual ~DisposableImpl()
 		{
@@ -253,7 +325,9 @@ public:
 	class StatusBaseImpl : public Base
 	{
 	public:
-		StatusBaseImpl()
+		typedef Status Declaration;
+
+		StatusBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -269,7 +343,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int cloopgetCodeDispatcher(const Status* self) throw()
+		static int CLOOP_CARG cloopgetCodeDispatcher(const Status* self) throw()
 		{
 			try
 			{
@@ -282,7 +356,7 @@ public:
 			}
 		}
 
-		static void cloopsetCodeDispatcher(Status* self, int code) throw()
+		static void CLOOP_CARG cloopsetCodeDispatcher(Status* self, int code) throw()
 		{
 			try
 			{
@@ -294,7 +368,7 @@ public:
 			}
 		}
 
-		static void cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
 		{
 			try
 			{
@@ -307,9 +381,14 @@ public:
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Status> >
+	template <typename Name, typename Base = DisposableImpl<Name, Inherit<Status> > >
 	class StatusImpl : public StatusBaseImpl<Name, Base>
 	{
+	protected:
+		StatusImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
 	public:
 		virtual ~StatusImpl()
 		{
@@ -323,7 +402,9 @@ public:
 	class FactoryBaseImpl : public Base
 	{
 	public:
-		FactoryBaseImpl()
+		typedef Factory Declaration;
+
+		FactoryBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -341,7 +422,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static Status* cloopcreateStatusDispatcher(Factory* self) throw()
+		static Status* CLOOP_CARG cloopcreateStatusDispatcher(Factory* self) throw()
 		{
 			try
 			{
@@ -354,7 +435,7 @@ public:
 			}
 		}
 
-		static Calculator* cloopcreateCalculatorDispatcher(Factory* self, Status* status) throw()
+		static Calculator* CLOOP_CARG cloopcreateCalculatorDispatcher(Factory* self, Status* status) throw()
 		{
 			try
 			{
@@ -367,7 +448,7 @@ public:
 			}
 		}
 
-		static Calculator2* cloopcreateCalculator2Dispatcher(Factory* self, Status* status) throw()
+		static Calculator2* CLOOP_CARG cloopcreateCalculator2Dispatcher(Factory* self, Status* status) throw()
 		{
 			try
 			{
@@ -380,7 +461,7 @@ public:
 			}
 		}
 
-		static Calculator* cloopcreateBrokenCalculatorDispatcher(Factory* self, Status* status) throw()
+		static Calculator* CLOOP_CARG cloopcreateBrokenCalculatorDispatcher(Factory* self, Status* status) throw()
 		{
 			try
 			{
@@ -393,7 +474,7 @@ public:
 			}
 		}
 
-		static void cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
 		{
 			try
 			{
@@ -406,9 +487,14 @@ public:
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Factory> >
+	template <typename Name, typename Base = DisposableImpl<Name, Inherit<Factory> > >
 	class FactoryImpl : public FactoryBaseImpl<Name, Base>
 	{
+	protected:
+		FactoryImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
 	public:
 		virtual ~FactoryImpl()
 		{
@@ -424,7 +510,9 @@ public:
 	class CalculatorBaseImpl : public Base
 	{
 	public:
-		CalculatorBaseImpl()
+		typedef Calculator Declaration;
+
+		CalculatorBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -442,7 +530,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int cloopsumDispatcher(const Calculator* self, Status* status, int n1, int n2) throw()
+		static int CLOOP_CARG cloopsumDispatcher(const Calculator* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
@@ -455,7 +543,7 @@ public:
 			}
 		}
 
-		static int cloopgetMemoryDispatcher(const Calculator* self) throw()
+		static int CLOOP_CARG cloopgetMemoryDispatcher(const Calculator* self) throw()
 		{
 			try
 			{
@@ -468,7 +556,7 @@ public:
 			}
 		}
 
-		static void cloopsetMemoryDispatcher(Calculator* self, int n) throw()
+		static void CLOOP_CARG cloopsetMemoryDispatcher(Calculator* self, int n) throw()
 		{
 			try
 			{
@@ -480,7 +568,7 @@ public:
 			}
 		}
 
-		static void cloopsumAndStoreDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
+		static void CLOOP_CARG cloopsumAndStoreDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
@@ -492,7 +580,7 @@ public:
 			}
 		}
 
-		static void cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
 		{
 			try
 			{
@@ -505,9 +593,14 @@ public:
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Calculator> >
+	template <typename Name, typename Base = DisposableImpl<Name, Inherit<Calculator> > >
 	class CalculatorImpl : public CalculatorBaseImpl<Name, Base>
 	{
+	protected:
+		CalculatorImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
 	public:
 		virtual ~CalculatorImpl()
 		{
@@ -523,7 +616,9 @@ public:
 	class Calculator2BaseImpl : public Base
 	{
 	public:
-		Calculator2BaseImpl()
+		typedef Calculator2 Declaration;
+
+		Calculator2BaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -544,7 +639,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int cloopmultiplyDispatcher(const Calculator2* self, Status* status, int n1, int n2) throw()
+		static int CLOOP_CARG cloopmultiplyDispatcher(const Calculator2* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
@@ -557,7 +652,7 @@ public:
 			}
 		}
 
-		static void cloopcopyMemoryDispatcher(Calculator2* self, const Calculator* calculator) throw()
+		static void CLOOP_CARG cloopcopyMemoryDispatcher(Calculator2* self, const Calculator* calculator) throw()
 		{
 			try
 			{
@@ -569,7 +664,7 @@ public:
 			}
 		}
 
-		static void cloopcopyMemory2Dispatcher(Calculator2* self, const int* address) throw()
+		static void CLOOP_CARG cloopcopyMemory2Dispatcher(Calculator2* self, const int* address) throw()
 		{
 			try
 			{
@@ -581,7 +676,7 @@ public:
 			}
 		}
 
-		static int cloopsumDispatcher(const Calculator* self, Status* status, int n1, int n2) throw()
+		static int CLOOP_CARG cloopsumDispatcher(const Calculator* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
@@ -594,7 +689,7 @@ public:
 			}
 		}
 
-		static int cloopgetMemoryDispatcher(const Calculator* self) throw()
+		static int CLOOP_CARG cloopgetMemoryDispatcher(const Calculator* self) throw()
 		{
 			try
 			{
@@ -607,7 +702,7 @@ public:
 			}
 		}
 
-		static void cloopsetMemoryDispatcher(Calculator* self, int n) throw()
+		static void CLOOP_CARG cloopsetMemoryDispatcher(Calculator* self, int n) throw()
 		{
 			try
 			{
@@ -619,7 +714,7 @@ public:
 			}
 		}
 
-		static void cloopsumAndStoreDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
+		static void CLOOP_CARG cloopsumAndStoreDispatcher(Calculator* self, Status* status, int n1, int n2) throw()
 		{
 			try
 			{
@@ -631,7 +726,7 @@ public:
 			}
 		}
 
-		static void cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
 		{
 			try
 			{
@@ -644,9 +739,14 @@ public:
 		}
 	};
 
-	template <typename Name, typename Base = CalculatorImpl<Name, DisposableImpl<Name, Calculator2> > >
+	template <typename Name, typename Base = CalculatorImpl<Name, Inherit<DisposableImpl<Name, Inherit<Calculator2> > > > >
 	class Calculator2Impl : public Calculator2BaseImpl<Name, Base>
 	{
+	protected:
+		Calculator2Impl(DoNotInherit = DoNotInherit())
+		{
+		}
+
 	public:
 		virtual ~Calculator2Impl()
 		{
@@ -657,6 +757,10 @@ public:
 		virtual void copyMemory2(const int* address) = 0;
 	};
 };
+
+template <typename Policy> const int CalcApi<Policy>::Status::ERROR_1;
+template <typename Policy> const int CalcApi<Policy>::Status::ERROR_2;
+template <typename Policy> const int CalcApi<Policy>::Status::ERROR_12;
 
 
 #endif	// CALC_CPP_API_H

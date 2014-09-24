@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <inttypes.h>
 
 using std::deque;
 using std::runtime_error;
@@ -138,11 +139,30 @@ void CppGenerator::generate()
 
 	fprintf(out, "#ifndef %s\n", headerGuard.c_str());
 	fprintf(out, "#define %s\n\n", headerGuard.c_str());
-	fprintf(out, "#include <stdint.h>\n\n\n");
+	fprintf(out, "#include <stdint.h>\n\n");
+
+	fprintf(out, "#ifndef CLOOP_CARG\n");
+	fprintf(out, "#define CLOOP_CARG\n");
+	fprintf(out, "#endif\n\n\n");
 
 	fprintf(out, "template <typename Policy>\n");
 	fprintf(out, "class %s\n", className.c_str());
 	fprintf(out, "{\n");
+	fprintf(out, "private:\n");
+	fprintf(out, "\tclass DoNotInherit\n");
+	fprintf(out, "\t{\n");
+	fprintf(out, "\t};\n");
+	fprintf(out, "\n");
+	fprintf(out, "\ttemplate <typename T>\n");
+	fprintf(out, "\tclass Inherit : public T\n");
+	fprintf(out, "\t{\n");
+	fprintf(out, "\tpublic:\n");
+	fprintf(out, "\t\tInherit(DoNotInherit = DoNotInherit())\n");
+	fprintf(out, "\t\t\t: T(DoNotInherit())\n");
+	fprintf(out, "\t\t{\n");
+	fprintf(out, "\t\t}\n");
+	fprintf(out, "\t};\n");
+	fprintf(out, "\n");
 	fprintf(out, "public:\n");
 
 	fprintf(out, "\t// Forward interfaces declarations\n\n");
@@ -179,7 +199,7 @@ void CppGenerator::generate()
 		}
 
 		fprintf(out, "\t{\n");
-		fprintf(out, "\tprotected:\n");
+		fprintf(out, "\tpublic:\n");
 
 		if (!interface->super)
 		{
@@ -201,7 +221,7 @@ void CppGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t\t\t%s (*%s)(%s%s* self",
+			fprintf(out, "\t\t\t%s (CLOOP_CARG *%s)(%s%s* self",
 				convertType(method->returnType).c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
@@ -217,7 +237,7 @@ void CppGenerator::generate()
 					convertType(parameter->type).c_str(), parameter->name.c_str());
 			}
 
-			fprintf(out, ");\n");
+			fprintf(out, ") throw();\n");
 		}
 
 		fprintf(out, "\t\t};\n");
@@ -225,13 +245,22 @@ void CppGenerator::generate()
 
 		if (!interface->super)
 		{
-			fprintf(out, "\tprotected:\n");
 			fprintf(out, "\t\tvoid* cloopDummy[%d];\n", DUMMY_INSTANCE);
-			fprintf(out, "\n");
-			fprintf(out, "\tpublic:\n");
 			fprintf(out, "\t\tVTable* cloopVTable;\n");
 			fprintf(out, "\n");
 		}
+
+		fprintf(out, "\tprotected:\n");
+		fprintf(out, "\t\t%s(DoNotInherit)\n", interface->name.c_str());
+		if (interface->super)
+			fprintf(out, "\t\t\t: %s(DoNotInherit())\n", interface->super->name.c_str());
+		fprintf(out, "\t\t{\n");
+		fprintf(out, "\t\t}\n");
+		fprintf(out, "\n");
+		fprintf(out, "\t\t~%s()\n", interface->name.c_str());
+		fprintf(out, "\t\t{\n");
+		fprintf(out, "\t\t}\n");
+		fprintf(out, "\n");
 
 		fprintf(out, "\tpublic:\n");
 		fprintf(out, "\t\tstatic const int VERSION = %d;\n", (int) methods.size());
@@ -365,7 +394,9 @@ void CppGenerator::generate()
 		fprintf(out, "\tclass %sBaseImpl : public Base\n", interface->name.c_str());
 		fprintf(out, "\t{\n");
 		fprintf(out, "\tpublic:\n");
-		fprintf(out, "\t\t%sBaseImpl()\n", interface->name.c_str());
+		fprintf(out, "\t\ttypedef %s Declaration;\n", interface->name.c_str());
+		fprintf(out, "\n");
+		fprintf(out, "\t\t%sBaseImpl(DoNotInherit = DoNotInherit())\n", interface->name.c_str());
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t\tstatic struct VTableImpl : Base::VTable\n");
 		fprintf(out, "\t\t\t{\n");
@@ -399,7 +430,7 @@ void CppGenerator::generate()
 				Method* method = *j;
 
 				fprintf(out, "\n");
-				fprintf(out, "\t\tstatic %s cloop%sDispatcher(%s%s* self",
+				fprintf(out, "\t\tstatic %s CLOOP_CARG cloop%sDispatcher(%s%s* self",
 					convertType(method->returnType).c_str(),
 					method->name.c_str(),
 					(method->isConst ? "const " : ""),
@@ -483,7 +514,7 @@ void CppGenerator::generate()
 
 		if (!interface->super)
 		{
-			fprintf(out, "\ttemplate <typename Name, typename Base = %s>\n",
+			fprintf(out, "\ttemplate <typename Name, typename Base = Inherit<%s> >\n",
 				interface->name.c_str());
 		}
 		else
@@ -493,14 +524,14 @@ void CppGenerator::generate()
 
 			for (Interface* p = interface->super; p; p = p->super)
 			{
-				base += p->name + "Impl<Name, ";
+				base += p->name + "Impl<Name, Inherit<";
 				++baseCount;
 			}
 
 			base += interface->name;
 
 			while (baseCount-- > 0)
-				base += "> ";
+				base += "> > ";
 
 			fprintf(out, "\ttemplate <typename Name, typename Base = %s>\n", base.c_str());
 		}
@@ -508,6 +539,11 @@ void CppGenerator::generate()
 		fprintf(out, "\tclass %sImpl : public %sBaseImpl<Name, Base>\n",
 			interface->name.c_str(), interface->name.c_str());
 		fprintf(out, "\t{\n");
+		fprintf(out, "\tprotected:\n");
+		fprintf(out, "\t\t%sImpl(DoNotInherit = DoNotInherit())\n", interface->name.c_str());
+		fprintf(out, "\t\t{\n");
+		fprintf(out, "\t\t}\n");
+		fprintf(out, "\n");
 		fprintf(out, "\tpublic:\n");
 		fprintf(out, "\t\tvirtual ~%sImpl()\n", interface->name.c_str());
 		fprintf(out, "\t\t{\n");
@@ -542,7 +578,32 @@ void CppGenerator::generate()
 		fprintf(out, "\t};\n");
 	}
 
-	fprintf(out, "};\n\n\n");
+	fprintf(out, "};\n\n");
+
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		Interface* interface = *i;
+
+		for (vector<Constant*>::iterator j = interface->constants.begin();
+			 j != interface->constants.end();
+			 ++j)
+		{
+			Constant* constant = *j;
+
+			fprintf(out, "template <typename Policy> const %s %s<Policy>::%s::%s;\n",
+				convertType(constant->type).c_str(),
+				className.c_str(),
+				interface->name.c_str(),
+				constant->name.c_str());
+		}
+
+		if (!interface->constants.empty())
+			fprintf(out, "\n");
+	}
+
+	fprintf(out, "\n");
 
 	fprintf(out, "#endif\t// %s\n", headerGuard.c_str());
 }

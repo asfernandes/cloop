@@ -72,7 +72,7 @@ string CBasedGenerator::convertType(const Type& type)
 	switch (type.token.type)
 	{
 		case Token::TYPE_BOOLEAN:
-			ret += "int";	// seems to be more portable than bool, specially thinking on pointers
+			ret += "FB_BOOLEAN";	// seems to be more portable than bool, specially thinking on pointers
 			break;
 
 		case Token::TYPE_INT:
@@ -80,7 +80,7 @@ string CBasedGenerator::convertType(const Type& type)
 			break;
 
 		case Token::TYPE_INT64:
-			ret += "int64_t";
+			ret += "ISC_INT64";		//int64_t
 			break;
 
 		case Token::TYPE_INTPTR:
@@ -100,7 +100,7 @@ string CBasedGenerator::convertType(const Type& type)
 			break;
 
 		case Token::TYPE_UINT64:
-			ret += "uint64_t";
+			ret += "ISC_UINT64";	//uint64_t
 			break;
 
 		case Token::TYPE_IDENTIFIER:

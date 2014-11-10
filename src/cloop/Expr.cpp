@@ -45,6 +45,20 @@ string IntLiteralExpr::generate(Language language)
 //--------------------------------------
 
 
+BooleanLiteralExpr::BooleanLiteralExpr(bool value)
+	: value(value)
+{
+}
+
+string BooleanLiteralExpr::generate(Language language)
+{
+	return value ? "true" : "false";
+}
+
+
+//--------------------------------------
+
+
 NegateExpr::NegateExpr(Expr* expr)
 	: expr(expr)
 {
@@ -67,7 +81,24 @@ ConstantExpr::ConstantExpr(Interface* interface, string name)
 
 string ConstantExpr::generate(Language language)
 {
-	return (language == LANGUAGE_C ? interface->name + "_" : "") + name;
+	string prefix;
+
+	switch (language)
+	{
+		case LANGUAGE_C:
+			prefix = interface->name + "_";
+			break;
+
+		case LANGUAGE_CPP:
+			prefix = interface->name + "::";
+			break;
+
+		case LANGUAGE_PASCAL:
+			prefix = interface->name + ".";
+			break;
+	}
+
+	return prefix + name;
 }
 
 

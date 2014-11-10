@@ -50,8 +50,12 @@ interface Factory : Disposable
 interface Calculator : Disposable
 {
 	int sum(Status status, int n1, int n2) const;
-	int getMemory() const;
+
+version:
+	[notImplemented(Status::ERROR_1)] int getMemory() const;
 	void setMemory(int n);
+
+version:
 	void sumAndStore(Status status, int n1, int n2);
 }
 
@@ -59,5 +63,7 @@ interface Calculator2 : Calculator
 {
 	int multiply(Status status, int n1, int n2) const;
 	void copyMemory(const Calculator calculator);
+
+version:
 	void copyMemory2(const int* address);
 }

@@ -69,13 +69,17 @@ class Method
 {
 public:
 	Method()
-		: isConst(false)
+		: notImplementedExpr(NULL),
+		  version(0),
+		  isConst(false)
 	{
 	}
 
 	std::string name;
 	Type returnType;
 	std::vector<Parameter*> parameters;
+	Expr* notImplementedExpr;
+	unsigned version;
 	bool isConst;
 };
 
@@ -84,7 +88,8 @@ class Interface
 {
 public:
 	Interface()
-		: super(NULL)
+		: super(NULL),
+		  version(1)
 	{
 	}
 
@@ -92,6 +97,7 @@ public:
 	Interface* super;
 	std::vector<Constant*> constants;
 	std::vector<Method*> methods;
+	unsigned version;
 };
 
 
@@ -112,7 +118,7 @@ public:
 	void parseStruct();
 	void parseItem();
 	void parseConstant(const Type& type, const std::string& name);
-	void parseMethod(const Type& returnType, const std::string& name);
+	void parseMethod(const Type& returnType, const std::string& name, Expr* notImplementedExpr);
 
 	Expr* parseExpr();
 	Expr* parseLogicalExpr();

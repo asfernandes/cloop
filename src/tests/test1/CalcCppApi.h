@@ -62,11 +62,10 @@ public:
 		}
 
 	public:
-		static const int VERSION = 1;
+		static const unsigned VERSION = 1;
 
 		void dispose()
 		{
-			Policy::template checkVersion<1>(this);
 			static_cast<VTable*>(this->cloopVTable)->dispose(this);
 		}
 	};
@@ -91,22 +90,20 @@ public:
 		}
 
 	public:
-		static const int VERSION = 3;
+		static const unsigned VERSION = 2;
 
 		static const int ERROR_1 = 1;
 		static const int ERROR_2 = 2;
-		static const int ERROR_12 = ERROR_1 | ERROR_2;
+		static const int ERROR_12 = Status::ERROR_1 | Status::ERROR_2;
 
 		int getCode() const
 		{
-			Policy::template checkVersion<2>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getCode(this);
 			return ret;
 		}
 
 		void setCode(int code)
 		{
-			Policy::template checkVersion<3>(this);
 			static_cast<VTable*>(this->cloopVTable)->setCode(this, code);
 		}
 	};
@@ -133,38 +130,34 @@ public:
 		}
 
 	public:
-		static const int VERSION = 5;
+		static const unsigned VERSION = 2;
 
 		Status* createStatus()
 		{
-			Policy::template checkVersion<2>(this);
-			Status* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createStatus(this));
+			Status* ret = static_cast<VTable*>(this->cloopVTable)->createStatus(this);
 			return ret;
 		}
 
 		Calculator* createCalculator(Status* status)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
-			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator(this, status2));
+			Calculator* ret = static_cast<VTable*>(this->cloopVTable)->createCalculator(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Calculator2* createCalculator2(Status* status)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			Calculator2* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createCalculator2(this, status2));
+			Calculator2* ret = static_cast<VTable*>(this->cloopVTable)->createCalculator2(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Calculator* createBrokenCalculator(Status* status)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			Calculator* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createBrokenCalculator(this, status2));
+			Calculator* ret = static_cast<VTable*>(this->cloopVTable)->createBrokenCalculator(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -192,11 +185,10 @@ public:
 		}
 
 	public:
-		static const int VERSION = 5;
+		static const unsigned VERSION = 4;
 
 		int sum(Status* status, int n1, int n2) const
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->sum(this, status2, n1, n2);
 			Policy::checkException(status2);
@@ -205,21 +197,31 @@ public:
 
 		int getMemory() const
 		{
-			Policy::template checkVersion<3>(this);
+			if (!Policy::template checkVersion<3>(this, 0))
+			{
+				return Status::ERROR_1;
+			}
 			int ret = static_cast<VTable*>(this->cloopVTable)->getMemory(this);
 			return ret;
 		}
 
 		void setMemory(int n)
 		{
-			Policy::template checkVersion<4>(this);
+			if (!Policy::template checkVersion<3>(this, 0))
+			{
+				return;
+			}
 			static_cast<VTable*>(this->cloopVTable)->setMemory(this, n);
 		}
 
 		void sumAndStore(Status* status, int n1, int n2)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
+			if (!Policy::template checkVersion<4>(this, status2))
+			{
+				Policy::checkException(status2);
+				return;
+			}
 			static_cast<VTable*>(this->cloopVTable)->sumAndStore(this, status2, n1, n2);
 			Policy::checkException(status2);
 		}
@@ -246,11 +248,10 @@ public:
 		}
 
 	public:
-		static const int VERSION = 8;
+		static const unsigned VERSION = 6;
 
 		int multiply(Status* status, int n1, int n2) const
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->multiply(this, status2, n1, n2);
 			Policy::checkException(status2);
@@ -259,13 +260,15 @@ public:
 
 		void copyMemory(const Calculator* calculator)
 		{
-			Policy::template checkVersion<6>(this);
 			static_cast<VTable*>(this->cloopVTable)->copyMemory(this, calculator);
 		}
 
 		void copyMemory2(const int* address)
 		{
-			Policy::template checkVersion<7>(this);
+			if (!Policy::template checkVersion<6>(this, 0))
+			{
+				return;
+			}
 			static_cast<VTable*>(this->cloopVTable)->copyMemory2(this, address);
 		}
 	};
@@ -439,7 +442,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::createCalculator(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::createCalculator(status);
 			}
 			catch (...)
 			{
@@ -452,7 +455,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::createCalculator2(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::createCalculator2(status);
 			}
 			catch (...)
 			{
@@ -465,7 +468,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::createBrokenCalculator(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::createBrokenCalculator(status);
 			}
 			catch (...)
 			{
@@ -534,7 +537,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::sum(Policy::upgrade(status), n1, n2);
+				return static_cast<const Name*>(self)->Name::sum(status, n1, n2);
 			}
 			catch (...)
 			{
@@ -572,7 +575,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::sumAndStore(Policy::upgrade(status), n1, n2);
+				static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
 			}
 			catch (...)
 			{
@@ -643,7 +646,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::multiply(Policy::upgrade(status), n1, n2);
+				return static_cast<const Name*>(self)->Name::multiply(status, n1, n2);
 			}
 			catch (...)
 			{
@@ -656,7 +659,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::copyMemory(Policy::upgrade(calculator));
+				static_cast<Name*>(self)->Name::copyMemory(calculator);
 			}
 			catch (...)
 			{
@@ -680,7 +683,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::sum(Policy::upgrade(status), n1, n2);
+				return static_cast<const Name*>(self)->Name::sum(status, n1, n2);
 			}
 			catch (...)
 			{
@@ -718,7 +721,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::sumAndStore(Policy::upgrade(status), n1, n2);
+				static_cast<Name*>(self)->Name::sumAndStore(status, n1, n2);
 			}
 			catch (...)
 			{

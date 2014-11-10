@@ -263,7 +263,7 @@ void CppGenerator::generate()
 		fprintf(out, "\n");
 
 		fprintf(out, "\tpublic:\n");
-		fprintf(out, "\t\tstatic const int VERSION = %d;\n", (int) methods.size());
+		fprintf(out, "\t\tstatic const unsigned VERSION = %u;\n", interface->version);
 
 		if (!interface->constants.empty())
 			fprintf(out, "\n");
@@ -280,7 +280,6 @@ void CppGenerator::generate()
 				constant->expr->generate(LANGUAGE_CPP).c_str());
 		}
 
-		unsigned methodNumber = (interface->super ? interface->super->methods.size() : 0);
 		for (vector<Method*>::iterator j = interface->methods.begin();
 			 j != interface->methods.end();
 			 ++j)
@@ -306,30 +305,49 @@ void CppGenerator::generate()
 
 			fprintf(out, ")%s\n", (method->isConst ? " const" : ""));
 			fprintf(out, "\t\t{\n");
-			fprintf(out, "\t\t\tPolicy::template checkVersion<%d>(this);\n", ++methodNumber);
+
+			string statusName;
 
 			if (!method->parameters.empty() &&
 				parser->exceptionInterface &&
 				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
 			{
+				statusName = method->parameters.front()->name;
+
 				fprintf(out, "\t\t\ttypename Policy::%s %s2(%s);\n",
 					parser->exceptionInterface->name.c_str(),
-					method->parameters.front()->name.c_str(),
-					method->parameters.front()->name.c_str());
+					statusName.c_str(),
+					statusName.c_str());
+			}
+
+			if (method->version - (interface->super ? interface->super->version : 0) != 1)
+			{
+				fprintf(out, "\t\t\tif (!Policy::template checkVersion<%u>(this, %s))\n",
+					method->version,
+					(statusName.empty() ? "0" : (statusName + "2").c_str()));
+
+				fprintf(out, "\t\t\t{\n");
+
+				if (!statusName.empty())
+					fprintf(out, "\t\t\t\tPolicy::checkException(%s2);\n", statusName.c_str());
+
+				fprintf(out, "\t\t\t\treturn");
+
+				if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+				{
+					fprintf(out, " %s",
+						(method->notImplementedExpr ?
+							method->notImplementedExpr->generate(LANGUAGE_CPP).c_str() : "0"));
+				}
+
+				fprintf(out, ";\n");
+				fprintf(out, "\t\t\t}\n");
 			}
 
 			fprintf(out, "\t\t\t");
 
 			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
-			{
 				fprintf(out, "%s ret = ", convertType(method->returnType).c_str());
-
-				if (method->returnType.token.type == Token::TYPE_IDENTIFIER &&
-					!method->returnType.isStruct)
-				{
-					fprintf(out, "Policy::upgrade(");
-				}
-			}
 
 			fprintf(out, "static_cast<VTable*>(this->cloopVTable)->%s(this",
 				method->name.c_str());
@@ -350,13 +368,6 @@ void CppGenerator::generate()
 			}
 
 			fprintf(out, ")");
-
-			if (method->returnType.token.type == Token::TYPE_IDENTIFIER &&
-				!method->returnType.isStruct)
-			{
-				fprintf(out, ")");
-			}
-
 			fprintf(out, ";\n");
 
 			if (!method->parameters.empty() &&
@@ -469,19 +480,7 @@ void CppGenerator::generate()
 					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
-					if (parameter->type.token.type == Token::TYPE_IDENTIFIER &&
-						!parameter->type.isStruct)
-					{
-						fprintf(out, "Policy::upgrade(");
-					}
-
 					fprintf(out, "%s", parameter->name.c_str());
-
-					if (parameter->type.token.type == Token::TYPE_IDENTIFIER &&
-						!parameter->type.isStruct)
-					{
-						fprintf(out, ")");
-					}
 				}
 
 				fprintf(out, ");\n");
@@ -800,6 +799,8 @@ void CImplGenerator::generate()
 			fprintf(out, "{\n");
 			fprintf(out, "\t");
 
+			//// TODO: checkVersion
+
 			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				fprintf(out, "return ");
 
@@ -1104,6 +1105,8 @@ void PascalGenerator::generate()
 			fprintf(out, ";\n");
 			fprintf(out, "begin\n");
 			fprintf(out, "\t");
+
+			//// TODO: checkVersion
 
 			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				fprintf(out, "Result := ");

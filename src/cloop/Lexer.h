@@ -36,13 +36,18 @@ struct Token
 	{
 		TYPE_EOF = 256,
 		TYPE_IDENTIFIER,
+		// punctuation
+		TYPE_DOUBLE_COLON,
 		// literals
+		TYPE_BOOLEAN_LITERAL,
 		TYPE_INT_LITERAL,
 		// keywords
 		TYPE_CONST,
 		TYPE_EXCEPTION,
 		TYPE_INTERFACE,
+		TYPE_NOT_IMPLEMENTED,
 		TYPE_STRUCT,
+		TYPE_VERSION,
 		// types
 		TYPE_VOID,
 		TYPE_BOOLEAN,

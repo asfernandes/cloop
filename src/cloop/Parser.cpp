@@ -127,6 +127,7 @@ void Parser::parseInterface(bool exception)
 			error(token, string("Super interface '") + superName + "' not found.");
 
 		interface->super = it->second;
+		interface->version = interface->super->version + 1;
 	}
 	else
 		lexer->pushToken(token);
@@ -135,7 +136,14 @@ void Parser::parseInterface(bool exception)
 
 	while (lexer->getToken(token).type != TOKEN('}'))
 	{
-		lexer->pushToken(token);
+		if (token.type == Token::TYPE_VERSION)
+		{
+			getToken(token, TOKEN(':'));
+			++interface->version;
+		}
+		else
+			lexer->pushToken(token);
+
 		parseItem();
 	}
 }
@@ -152,10 +160,25 @@ void Parser::parseStruct()
 
 void Parser::parseItem()
 {
+	Expr* notImplementedExpr = NULL;
+
+	lexer->getToken(token);
+
+	if (token.type == TOKEN('['))
+	{
+		getToken(token, Token::TYPE_NOT_IMPLEMENTED);	// This is the only attribute we allow now.
+		getToken(token, TOKEN('('));
+		notImplementedExpr = parseExpr();
+		getToken(token, TOKEN(')'));
+		getToken(token, TOKEN(']'));
+	}
+	else
+		lexer->pushToken(token);
+
 	Type type(parseType());
 	string name(getToken(token, Token::TYPE_IDENTIFIER).text);
 
-	if (type.isConst)
+	if (!notImplementedExpr && type.isConst)
 	{
 		if (lexer->getToken(token).type == TOKEN('='))
 		{
@@ -168,7 +191,7 @@ void Parser::parseItem()
 	}
 
 	getToken(token, TOKEN('('));
-	parseMethod(type, name);
+	parseMethod(type, name, notImplementedExpr);
 }
 
 void Parser::parseConstant(const Type& type, const string& name)
@@ -183,13 +206,15 @@ void Parser::parseConstant(const Type& type, const string& name)
 	getToken(token, TOKEN(';'));
 }
 
-void Parser::parseMethod(const Type& returnType, const string& name)
+void Parser::parseMethod(const Type& returnType, const string& name, Expr* notImplementedExpr)
 {
 	Method* method = new Method();
 	interface->methods.push_back(method);
 
 	method->returnType = returnType;
 	method->name = name;
+	method->version = interface->version;
+	method->notImplementedExpr = notImplementedExpr;
 
 	if (lexer->getToken(token).type != TOKEN(')'))
 	{
@@ -259,6 +284,9 @@ Expr* Parser::parsePrimaryExpr()
 
 	switch (token.type)
 	{
+		case Token::TYPE_BOOLEAN_LITERAL:
+			return new BooleanLiteralExpr(token.text == "true");
+
 		case Token::TYPE_INT_LITERAL:
 		{
 			const char* p = token.text.c_str();
@@ -270,7 +298,25 @@ Expr* Parser::parsePrimaryExpr()
 		}
 
 		case Token::TYPE_IDENTIFIER:
-			return new ConstantExpr(interface, token.text);
+		{
+			string text = token.text;
+
+			if (lexer->getToken(token).type == Token::TYPE_DOUBLE_COLON)
+			{
+				getToken(token, Token::TYPE_IDENTIFIER);
+				map<string, Interface*>::iterator it = interfacesByName.find(text);
+
+				if (it == interfacesByName.end())
+					error(token, string("Interface '") + text + "' not found.");
+
+				return new ConstantExpr(it->second, token.text);
+			}
+			else
+			{
+				lexer->pushToken(token);
+				return new ConstantExpr(interface, text);
+			}
+		}
 
 		default:
 			syntaxError(token);

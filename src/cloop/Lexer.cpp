@@ -78,15 +78,22 @@ Token& Lexer::getToken(Token& token)
 
 		ungetChar(ch);
 
+		// literals
+		if (token.text == "false" || token.text == "true")
+			token.type = Token::TYPE_BOOLEAN_LITERAL;
 		// keywords
-		if (token.text == "const")
+		else if (token.text == "const")
 			token.type = Token::TYPE_CONST;
 		else if (token.text == "exception")
 			token.type = Token::TYPE_EXCEPTION;
 		else if (token.text == "interface")
 			token.type = Token::TYPE_INTERFACE;
+		else if (token.text == "notImplemented")
+			token.type = Token::TYPE_NOT_IMPLEMENTED;
 		else if (token.text == "struct")
 			token.type = Token::TYPE_STRUCT;
+		else if (token.text == "version")
+			token.type = Token::TYPE_VERSION;
 		// types
 		else if (token.text == "void")
 			token.type = Token::TYPE_VOID;
@@ -146,6 +153,14 @@ Token& Lexer::getToken(Token& token)
 	{
 		token.type = static_cast<Token::Type>(ch.c);
 		token.text = ch.c;
+
+		if (getChar(ch).c == ':')
+		{
+			token.type = Token::TYPE_DOUBLE_COLON;
+			token.text += ch.c;
+		}
+		else
+			ungetChar(ch);
 	}
 
 	return token;

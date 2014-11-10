@@ -85,15 +85,13 @@ public:
 	static void catchException(calc::Status* status);
 
 	template <unsigned V, typename T>
-	static inline void checkVersion(T*)
+	static inline bool checkVersion(T* o, calc::Status* status)
 	{
-	}
+		if (o->cloopVTable->version >= V)
+			return true;
 
-	template <typename T>
-	static inline T* upgrade(T* o)
-	{
-		//// TODO:
-		return o;
+		status->setCode(Status::ERROR_1);
+		return false;
 	}
 };
 

@@ -61,6 +61,19 @@ private:
 };
 
 
+class BooleanLiteralExpr : public Expr
+{
+public:
+	BooleanLiteralExpr(bool value);
+
+public:
+	virtual std::string generate(Language language);
+
+private:
+	bool value;
+};
+
+
 class NegateExpr : public Expr
 {
 public:

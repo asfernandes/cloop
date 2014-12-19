@@ -34,7 +34,7 @@ IntLiteralExpr::IntLiteralExpr(int value)
 {
 }
 
-string IntLiteralExpr::generate(Language language)
+string IntLiteralExpr::generate(Language language, const string& prefix)
 {
 	char buffer[64];
 	sprintf(buffer, "%d", value);
@@ -50,7 +50,7 @@ BooleanLiteralExpr::BooleanLiteralExpr(bool value)
 {
 }
 
-string BooleanLiteralExpr::generate(Language language)
+string BooleanLiteralExpr::generate(Language language, const string& prefix)
 {
 	return value ? "true" : "false";
 }
@@ -64,9 +64,9 @@ NegateExpr::NegateExpr(Expr* expr)
 {
 }
 
-std::string NegateExpr::generate(Language language)
+std::string NegateExpr::generate(Language language, const string& prefix)
 {
-	return "-" + expr->generate(language);
+	return "-" + expr->generate(language, prefix);
 }
 
 
@@ -79,26 +79,26 @@ ConstantExpr::ConstantExpr(Interface* interface, string name)
 {
 }
 
-string ConstantExpr::generate(Language language)
+string ConstantExpr::generate(Language language, const string& prefix)
 {
-	string prefix;
+	string retPrefix;
 
 	switch (language)
 	{
 		case LANGUAGE_C:
-			prefix = interface->name + "_";
+			retPrefix = prefix + interface->name + "_";
 			break;
 
 		case LANGUAGE_CPP:
-			prefix = interface->name + "::";
+			retPrefix = prefix + interface->name + "::";
 			break;
 
 		case LANGUAGE_PASCAL:
-			prefix = interface->name + ".";
+			retPrefix = prefix + interface->name + ".";
 			break;
 	}
 
-	return prefix + name;
+	return retPrefix + name;
 }
 
 
@@ -111,9 +111,9 @@ BitwiseOrExpr::BitwiseOrExpr(Expr* expr1, Expr* expr2)
 {
 }
 
-string BitwiseOrExpr::generate(Language language)
+string BitwiseOrExpr::generate(Language language, const string& prefix)
 {
-	return expr1->generate(language) +
+	return expr1->generate(language, prefix) +
 		(language == LANGUAGE_PASCAL ? " or " : " | ") +
-		expr2->generate(language);
+		expr2->generate(language, prefix);
 }

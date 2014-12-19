@@ -44,7 +44,7 @@ public:
 	}
 
 public:
-	virtual std::string generate(Language language) = 0;
+	virtual std::string generate(Language language, const std::string& prefix) = 0;
 };
 
 
@@ -54,7 +54,7 @@ public:
 	IntLiteralExpr(int value);
 
 public:
-	virtual std::string generate(Language language);
+	virtual std::string generate(Language language, const std::string& prefix);
 
 private:
 	int value;
@@ -67,7 +67,7 @@ public:
 	BooleanLiteralExpr(bool value);
 
 public:
-	virtual std::string generate(Language language);
+	virtual std::string generate(Language language, const std::string& prefix);
 
 private:
 	bool value;
@@ -80,7 +80,7 @@ public:
 	NegateExpr(Expr* expr);
 
 public:
-	virtual std::string generate(Language language);
+	virtual std::string generate(Language language, const std::string& prefix);
 
 private:
 	Expr* expr;
@@ -93,7 +93,7 @@ public:
 	ConstantExpr(Interface* interface, std::string name);
 
 public:
-	virtual std::string generate(Language language);
+	virtual std::string generate(Language language, const std::string& prefix);
 
 private:
 	Interface* interface;
@@ -107,7 +107,7 @@ public:
 	BitwiseOrExpr(Expr* expr1, Expr* expr2);
 
 public:
-	virtual std::string generate(Language language);
+	virtual std::string generate(Language language, const std::string& prefix);
 
 private:
 	Expr* expr1;

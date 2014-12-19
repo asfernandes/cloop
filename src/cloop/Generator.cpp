@@ -45,7 +45,8 @@ const char* const Generator::AUTOGEN_MSG =
 //--------------------------------------
 
 
-FileGenerator::FileGenerator(const string& filename)
+FileGenerator::FileGenerator(const string& filename, const string& prefix)
+	: prefix(prefix)
 {
 	out = fopen(filename.c_str(), "w+");
 }
@@ -59,8 +60,8 @@ FileGenerator::~FileGenerator()
 //--------------------------------------
 
 
-CBasedGenerator::CBasedGenerator(const string& filename, bool cPlusPlus)
-	: FileGenerator(filename),
+CBasedGenerator::CBasedGenerator(const string& filename, const string& prefix, bool cPlusPlus)
+	: FileGenerator(filename, prefix),
 	  cPlusPlus(cPlusPlus)
 {
 }
@@ -104,7 +105,9 @@ string CBasedGenerator::convertType(const Type& type)
 			break;
 
 		case Token::TYPE_IDENTIFIER:
-			ret += string(cPlusPlus ? "" : "struct ") + type.token.text;
+			ret += string(cPlusPlus ? "" : "struct ") +
+				(type.isStruct ? "" : prefix) + type.token.text;
+
 			if (!type.isStruct)
 				ret += "*";
 			break;
@@ -124,9 +127,9 @@ string CBasedGenerator::convertType(const Type& type)
 //--------------------------------------
 
 
-CppGenerator::CppGenerator(const string& filename, Parser* parser, const string& headerGuard,
-		const string& className)
-	: CBasedGenerator(filename, true),
+CppGenerator::CppGenerator(const string& filename, const string& prefix, Parser* parser,
+		const string& headerGuard, const string& className)
+	: CBasedGenerator(filename, prefix, true),
 	  parser(parser),
 	  headerGuard(headerGuard),
 	  className(className)
@@ -173,7 +176,7 @@ void CppGenerator::generate()
 	{
 		Interface* interface = *i;
 
-		fprintf(out, "\tclass %s;\n", interface->name.c_str());
+		fprintf(out, "\tclass %s%s;\n", prefix.c_str(), interface->name.c_str());
 	}
 
 	fprintf(out, "\n");
@@ -191,11 +194,12 @@ void CppGenerator::generate()
 			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
 		if (!interface->super)
-			fprintf(out, "\tclass %s\n", interface->name.c_str());
+			fprintf(out, "\tclass %s%s\n", prefix.c_str(), interface->name.c_str());
 		else
 		{
-			fprintf(out, "\tclass %s : public %s\n",
-				interface->name.c_str(), interface->super->name.c_str());
+			fprintf(out, "\tclass %s%s : public %s%s\n",
+				prefix.c_str(), interface->name.c_str(),
+				prefix.c_str(), interface->super->name.c_str());
 		}
 
 		fprintf(out, "\t{\n");
@@ -210,8 +214,8 @@ void CppGenerator::generate()
 		}
 		else
 		{
-			fprintf(out, "\t\tstruct VTable : public %s::VTable\n",
-				interface->super->name.c_str());
+			fprintf(out, "\t\tstruct VTable : public %s%s::VTable\n",
+				prefix.c_str(), interface->super->name.c_str());
 			fprintf(out, "\t\t{\n");
 		}
 
@@ -221,10 +225,11 @@ void CppGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t\t\t%s (CLOOP_CARG *%s)(%s%s* self",
+			fprintf(out, "\t\t\t%s (CLOOP_CARG *%s)(%s%s%s* self",
 				convertType(method->returnType).c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
+				prefix.c_str(),
 				interface->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -251,13 +256,18 @@ void CppGenerator::generate()
 		}
 
 		fprintf(out, "\tprotected:\n");
-		fprintf(out, "\t\t%s(DoNotInherit)\n", interface->name.c_str());
+		fprintf(out, "\t\t%s%s(DoNotInherit)\n", prefix.c_str(), interface->name.c_str());
+
 		if (interface->super)
-			fprintf(out, "\t\t\t: %s(DoNotInherit())\n", interface->super->name.c_str());
+		{
+			fprintf(out, "\t\t\t: %s%s(DoNotInherit())\n",
+				prefix.c_str(), interface->super->name.c_str());
+		}
+
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t}\n");
 		fprintf(out, "\n");
-		fprintf(out, "\t\t~%s()\n", interface->name.c_str());
+		fprintf(out, "\t\t~%s%s()\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t}\n");
 		fprintf(out, "\n");
@@ -277,7 +287,7 @@ void CppGenerator::generate()
 			fprintf(out, "\t\tstatic const %s %s = %s;\n",
 				convertType(constant->type).c_str(),
 				constant->name.c_str(),
-				constant->expr->generate(LANGUAGE_CPP).c_str());
+				constant->expr->generate(LANGUAGE_CPP, prefix).c_str());
 		}
 
 		for (vector<Method*>::iterator j = interface->methods.begin();
@@ -314,7 +324,8 @@ void CppGenerator::generate()
 			{
 				statusName = method->parameters.front()->name;
 
-				fprintf(out, "\t\t\ttypename Policy::%s %s2(%s);\n",
+				fprintf(out, "\t\t\ttypename Policy::%s%s %s2(%s);\n",
+					prefix.c_str(),
 					parser->exceptionInterface->name.c_str(),
 					statusName.c_str(),
 					statusName.c_str());
@@ -337,7 +348,8 @@ void CppGenerator::generate()
 				{
 					fprintf(out, " %s",
 						(method->notImplementedExpr ?
-							method->notImplementedExpr->generate(LANGUAGE_CPP).c_str() : "0"));
+							method->notImplementedExpr->generate(LANGUAGE_CPP, prefix).c_str() :
+							"0"));
 				}
 
 				fprintf(out, ";\n");
@@ -402,12 +414,14 @@ void CppGenerator::generate()
 
 		fprintf(out, "\n");
 		fprintf(out, "\ttemplate <typename Name, typename Base>\n");
-		fprintf(out, "\tclass %sBaseImpl : public Base\n", interface->name.c_str());
+		fprintf(out, "\tclass %s%sBaseImpl : public Base\n",
+			prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t{\n");
 		fprintf(out, "\tpublic:\n");
-		fprintf(out, "\t\ttypedef %s Declaration;\n", interface->name.c_str());
+		fprintf(out, "\t\ttypedef %s%s Declaration;\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\n");
-		fprintf(out, "\t\t%sBaseImpl(DoNotInherit = DoNotInherit())\n", interface->name.c_str());
+		fprintf(out, "\t\t%s%sBaseImpl(DoNotInherit = DoNotInherit())\n",
+			prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t\tstatic struct VTableImpl : Base::VTable\n");
 		fprintf(out, "\t\t\t{\n");
@@ -441,10 +455,11 @@ void CppGenerator::generate()
 				Method* method = *j;
 
 				fprintf(out, "\n");
-				fprintf(out, "\t\tstatic %s CLOOP_CARG cloop%sDispatcher(%s%s* self",
+				fprintf(out, "\t\tstatic %s CLOOP_CARG cloop%sDispatcher(%s%s%s* self",
 					convertType(method->returnType).c_str(),
 					method->name.c_str(),
 					(method->isConst ? "const " : ""),
+					prefix.c_str(),
 					p->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -513,8 +528,8 @@ void CppGenerator::generate()
 
 		if (!interface->super)
 		{
-			fprintf(out, "\ttemplate <typename Name, typename Base = Inherit<%s> >\n",
-				interface->name.c_str());
+			fprintf(out, "\ttemplate <typename Name, typename Base = Inherit<%s%s> >\n",
+				prefix.c_str(), interface->name.c_str());
 		}
 		else
 		{
@@ -523,11 +538,11 @@ void CppGenerator::generate()
 
 			for (Interface* p = interface->super; p; p = p->super)
 			{
-				base += p->name + "Impl<Name, Inherit<";
+				base += prefix + p->name + "Impl<Name, Inherit<";
 				++baseCount;
 			}
 
-			base += interface->name;
+			base += prefix.c_str() + interface->name;
 
 			while (baseCount-- > 0)
 				base += "> > ";
@@ -535,16 +550,17 @@ void CppGenerator::generate()
 			fprintf(out, "\ttemplate <typename Name, typename Base = %s>\n", base.c_str());
 		}
 
-		fprintf(out, "\tclass %sImpl : public %sBaseImpl<Name, Base>\n",
-			interface->name.c_str(), interface->name.c_str());
+		fprintf(out, "\tclass %s%sImpl : public %s%sBaseImpl<Name, Base>\n",
+			prefix.c_str(), interface->name.c_str(), prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t{\n");
 		fprintf(out, "\tprotected:\n");
-		fprintf(out, "\t\t%sImpl(DoNotInherit = DoNotInherit())\n", interface->name.c_str());
+		fprintf(out, "\t\t%s%sImpl(DoNotInherit = DoNotInherit())\n",
+			prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t}\n");
 		fprintf(out, "\n");
 		fprintf(out, "\tpublic:\n");
-		fprintf(out, "\t\tvirtual ~%sImpl()\n", interface->name.c_str());
+		fprintf(out, "\t\tvirtual ~%s%sImpl()\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t}\n");
 		fprintf(out, "\n");
@@ -591,9 +607,10 @@ void CppGenerator::generate()
 		{
 			Constant* constant = *j;
 
-			fprintf(out, "template <typename Policy> const %s %s<Policy>::%s::%s;\n",
+			fprintf(out, "template <typename Policy> const %s %s<Policy>::%s%s::%s;\n",
 				convertType(constant->type).c_str(),
 				className.c_str(),
+				prefix.c_str(),
 				interface->name.c_str(),
 				constant->name.c_str());
 		}
@@ -611,9 +628,9 @@ void CppGenerator::generate()
 //--------------------------------------
 
 
-CHeaderGenerator::CHeaderGenerator(const string& filename, Parser* parser,
+CHeaderGenerator::CHeaderGenerator(const string& filename, const string& prefix, Parser* parser,
 		const string& headerGuard)
-	: CBasedGenerator(filename, false),
+	: CBasedGenerator(filename, prefix, false),
 	  parser(parser),
 	  headerGuard(headerGuard)
 {
@@ -670,7 +687,7 @@ void CHeaderGenerator::generate()
 				interface->name.c_str(),
 				constant->name.c_str(),
 				convertType(constant->type).c_str(),
-				constant->expr->generate(LANGUAGE_C).c_str());
+				constant->expr->generate(LANGUAGE_C, prefix).c_str());
 		}
 
 		if (!interface->constants.empty())
@@ -749,9 +766,9 @@ void CHeaderGenerator::generate()
 //--------------------------------------
 
 
-CImplGenerator::CImplGenerator(const string& filename, Parser* parser,
+CImplGenerator::CImplGenerator(const string& filename, const string& prefix, Parser* parser,
 		const string& includeFilename)
-	: CBasedGenerator(filename, false),
+	: CBasedGenerator(filename, prefix, false),
 	  parser(parser),
 	  includeFilename(includeFilename)
 {
@@ -824,10 +841,10 @@ void CImplGenerator::generate()
 //--------------------------------------
 
 
-PascalGenerator::PascalGenerator(const string& filename, Parser* parser, const string& unitName,
-		const std::string& additionalUses, const std::string& interfaceFile,
+PascalGenerator::PascalGenerator(const string& filename, const string& prefix, Parser* parser,
+		const string& unitName, const std::string& additionalUses, const std::string& interfaceFile,
 		const std::string& implementationFile, const std::string& exceptionClass)
-	: FileGenerator(filename),
+	: FileGenerator(filename, prefix),
 	  parser(parser),
 	  unitName(unitName),
 	  additionalUses(additionalUses),
@@ -987,7 +1004,7 @@ void PascalGenerator::generate()
 			fprintf(out, "\t\tconst %s = %s(%s);\n",
 				constant->name.c_str(),
 				convertType(constant->type).c_str(),
-				constant->expr->generate(LANGUAGE_PASCAL).c_str());
+				constant->expr->generate(LANGUAGE_PASCAL, prefix).c_str());
 		}
 
 		fprintf(out, "\n");

@@ -41,10 +41,10 @@ class CalcPolice
 {
 public:
 #ifdef NO_VIRTUAL_STATUS
-	class Status : public calc::StatusImpl<Status>
+	class IStatus : public calc::IStatusImpl<IStatus>
 	{
 	public:
-		Status(calc::Status* next)
+		IStatus(calc::IStatus* next)
 			: next(next),
 			  dirty(false)
 		{
@@ -66,31 +66,31 @@ public:
 			next->setCode(code);
 		}
 
-		operator calc::Status*()
+		operator calc::IStatus*()
 		{
 			return this;
 		}
 
 	public:
-		calc::Status* next;
+		calc::IStatus* next;
 		bool dirty;
 	};
 
-	static void checkException(Status& status);
+	static void checkException(IStatus& status);
 #else
-	typedef calc::Status* Status;
-	static void checkException(calc::Status* status);
+	typedef calc::IStatus* IStatus;
+	static void checkException(calc::IStatus* status);
 #endif
 
-	static void catchException(calc::Status* status);
+	static void catchException(calc::IStatus* status);
 
 	template <unsigned V, typename T>
-	static inline bool checkVersion(T* o, calc::Status* status)
+	static inline bool checkVersion(T* o, calc::IStatus* status)
 	{
 		if (o->cloopVTable->version >= V)
 			return true;
 
-		status->setCode(Status::ERROR_1);
+		status->setCode(calc::IStatus::ERROR_1);
 		return false;
 	}
 };
@@ -99,7 +99,7 @@ public:
 class CalcException
 {
 public:
-	CalcException(calc::Status* status)
+	CalcException(calc::IStatus* status)
 		: code(status ? status->getCode() : -1)
 	{
 	}
@@ -115,13 +115,13 @@ public:
 
 
 #ifdef NO_VIRTUAL_STATUS
-void CalcPolice::checkException(CalcPolice::Status& status)
+void CalcPolice::checkException(CalcPolice::IStatus& status)
 {
 	if (status.dirty && status.next->getCode() != 0)
 		throw CalcException(status.next);
 }
 #else
-void CalcPolice::checkException(calc::Status* status)
+void CalcPolice::checkException(calc::IStatus* status)
 {
 	assert(status);
 
@@ -131,7 +131,7 @@ void CalcPolice::checkException(calc::Status* status)
 #endif
 
 
-void CalcPolice::catchException(calc::Status* status)
+void CalcPolice::catchException(calc::IStatus* status)
 {
 	try
 	{
@@ -154,7 +154,7 @@ void CalcPolice::catchException(calc::Status* status)
 // StatusImpl
 
 
-class StatusImpl : public calc::StatusImpl<StatusImpl>
+class StatusImpl : public calc::IStatusImpl<StatusImpl>
 {
 public:
 	StatusImpl()
@@ -187,7 +187,7 @@ private:
 // CalculatorImpl
 
 
-class CalculatorImpl : public calc::CalculatorImpl<CalculatorImpl>
+class CalculatorImpl : public calc::ICalculatorImpl<CalculatorImpl>
 {
 public:
 	CalculatorImpl()
@@ -200,10 +200,10 @@ public:
 		delete this;
 	}
 
-	virtual int sum(calc::Status* status, int n1, int n2) const
+	virtual int sum(calc::IStatus* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
-			throw CalcException(calc::Status::ERROR_1);
+			throw CalcException(calc::IStatus::ERROR_1);
 		else
 			return n1 + n2;
 	}
@@ -218,7 +218,7 @@ public:
 		memory = n;
 	}
 
-	virtual void sumAndStore(calc::Status* status, int n1, int n2)
+	virtual void sumAndStore(calc::IStatus* status, int n1, int n2)
 	{
 		setMemory(sum(status, n1, n2));
 	}
@@ -233,7 +233,7 @@ private:
 // Calculator2Impl
 
 
-class Calculator2Impl : public calc::Calculator2Impl<Calculator2Impl>
+class Calculator2Impl : public calc::ICalculator2Impl<Calculator2Impl>
 {
 public:
 	Calculator2Impl()
@@ -246,10 +246,10 @@ public:
 		delete this;
 	}
 
-	virtual int sum(calc::Status* status, int n1, int n2) const
+	virtual int sum(calc::IStatus* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
-			throw CalcException(calc::Status::ERROR_1);
+			throw CalcException(calc::IStatus::ERROR_1);
 		else
 			return n1 + n2;
 	}
@@ -264,17 +264,17 @@ public:
 		memory = n;
 	}
 
-	virtual void sumAndStore(calc::Status* status, int n1, int n2)
+	virtual void sumAndStore(calc::IStatus* status, int n1, int n2)
 	{
 		setMemory(sum(status, n1, n2));
 	}
 
-	virtual int multiply(calc::Status* status, int n1, int n2) const
+	virtual int multiply(calc::IStatus* status, int n1, int n2) const
 	{
 		return n1 * n2;
 	}
 
-	virtual void copyMemory(const calc::Calculator* calculator)
+	virtual void copyMemory(const calc::ICalculator* calculator)
 	{
 		setMemory(calculator->getMemory());
 	}
@@ -294,10 +294,10 @@ private:
 // BrokenCalculatorImpl
 
 
-class BrokenCalculatorImpl : public calc::CalculatorBaseImpl<BrokenCalculatorImpl, CalculatorImpl>
+class BrokenCalculatorImpl : public calc::ICalculatorBaseImpl<BrokenCalculatorImpl, CalculatorImpl>
 {
 public:
-	virtual int sum(calc::Status* status, int n1, int n2) const
+	virtual int sum(calc::IStatus* status, int n1, int n2) const
 	{
 		return CalculatorImpl::sum(status, n1, n2) + 1;
 	}
@@ -309,7 +309,7 @@ public:
 // FactoryImpl
 
 
-class FactoryImpl : public calc::FactoryImpl<FactoryImpl>
+class FactoryImpl : public calc::IFactoryImpl<FactoryImpl>
 {
 public:
 	virtual void dispose()
@@ -317,22 +317,22 @@ public:
 		delete this;
 	}
 
-	virtual calc::Status* createStatus()
+	virtual calc::IStatus* createStatus()
 	{
 		return new StatusImpl();
 	}
 
-	virtual calc::Calculator* createCalculator(calc::Status* status)
+	virtual calc::ICalculator* createCalculator(calc::IStatus* status)
 	{
 		return new CalculatorImpl();
 	}
 
-	virtual calc::Calculator2* createCalculator2(calc::Status* status)
+	virtual calc::ICalculator2* createCalculator2(calc::IStatus* status)
 	{
 		return new Calculator2Impl();
 	}
 
-	virtual calc::Calculator* createBrokenCalculator(calc::Status* status)
+	virtual calc::ICalculator* createBrokenCalculator(calc::IStatus* status)
 	{
 		return new BrokenCalculatorImpl();
 	}
@@ -344,7 +344,7 @@ public:
 // Library entry point
 
 
-extern "C" DLL_EXPORT calc::Factory* createFactory()
+extern "C" DLL_EXPORT calc::IFactory* createFactory()
 {
 	return new FactoryImpl();
 }
@@ -353,12 +353,12 @@ extern "C" DLL_EXPORT calc::Factory* createFactory()
 //--------------------------------------
 
 
-static void test(calc::Factory* (*createFactory)())
+static void test(calc::IFactory* (*createFactory)())
 {
-	calc::Factory* factory = createFactory();
+	calc::IFactory* factory = createFactory();
 	StatusImpl status;
 
-	calc::Calculator* calculator = factory->createCalculator(&status);
+	calc::ICalculator* calculator = factory->createCalculator(&status);
 
 	calculator->sumAndStore(&status, 1, 22);
 	printf("%d\n", calculator->getMemory());	// 23
@@ -366,7 +366,7 @@ static void test(calc::Factory* (*createFactory)())
 	calculator->setMemory(calculator->sum(&status, 2, 33));
 	printf("%d\n", calculator->getMemory());	// 35
 
-	calc::Calculator2* calculator2 = factory->createCalculator2(&status);
+	calc::ICalculator2* calculator2 = factory->createCalculator2(&status);
 
 	calculator2->copyMemory(calculator);
 	printf("%d\n", calculator2->getMemory());	// 35
@@ -431,7 +431,7 @@ static void loadSymbol(void* library, const char* name, T& symbol)
 
 int main(int argc, char* argv[])
 {
-	calc::Factory* (*createFactory)();
+	calc::IFactory* (*createFactory)();
 
 #ifdef WIN32
 	HMODULE library = LoadLibrary(argv[1]);

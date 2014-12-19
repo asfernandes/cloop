@@ -48,23 +48,24 @@ protected:
 class FileGenerator : public Generator
 {
 public:
-	FileGenerator(const std::string& filename);
+	FileGenerator(const std::string& filename, const std::string& prefix);
 	virtual ~FileGenerator();
 
 protected:
 	FILE* out;
+	std::string prefix;
 };
 
 
 class CBasedGenerator : public FileGenerator
 {
 protected:
-	CBasedGenerator(const std::string& filename, bool cPlusPlus);
+	CBasedGenerator(const std::string& filename, const std::string& prefix, bool cPlusPlus);
 
 protected:
 	std::string convertType(const Type& type);
 
-private:
+protected:
 	bool cPlusPlus;
 };
 
@@ -72,8 +73,8 @@ private:
 class CppGenerator : public CBasedGenerator
 {
 public:
-	CppGenerator(const std::string& filename, Parser* parser, const std::string& headerGuard,
-		const std::string& className);
+	CppGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+		const std::string& headerGuard, const std::string& className);
 
 public:
 	virtual void generate();
@@ -88,7 +89,8 @@ private:
 class CHeaderGenerator : public CBasedGenerator
 {
 public:
-	CHeaderGenerator(const std::string& filename, Parser* parser, const std::string& headerGuard);
+	CHeaderGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+		const std::string& headerGuard);
 
 public:
 	virtual void generate();
@@ -102,7 +104,8 @@ private:
 class CImplGenerator : public CBasedGenerator
 {
 public:
-	CImplGenerator(const std::string& filename, Parser* parser, const std::string& includeFilename);
+	CImplGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+		const std::string& includeFilename);
 
 public:
 	virtual void generate();
@@ -116,9 +119,10 @@ private:
 class PascalGenerator : public FileGenerator
 {
 public:
-	PascalGenerator(const std::string& filename, Parser* parser, const std::string& unitName,
-		const std::string& additionalUses, const std::string& interfaceFile,
-		const std::string& implementationFile, const std::string& exceptionClass);
+	PascalGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+		const std::string& unitName, const std::string& additionalUses,
+		const std::string& interfaceFile, const std::string& implementationFile,
+		const std::string& exceptionClass);
 
 public:
 	virtual void generate();

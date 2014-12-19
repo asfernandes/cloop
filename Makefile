@@ -88,7 +88,7 @@ $(SRC_DIR)/tests/test1/CalcCApi.c: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Inter
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl c-impl $@ CalcCApi.h
 
 $(SRC_DIR)/tests/test1/CalcCppApi.h: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
-	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl c++ $@ CALC_CPP_API_H CalcApi
+	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl c++ $@ CALC_CPP_API_H CalcApi I
 
 $(SRC_DIR)/tests/test1/CalcPascalApi.pas: $(BIN_DIR)/cloop \
 	$(SRC_DIR)/tests/test1/Interface.idl \

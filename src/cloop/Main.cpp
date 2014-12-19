@@ -57,13 +57,14 @@ static void run(int argc, const char* argv[])
 
 	if (outFormat == "c++")
 	{
-		if (argc < 6)
+		if (argc < 7)
 			throw runtime_error("Invalid command line parameters for C++ output.");
 
 		string headerGuard(argv[4]);
 		string className(argv[5]);
+		string prefix(argv[6]);
 
-		generator.reset(new CppGenerator(outFilename, &parser, headerGuard, className));
+		generator.reset(new CppGenerator(outFilename, prefix, &parser, headerGuard, className));
 	}
 	else if (outFormat == "c-header")
 	{
@@ -71,8 +72,9 @@ static void run(int argc, const char* argv[])
 			throw runtime_error("Invalid command line parameters for C header output.");
 
 		string headerGuard(argv[4]);
+		string prefix;	//// TODO:
 
-		generator.reset(new CHeaderGenerator(outFilename, &parser, headerGuard));
+		generator.reset(new CHeaderGenerator(outFilename, prefix, &parser, headerGuard));
 	}
 	else if (outFormat == "c-impl")
 	{
@@ -80,8 +82,9 @@ static void run(int argc, const char* argv[])
 			throw runtime_error("Invalid command line parameters for C implementation output.");
 
 		string includeFilename(argv[4]);
+		string prefix;	//// TODO:
 
-		generator.reset(new CImplGenerator(outFilename, &parser, includeFilename));
+		generator.reset(new CImplGenerator(outFilename, prefix, &parser, includeFilename));
 	}
 	else if (outFormat == "pascal")
 	{
@@ -93,8 +96,9 @@ static void run(int argc, const char* argv[])
 		string interfaceFile(argc > 6 ? argv[6] : "");
 		string implementationFile(argc > 7 ? argv[7] : "");
 		string exceptionClass(argc > 8 ? argv[8] : "");
+		string prefix;	//// TODO:
 
-		generator.reset(new PascalGenerator(outFilename, &parser, unitName,
+		generator.reset(new PascalGenerator(outFilename, prefix, &parser, unitName,
 			additionalUses, interfaceFile, implementationFile, exceptionClass));
 	}
 	else

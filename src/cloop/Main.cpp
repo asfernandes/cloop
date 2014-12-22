@@ -41,12 +41,12 @@ using std::runtime_error;
 
 static void run(int argc, const char* argv[])
 {
+	if (argc < 4)
+		throw runtime_error("Invalid command line parameters.");
+
 	string inFilename(argv[1]);
 	string outFormat(argv[2]);
 	string outFilename(argv[3]);
-
-	if (argc < 4)
-		throw runtime_error("Invalid command line parameters.");
 
 	Lexer lexer(inFilename);
 

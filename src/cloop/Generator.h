@@ -74,7 +74,7 @@ class CppGenerator : public CBasedGenerator
 {
 public:
 	CppGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
-		const std::string& headerGuard, const std::string& className);
+		const std::string& headerGuard, const std::string& nameSpace);
 
 public:
 	virtual void generate();
@@ -82,7 +82,7 @@ public:
 private:
 	Parser* parser;
 	std::string headerGuard;
-	std::string className;
+	std::string nameSpace;
 };
 
 

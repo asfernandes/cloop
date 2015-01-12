@@ -128,11 +128,11 @@ string CBasedGenerator::convertType(const Type& type)
 
 
 CppGenerator::CppGenerator(const string& filename, const string& prefix, Parser* parser,
-		const string& headerGuard, const string& className)
+		const string& headerGuard, const string& nameSpace)
 	: CBasedGenerator(filename, prefix, true),
 	  parser(parser),
 	  headerGuard(headerGuard),
-	  className(className)
+	  nameSpace(nameSpace)
 {
 }
 
@@ -148,10 +148,8 @@ void CppGenerator::generate()
 	fprintf(out, "#define CLOOP_CARG\n");
 	fprintf(out, "#endif\n\n\n");
 
-	fprintf(out, "template <typename Policy>\n");
-	fprintf(out, "class %s\n", className.c_str());
+	fprintf(out, "namespace %s\n", nameSpace.c_str());
 	fprintf(out, "{\n");
-	fprintf(out, "private:\n");
 	fprintf(out, "\tclass DoNotInherit\n");
 	fprintf(out, "\t{\n");
 	fprintf(out, "\t};\n");
@@ -166,7 +164,6 @@ void CppGenerator::generate()
 	fprintf(out, "\t\t}\n");
 	fprintf(out, "\t};\n");
 	fprintf(out, "\n");
-	fprintf(out, "public:\n");
 
 	fprintf(out, "\t// Forward interfaces declarations\n\n");
 
@@ -296,8 +293,19 @@ void CppGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\n");
-			fprintf(out, "\t\t%s %s(",
+			fprintf(out, "\n\t\t");
+
+			string statusName;
+
+			if (!method->parameters.empty() &&
+				parser->exceptionInterface &&
+				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
+			{
+				statusName = method->parameters.front()->name;
+				fprintf(out, "template <typename StatusType> ");
+			}
+
+			fprintf(out, "%s %s(",
 				convertType(method->returnType).c_str(), method->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -309,38 +317,34 @@ void CppGenerator::generate()
 				if (k != method->parameters.begin())
 					fprintf(out, ", ");
 
-				fprintf(out, "%s %s",
-					convertType(parameter->type).c_str(), parameter->name.c_str());
+				if (k == method->parameters.begin() && !statusName.empty())
+					fprintf(out, "StatusType* %s", parameter->name.c_str());
+				else
+				{
+					fprintf(out, "%s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
+				}
 			}
 
 			fprintf(out, ")%s\n", (method->isConst ? " const" : ""));
 			fprintf(out, "\t\t{\n");
 
-			string statusName;
-
-			if (!method->parameters.empty() &&
-				parser->exceptionInterface &&
-				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
-			{
-				statusName = method->parameters.front()->name;
-
-				fprintf(out, "\t\t\ttypename Policy::%s%s %s2(%s);\n",
-					prefix.c_str(),
-					parser->exceptionInterface->name.c_str(),
-					statusName.c_str(),
-					statusName.c_str());
-			}
-
 			if (method->version - (interface->super ? interface->super->version : 0) != 1)
 			{
-				fprintf(out, "\t\t\tif (!Policy::template checkVersion<%u>(this, %s))\n",
-					method->version,
-					(statusName.empty() ? "0" : (statusName + "2").c_str()));
-
+				fprintf(out, "\t\t\tif (cloopVTable->version < %d)\n", method->version);
 				fprintf(out, "\t\t\t{\n");
 
 				if (!statusName.empty())
-					fprintf(out, "\t\t\t\tPolicy::checkException(%s2);\n", statusName.c_str());
+				{
+					fprintf(out,
+						"\t\t\t\tStatusType::setVersionError(%s, \"%s%s\", cloopVTable->version, %d);\n",
+						statusName.c_str(),
+						prefix.c_str(),
+						interface->name.c_str(),
+						method->version);
+
+					fprintf(out, "\t\t\t\tStatusType::checkException(%s);\n", statusName.c_str());
+				}
 
 				fprintf(out, "\t\t\t\treturn");
 
@@ -370,13 +374,6 @@ void CppGenerator::generate()
 			{
 				Parameter* parameter = *k;
 				fprintf(out, ", %s", parameter->name.c_str());
-
-				if (k == method->parameters.begin() &&
-					parser->exceptionInterface &&
-					parameter->type.token.text == parser->exceptionInterface->name)
-				{
-					fprintf(out, "2");
-				}
 			}
 
 			fprintf(out, ")");
@@ -386,7 +383,7 @@ void CppGenerator::generate()
 				parser->exceptionInterface &&
 				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
 			{
-				fprintf(out, "\t\t\tPolicy::checkException(%s2);\n",
+				fprintf(out, "\t\t\tStatusType::checkException(%s);\n",
 					method->parameters.front()->name.c_str());
 			}
 
@@ -413,7 +410,7 @@ void CppGenerator::generate()
 			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
 		fprintf(out, "\n");
-		fprintf(out, "\ttemplate <typename Name, typename Base>\n");
+		fprintf(out, "\ttemplate <typename Name, typename StatusType, typename Base>\n");
 		fprintf(out, "\tclass %s%sBaseImpl : public Base\n",
 			prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t{\n");
@@ -472,8 +469,23 @@ void CppGenerator::generate()
 						convertType(parameter->type).c_str(), parameter->name.c_str());
 				}
 
+				Parameter* exceptionParameter =
+					(!method->parameters.empty() &&
+					 parser->exceptionInterface &&
+					 method->parameters.front()->type.token.text == parser->exceptionInterface->name
+					) ? method->parameters.front() : NULL;
+
 				fprintf(out, ") throw()\n");
 				fprintf(out, "\t\t{\n");
+
+				if (exceptionParameter)
+				{
+					fprintf(out, "\t\t\tStatusType %s2(%s);\n",
+						exceptionParameter->name.c_str(),
+						exceptionParameter->name.c_str());
+					fprintf(out, "\n");
+				}
+
 				fprintf(out, "\t\t\ttry\n");
 				fprintf(out, "\t\t\t{\n");
 
@@ -495,22 +507,19 @@ void CppGenerator::generate()
 					if (k != method->parameters.begin())
 						fprintf(out, ", ");
 
-					fprintf(out, "%s", parameter->name.c_str());
+					if (parameter == exceptionParameter)
+						fprintf(out, "&%s2", parameter->name.c_str());
+					else
+						fprintf(out, "%s", parameter->name.c_str());
 				}
 
 				fprintf(out, ");\n");
 
-				Parameter* exceptionParameter =
-					(!method->parameters.empty() &&
-					 parser->exceptionInterface &&
-					 method->parameters.front()->type.token.text == parser->exceptionInterface->name
-					) ? method->parameters.front() : NULL;
-
 				fprintf(out, "\t\t\t}\n");
 				fprintf(out, "\t\t\tcatch (...)\n");
 				fprintf(out, "\t\t\t{\n");
-				fprintf(out, "\t\t\t\tPolicy::catchException(%s);\n",
-					(exceptionParameter ? exceptionParameter->name.c_str() : "0"));
+				fprintf(out, "\t\t\t\tStatusType::catchException(%s);\n",
+					(exceptionParameter ? ("&" + exceptionParameter->name + "2").c_str() : "0"));
 
 				if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
 				{
@@ -528,7 +537,7 @@ void CppGenerator::generate()
 
 		if (!interface->super)
 		{
-			fprintf(out, "\ttemplate <typename Name, typename Base = Inherit<%s%s> >\n",
+			fprintf(out, "\ttemplate <typename Name, typename StatusType, typename Base = Inherit<%s%s> >\n",
 				prefix.c_str(), interface->name.c_str());
 		}
 		else
@@ -538,7 +547,7 @@ void CppGenerator::generate()
 
 			for (Interface* p = interface->super; p; p = p->super)
 			{
-				base += prefix + p->name + "Impl<Name, Inherit<";
+				base += prefix + p->name + "Impl<Name, StatusType, Inherit<";
 				++baseCount;
 			}
 
@@ -547,10 +556,10 @@ void CppGenerator::generate()
 			while (baseCount-- > 0)
 				base += "> > ";
 
-			fprintf(out, "\ttemplate <typename Name, typename Base = %s>\n", base.c_str());
+			fprintf(out, "\ttemplate <typename Name, typename StatusType, typename Base = %s>\n", base.c_str());
 		}
 
-		fprintf(out, "\tclass %s%sImpl : public %s%sBaseImpl<Name, Base>\n",
+		fprintf(out, "\tclass %s%sImpl : public %s%sBaseImpl<Name, StatusType, Base>\n",
 			prefix.c_str(), interface->name.c_str(), prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t{\n");
 		fprintf(out, "\tprotected:\n");
@@ -571,6 +580,12 @@ void CppGenerator::generate()
 		{
 			Method* method = *j;
 
+			Parameter* exceptionParameter =
+				(!method->parameters.empty() &&
+				 parser->exceptionInterface &&
+				 method->parameters.front()->type.token.text == parser->exceptionInterface->name
+				) ? method->parameters.front() : NULL;
+
 			fprintf(out, "\t\tvirtual %s %s(",
 				convertType(method->returnType).c_str(), method->name.c_str());
 
@@ -583,8 +598,13 @@ void CppGenerator::generate()
 				if (k != method->parameters.begin())
 					fprintf(out, ", ");
 
-				fprintf(out, "%s %s",
-					convertType(parameter->type).c_str(), parameter->name.c_str());
+				if (parameter == exceptionParameter)
+					fprintf(out, "StatusType* %s", parameter->name.c_str());
+				else
+				{
+					fprintf(out, "%s %s",
+						convertType(parameter->type).c_str(), parameter->name.c_str());
+				}
 			}
 
 			fprintf(out, ")%s = 0;\n", (method->isConst ? " const" : ""));
@@ -594,31 +614,6 @@ void CppGenerator::generate()
 	}
 
 	fprintf(out, "};\n\n");
-
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
-	{
-		Interface* interface = *i;
-
-		for (vector<Constant*>::iterator j = interface->constants.begin();
-			 j != interface->constants.end();
-			 ++j)
-		{
-			Constant* constant = *j;
-
-			fprintf(out, "template <typename Policy> const %s %s<Policy>::%s%s::%s;\n",
-				convertType(constant->type).c_str(),
-				className.c_str(),
-				prefix.c_str(),
-				interface->name.c_str(),
-				constant->name.c_str());
-		}
-
-		if (!interface->constants.empty())
-			fprintf(out, "\n");
-	}
-
 	fprintf(out, "\n");
 
 	fprintf(out, "#endif\t// %s\n", headerGuard.c_str());

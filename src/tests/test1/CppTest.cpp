@@ -20,8 +20,8 @@
  */
 
 #include "CalcCppApi.h"
-#include <assert.h>
 #include <stdio.h>
+#include <assert.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -31,69 +31,10 @@
 #define DLL_EXPORT
 #endif
 
-#define NO_VIRTUAL_STATUS
 
+//--------------------------------------
 
-typedef CalcApi<class CalcPolice> calc;
-
-
-class CalcPolice
-{
-public:
-#ifdef NO_VIRTUAL_STATUS
-	class IStatus : public calc::IStatusImpl<IStatus>
-	{
-	public:
-		IStatus(calc::IStatus* next)
-			: next(next),
-			  dirty(false)
-		{
-		}
-
-		virtual void dispose()
-		{
-			delete this;
-		}
-
-		virtual int getCode() const
-		{
-			return next->getCode();
-		}
-
-		virtual void setCode(int code)
-		{
-			dirty = true;
-			next->setCode(code);
-		}
-
-		operator calc::IStatus*()
-		{
-			return this;
-		}
-
-	public:
-		calc::IStatus* next;
-		bool dirty;
-	};
-
-	static void checkException(IStatus& status);
-#else
-	typedef calc::IStatus* IStatus;
-	static void checkException(calc::IStatus* status);
-#endif
-
-	static void catchException(calc::IStatus* status);
-
-	template <unsigned V, typename T>
-	static inline bool checkVersion(T* o, calc::IStatus* status)
-	{
-		if (o->cloopVTable->version >= V)
-			return true;
-
-		status->setCode(calc::IStatus::ERROR_1);
-		return false;
-	}
-};
+// CalcException
 
 
 class CalcException
@@ -114,39 +55,69 @@ public:
 };
 
 
-#ifdef NO_VIRTUAL_STATUS
-void CalcPolice::checkException(CalcPolice::IStatus& status)
-{
-	if (status.dirty && status.next->getCode() != 0)
-		throw CalcException(status.next);
-}
-#else
-void CalcPolice::checkException(calc::IStatus* status)
-{
-	assert(status);
+//--------------------------------------
 
-	if (status->getCode() != 0)
-		throw CalcException(status);
-}
-#endif
+// StatusWrapper
 
 
-void CalcPolice::catchException(calc::IStatus* status)
+class StatusWrapper : public calc::IStatusImpl<StatusWrapper, StatusWrapper>
 {
-	try
+public:
+	StatusWrapper(calc::IStatus* delegate)
+		: delegate(delegate),
+		  code(0)
 	{
-		throw;
 	}
-	catch (const CalcException& e)
+
+	virtual void dispose()
 	{
-		assert(status);
-		status->setCode(e.code);
+		delete this;
 	}
-	catch (...)
+
+	virtual int getCode() const
 	{
-		assert(false);
+		return code;
 	}
-}
+
+	virtual void setCode(int code)
+	{
+		this->code = code;
+		delegate->setCode(code);
+	}
+
+	static void checkException(StatusWrapper* status)
+	{
+		if (status->getCode() != 0)
+			throw CalcException(status);
+	}
+
+	static void catchException(StatusWrapper* status)
+	{
+		try
+		{
+			throw;
+		}
+		catch (const CalcException& e)
+		{
+			assert(status);
+			status->setCode(e.code);
+		}
+		catch (...)
+		{
+			assert(false);
+		}
+	}
+
+	static void setVersionError(StatusWrapper* status, const char* /*interfaceName*/,
+		unsigned /*currentVersion*/, unsigned /*expectedVersion*/)
+	{
+		status->setCode(calc::IStatus::ERROR_1);
+	}
+
+private:
+	calc::IStatus* delegate;
+	int code;
+};
 
 
 //--------------------------------------
@@ -154,7 +125,7 @@ void CalcPolice::catchException(calc::IStatus* status)
 // StatusImpl
 
 
-class StatusImpl : public calc::IStatusImpl<StatusImpl>
+class StatusImpl : public calc::IStatusImpl<StatusImpl, StatusWrapper>
 {
 public:
 	StatusImpl()
@@ -187,7 +158,7 @@ private:
 // CalculatorImpl
 
 
-class CalculatorImpl : public calc::ICalculatorImpl<CalculatorImpl>
+class CalculatorImpl : public calc::ICalculatorImpl<CalculatorImpl, StatusWrapper>
 {
 public:
 	CalculatorImpl()
@@ -200,7 +171,7 @@ public:
 		delete this;
 	}
 
-	virtual int sum(calc::IStatus* status, int n1, int n2) const
+	virtual int sum(StatusWrapper* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
 			throw CalcException(calc::IStatus::ERROR_1);
@@ -218,7 +189,7 @@ public:
 		memory = n;
 	}
 
-	virtual void sumAndStore(calc::IStatus* status, int n1, int n2)
+	virtual void sumAndStore(StatusWrapper* status, int n1, int n2)
 	{
 		setMemory(sum(status, n1, n2));
 	}
@@ -233,7 +204,7 @@ private:
 // Calculator2Impl
 
 
-class Calculator2Impl : public calc::ICalculator2Impl<Calculator2Impl>
+class Calculator2Impl : public calc::ICalculator2Impl<Calculator2Impl, StatusWrapper>
 {
 public:
 	Calculator2Impl()
@@ -246,7 +217,7 @@ public:
 		delete this;
 	}
 
-	virtual int sum(calc::IStatus* status, int n1, int n2) const
+	virtual int sum(StatusWrapper* status, int n1, int n2) const
 	{
 		if (n1 + n2 > 1000)
 			throw CalcException(calc::IStatus::ERROR_1);
@@ -264,12 +235,12 @@ public:
 		memory = n;
 	}
 
-	virtual void sumAndStore(calc::IStatus* status, int n1, int n2)
+	virtual void sumAndStore(StatusWrapper* status, int n1, int n2)
 	{
 		setMemory(sum(status, n1, n2));
 	}
 
-	virtual int multiply(calc::IStatus* status, int n1, int n2) const
+	virtual int multiply(StatusWrapper* status, int n1, int n2) const
 	{
 		return n1 * n2;
 	}
@@ -294,10 +265,11 @@ private:
 // BrokenCalculatorImpl
 
 
-class BrokenCalculatorImpl : public calc::ICalculatorBaseImpl<BrokenCalculatorImpl, CalculatorImpl>
+class BrokenCalculatorImpl :
+	public calc::ICalculatorBaseImpl<BrokenCalculatorImpl, StatusWrapper, CalculatorImpl>
 {
 public:
-	virtual int sum(calc::IStatus* status, int n1, int n2) const
+	virtual int sum(StatusWrapper* status, int n1, int n2) const
 	{
 		return CalculatorImpl::sum(status, n1, n2) + 1;
 	}
@@ -309,7 +281,7 @@ public:
 // FactoryImpl
 
 
-class FactoryImpl : public calc::IFactoryImpl<FactoryImpl>
+class FactoryImpl : public calc::IFactoryImpl<FactoryImpl, StatusWrapper>
 {
 public:
 	virtual void dispose()
@@ -322,17 +294,17 @@ public:
 		return new StatusImpl();
 	}
 
-	virtual calc::ICalculator* createCalculator(calc::IStatus* status)
+	virtual calc::ICalculator* createCalculator(StatusWrapper* /*status*/)
 	{
 		return new CalculatorImpl();
 	}
 
-	virtual calc::ICalculator2* createCalculator2(calc::IStatus* status)
+	virtual calc::ICalculator2* createCalculator2(StatusWrapper* /*status*/)
 	{
 		return new Calculator2Impl();
 	}
 
-	virtual calc::ICalculator* createBrokenCalculator(calc::IStatus* status)
+	virtual calc::ICalculator* createBrokenCalculator(StatusWrapper* /*status*/)
 	{
 		return new BrokenCalculatorImpl();
 	}
@@ -356,7 +328,8 @@ extern "C" DLL_EXPORT calc::IFactory* createFactory()
 static void test(calc::IFactory* (*createFactory)())
 {
 	calc::IFactory* factory = createFactory();
-	StatusImpl status;
+	StatusImpl statusImpl;
+	StatusWrapper status(&statusImpl);
 
 	calc::ICalculator* calculator = factory->createCalculator(&status);
 

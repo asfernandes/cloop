@@ -3,8 +3,6 @@
 #ifndef CALC_CPP_API_H
 #define CALC_CPP_API_H
 
-#include <stdint.h>
-
 #ifndef CLOOP_CARG
 #define CLOOP_CARG
 #endif

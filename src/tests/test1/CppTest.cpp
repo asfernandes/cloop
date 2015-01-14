@@ -19,6 +19,7 @@
  *  Contributor(s): ______________________________________.
  */
 
+#include <stdint.h>
 #include "CalcCppApi.h"
 #include <stdio.h>
 #include <assert.h>

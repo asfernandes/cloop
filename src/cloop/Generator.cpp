@@ -142,7 +142,7 @@ void CppGenerator::generate()
 
 	fprintf(out, "#ifndef %s\n", headerGuard.c_str());
 	fprintf(out, "#define %s\n\n", headerGuard.c_str());
-	fprintf(out, "#include <stdint.h>\n\n");
+	///fprintf(out, "#include <stdint.h>\n\n");
 
 	fprintf(out, "#ifndef CLOOP_CARG\n");
 	fprintf(out, "#define CLOOP_CARG\n");

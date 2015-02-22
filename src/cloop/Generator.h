@@ -63,7 +63,7 @@ protected:
 	CBasedGenerator(const std::string& filename, const std::string& prefix, bool cPlusPlus);
 
 protected:
-	std::string convertType(const Type& type);
+	std::string convertType(const TypeRef& typeRef);
 
 protected:
 	bool cPlusPlus;
@@ -129,7 +129,7 @@ public:
 
 private:
 	std::string convertParameter(const Parameter& parameter);
-	std::string convertType(const Type& type);
+	std::string convertType(const TypeRef& typeRef);
 
 	void insertFile(const std::string& filename);
 

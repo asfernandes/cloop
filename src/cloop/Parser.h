@@ -31,20 +31,45 @@
 class Expr;
 
 
-class Type
+class BaseType
 {
 public:
-	Type()
+	enum Type
+	{
+		TYPE_INTERFACE,
+		TYPE_STRUCT
+	};
+
+protected:
+	BaseType(Type type)
+		: type(type)
+	{
+	}
+
+	virtual ~BaseType()
+	{
+	}
+
+public:
+	Type type;
+	std::string name;
+};
+
+
+class TypeRef
+{
+public:
+	TypeRef()
 		: isConst(false),
 		  isPointer(false),
-		  isStruct(false)
+		  type(BaseType::TYPE_INTERFACE)
 	{
 	}
 
 	Token token;
 	bool isConst;
 	bool isPointer;
-	bool isStruct;
+	BaseType::Type type;
 };
 
 
@@ -52,7 +77,7 @@ class Parameter
 {
 public:
 	std::string name;
-	Type type;
+	TypeRef typeRef;
 };
 
 
@@ -60,7 +85,7 @@ class Constant
 {
 public:
 	std::string name;
-	Type type;
+	TypeRef typeRef;
 	Expr* expr;
 };
 
@@ -76,7 +101,7 @@ public:
 	}
 
 	std::string name;
-	Type returnType;
+	TypeRef returnTypeRef;
 	std::vector<Parameter*> parameters;
 	Expr* notImplementedExpr;
 	unsigned version;
@@ -84,16 +109,17 @@ public:
 };
 
 
-class Interface
+class Interface : public BaseType
 {
 public:
 	Interface()
-		: super(NULL),
+		: BaseType(TYPE_INTERFACE),
+		  super(NULL),
 		  version(1)
 	{
 	}
 
-	std::string name;
+public:
 	Interface* super;
 	std::vector<Constant*> constants;
 	std::vector<Method*> methods;
@@ -101,10 +127,13 @@ public:
 };
 
 
-class Struct
+class Struct : public BaseType
 {
 public:
-	std::string name;
+	Struct()
+		: BaseType(TYPE_STRUCT)
+	{
+	}
 };
 
 
@@ -117,8 +146,8 @@ public:
 	void parseInterface(bool exception);
 	void parseStruct();
 	void parseItem();
-	void parseConstant(const Type& type, const std::string& name);
-	void parseMethod(const Type& returnType, const std::string& name, Expr* notImplementedExpr);
+	void parseConstant(const TypeRef& typeRef, const std::string& name);
+	void parseMethod(const TypeRef& returnTypeRef, const std::string& name, Expr* notImplementedExpr);
 
 	Expr* parseExpr();
 	Expr* parseLogicalExpr();
@@ -126,19 +155,18 @@ public:
 	Expr* parsePrimaryExpr();
 
 private:
-	void checkType(Type& type);
+	void checkType(TypeRef& typeRef);
 
 	Token& getToken(Token& token, Token::Type expected, bool allowEof = false);
 
-	Type parseType();
+	TypeRef parseTypeRef();
 
 	void syntaxError(const Token& token);
 	void error(const Token& token, const std::string& msg);
 
 public:
 	std::vector<Interface*> interfaces;
-	std::map<std::string, Interface*> interfacesByName;
-	std::map<std::string, Struct*> structsByName;
+	std::map<std::string, BaseType*> typesByName;
 	Interface* exceptionInterface;
 
 private:

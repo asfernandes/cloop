@@ -94,14 +94,14 @@ void Parser::parse()
 		{
 			Method* method = *j;
 
-			checkType(method->returnType);
+			checkType(method->returnTypeRef);
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
 				 ++k)
 			{
 				Parameter* parameter = *k;
-				checkType(parameter->type);
+				checkType(parameter->typeRef);
 			}
 		}
 	}
@@ -113,7 +113,7 @@ void Parser::parseInterface(bool exception)
 	interfaces.push_back(interface);
 
 	interface->name = getToken(token, Token::TYPE_IDENTIFIER).text;
-	interfacesByName.insert(pair<string, Interface*>(interface->name, interface));
+	typesByName.insert(pair<string, BaseType*>(interface->name, interface));
 
 	if (exception)
 		exceptionInterface = interface;
@@ -121,12 +121,12 @@ void Parser::parseInterface(bool exception)
 	if (lexer->getToken(token).type == TOKEN(':'))
 	{
 		string superName = getToken(token, Token::TYPE_IDENTIFIER).text;
-		map<string, Interface*>::iterator it = interfacesByName.find(superName);
+		map<string, BaseType*>::iterator it = typesByName.find(superName);
 
-		if (it == interfacesByName.end())
+		if (it == typesByName.end() || it->second->type != BaseType::TYPE_INTERFACE)
 			error(token, string("Super interface '") + superName + "' not found.");
 
-		interface->super = it->second;
+		interface->super = static_cast<Interface*>(it->second);
 		interface->version = interface->super->version + 1;
 	}
 	else
@@ -153,7 +153,7 @@ void Parser::parseStruct()
 	Struct* ztruct = new Struct();
 
 	ztruct->name = getToken(token, Token::TYPE_IDENTIFIER).text;
-	structsByName.insert(pair<string, Struct*>(ztruct->name, ztruct));
+	typesByName.insert(pair<string, BaseType*>(ztruct->name, ztruct));
 
 	getToken(token, TOKEN(';'));
 }
@@ -175,15 +175,15 @@ void Parser::parseItem()
 	else
 		lexer->pushToken(token);
 
-	Type type(parseType());
+	TypeRef typeRef(parseTypeRef());
 	string name(getToken(token, Token::TYPE_IDENTIFIER).text);
 
-	if (!notImplementedExpr && type.isConst)
+	if (!notImplementedExpr && typeRef.isConst)
 	{
 		if (lexer->getToken(token).type == TOKEN('='))
 		{
-			type.isConst = false;
-			parseConstant(type, name);
+			typeRef.isConst = false;
+			parseConstant(typeRef, name);
 			return;
 		}
 		else
@@ -191,27 +191,27 @@ void Parser::parseItem()
 	}
 
 	getToken(token, TOKEN('('));
-	parseMethod(type, name, notImplementedExpr);
+	parseMethod(typeRef, name, notImplementedExpr);
 }
 
-void Parser::parseConstant(const Type& type, const string& name)
+void Parser::parseConstant(const TypeRef& typeRef, const string& name)
 {
 	Constant* constant = new Constant();
 	interface->constants.push_back(constant);
 
-	constant->type = type;
+	constant->typeRef = typeRef;
 	constant->name = name;
 	constant->expr = parseExpr();
 
 	getToken(token, TOKEN(';'));
 }
 
-void Parser::parseMethod(const Type& returnType, const string& name, Expr* notImplementedExpr)
+void Parser::parseMethod(const TypeRef& returnTypeRef, const string& name, Expr* notImplementedExpr)
 {
 	Method* method = new Method();
 	interface->methods.push_back(method);
 
-	method->returnType = returnType;
+	method->returnTypeRef = returnTypeRef;
 	method->name = name;
 	method->version = interface->version;
 	method->notImplementedExpr = notImplementedExpr;
@@ -225,7 +225,7 @@ void Parser::parseMethod(const Type& returnType, const string& name, Expr* notIm
 			Parameter* parameter = new Parameter();
 			method->parameters.push_back(parameter);
 
-			parameter->type = parseType();
+			parameter->typeRef = parseTypeRef();
 			parameter->name = getToken(token, Token::TYPE_IDENTIFIER).text;
 
 			lexer->getToken(token);
@@ -304,12 +304,12 @@ Expr* Parser::parsePrimaryExpr()
 			if (lexer->getToken(token).type == Token::TYPE_DOUBLE_COLON)
 			{
 				getToken(token, Token::TYPE_IDENTIFIER);
-				map<string, Interface*>::iterator it = interfacesByName.find(text);
+				map<string, BaseType*>::iterator it = typesByName.find(text);
 
-				if (it == interfacesByName.end())
+				if (it == typesByName.end() || it->second->type != BaseType::TYPE_INTERFACE)
 					error(token, string("Interface '") + text + "' not found.");
 
-				return new ConstantExpr(it->second, token.text);
+				return new ConstantExpr(static_cast<Interface*>(it->second), token.text);
 			}
 			else
 			{
@@ -324,17 +324,16 @@ Expr* Parser::parsePrimaryExpr()
 	}
 }
 
-void Parser::checkType(Type& type)
+void Parser::checkType(TypeRef& typeRef)
 {
-	if (type.token.type == Token::TYPE_IDENTIFIER)
+	if (typeRef.token.type == Token::TYPE_IDENTIFIER)
 	{
-		if (interfacesByName.find(type.token.text) == interfacesByName.end())
-		{
-			if (structsByName.find(type.token.text) == structsByName.end())
-				error(type.token, string("Interface/struct '") + type.token.text + "' not found.");
-			else
-				type.isStruct = true;
-		}
+		map<string, BaseType*>::iterator it = typesByName.find(typeRef.token.text);
+
+		if (it != typesByName.end())
+			typeRef.type = it->second->type;
+		else
+			error(typeRef.token, string("Interface/struct '") + typeRef.token.text + "' not found.");
 	}
 }
 
@@ -348,18 +347,18 @@ Token& Parser::getToken(Token& token, Token::Type expected, bool allowEof)
 	return token;
 }
 
-Type Parser::parseType()
+TypeRef Parser::parseTypeRef()
 {
-	Type type;
-	lexer->getToken(type.token);
+	TypeRef typeRef;
+	lexer->getToken(typeRef.token);
 
-	if (type.token.type == Token::TYPE_CONST)
+	if (typeRef.token.type == Token::TYPE_CONST)
 	{
-		type.isConst = true;
-		lexer->getToken(type.token);
+		typeRef.isConst = true;
+		lexer->getToken(typeRef.token);
 	}
 
-	switch (type.token.type)
+	switch (typeRef.token.type)
 	{
 		case Token::TYPE_VOID:
 		case Token::TYPE_BOOLEAN:
@@ -374,19 +373,19 @@ Type Parser::parseType()
 			break;
 
 		default:
-			error(type.token, string("Syntax error at '") +
-				type.token.text + "'. Expected a type.");
+			error(typeRef.token, string("Syntax error at '") +
+				typeRef.token.text + "'. Expected a type.");
 			break;
 	}
 
 	Token token2;
 	lexer->getToken(token2);
 	if (token2.type == TOKEN('*'))
-		type.isPointer = true;
+		typeRef.isPointer = true;
 	else
 		lexer->pushToken(token2);
 
-	return type;
+	return typeRef;
 }
 
 void Parser::syntaxError(const Token& token)

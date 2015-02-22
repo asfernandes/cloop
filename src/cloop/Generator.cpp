@@ -66,11 +66,11 @@ CBasedGenerator::CBasedGenerator(const string& filename, const string& prefix, b
 {
 }
 
-string CBasedGenerator::convertType(const Type& type)
+string CBasedGenerator::convertType(const TypeRef& typeRef)
 {
-	string ret(type.isConst ? "const " : "");
+	string ret(typeRef.isConst ? "const " : "");
 
-	switch (type.token.type)
+	switch (typeRef.token.type)
 	{
 		case Token::TYPE_BOOLEAN:
 			ret += "FB_BOOLEAN";	// seems to be more portable than bool, specially thinking on pointers
@@ -106,18 +106,18 @@ string CBasedGenerator::convertType(const Type& type)
 
 		case Token::TYPE_IDENTIFIER:
 			ret += string(cPlusPlus ? "" : "struct ") +
-				(type.isStruct ? "" : prefix) + type.token.text;
+				(typeRef.type == BaseType::TYPE_STRUCT ? "" : prefix) + typeRef.token.text;
 
-			if (!type.isStruct)
+			if (typeRef.type == BaseType::TYPE_INTERFACE)
 				ret += "*";
 			break;
 
 		default:
-			ret += type.token.text;
+			ret += typeRef.token.text;
 			break;
 	}
 
-	if (type.isPointer)
+	if (typeRef.isPointer)
 		ret += "*";
 
 	return ret;
@@ -223,7 +223,7 @@ void CppGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "\t\t\t%s (CLOOP_CARG *%s)(%s%s%s* self",
-				convertType(method->returnType).c_str(),
+				convertType(method->returnTypeRef).c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
 				prefix.c_str(),
@@ -236,7 +236,7 @@ void CppGenerator::generate()
 				Parameter* parameter = *k;
 
 				fprintf(out, ", %s %s",
-					convertType(parameter->type).c_str(), parameter->name.c_str());
+					convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 			}
 
 			fprintf(out, ") throw();\n");
@@ -282,7 +282,7 @@ void CppGenerator::generate()
 			Constant* constant = *j;
 
 			fprintf(out, "\t\tstatic const %s %s = %s;\n",
-				convertType(constant->type).c_str(),
+				convertType(constant->typeRef).c_str(),
 				constant->name.c_str(),
 				constant->expr->generate(LANGUAGE_CPP, prefix).c_str());
 		}
@@ -299,14 +299,14 @@ void CppGenerator::generate()
 
 			if (!method->parameters.empty() &&
 				parser->exceptionInterface &&
-				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
+				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name)
 			{
 				statusName = method->parameters.front()->name;
 				fprintf(out, "template <typename StatusType> ");
 			}
 
 			fprintf(out, "%s %s(",
-				convertType(method->returnType).c_str(), method->name.c_str());
+				convertType(method->returnTypeRef).c_str(), method->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -322,7 +322,7 @@ void CppGenerator::generate()
 				else
 				{
 					fprintf(out, "%s %s",
-						convertType(parameter->type).c_str(), parameter->name.c_str());
+						convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 				}
 			}
 
@@ -348,7 +348,8 @@ void CppGenerator::generate()
 
 				fprintf(out, "\t\t\t\treturn");
 
-				if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+				if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+					method->returnTypeRef.isPointer)
 				{
 					fprintf(out, " %s",
 						(method->notImplementedExpr ?
@@ -362,8 +363,11 @@ void CppGenerator::generate()
 
 			fprintf(out, "\t\t\t");
 
-			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
-				fprintf(out, "%s ret = ", convertType(method->returnType).c_str());
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
+				fprintf(out, "%s ret = ", convertType(method->returnTypeRef).c_str());
+			}
 
 			fprintf(out, "static_cast<VTable*>(this->cloopVTable)->%s(this",
 				method->name.c_str());
@@ -381,14 +385,17 @@ void CppGenerator::generate()
 
 			if (!method->parameters.empty() &&
 				parser->exceptionInterface &&
-				method->parameters.front()->type.token.text == parser->exceptionInterface->name)
+				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name)
 			{
 				fprintf(out, "\t\t\tStatusType::checkException(%s);\n",
 					method->parameters.front()->name.c_str());
 			}
 
-			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
 				fprintf(out, "\t\t\treturn ret;\n");
+			}
 
 			fprintf(out, "\t\t}\n");
 		}
@@ -453,7 +460,7 @@ void CppGenerator::generate()
 
 				fprintf(out, "\n");
 				fprintf(out, "\t\tstatic %s CLOOP_CARG cloop%sDispatcher(%s%s%s* self",
-					convertType(method->returnType).c_str(),
+					convertType(method->returnTypeRef).c_str(),
 					method->name.c_str(),
 					(method->isConst ? "const " : ""),
 					prefix.c_str(),
@@ -466,13 +473,13 @@ void CppGenerator::generate()
 					Parameter* parameter = *k;
 
 					fprintf(out, ", %s %s",
-						convertType(parameter->type).c_str(), parameter->name.c_str());
+						convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 				}
 
 				Parameter* exceptionParameter =
 					(!method->parameters.empty() &&
 					 parser->exceptionInterface &&
-					 method->parameters.front()->type.token.text == parser->exceptionInterface->name
+					 method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name
 					) ? method->parameters.front() : NULL;
 
 				fprintf(out, ") throw()\n");
@@ -491,8 +498,11 @@ void CppGenerator::generate()
 
 				fprintf(out, "\t\t\t\t");
 
-				if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+				if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+					method->returnTypeRef.isPointer)
+				{
 					fprintf(out, "return ");
+				}
 
 				fprintf(out, "static_cast<%sName*>(self)->Name::%s(",
 					(method->isConst ? "const " : ""),
@@ -521,10 +531,11 @@ void CppGenerator::generate()
 				fprintf(out, "\t\t\t\tStatusType::catchException(%s);\n",
 					(exceptionParameter ? ("&" + exceptionParameter->name + "2").c_str() : "0"));
 
-				if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+				if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+					method->returnTypeRef.isPointer)
 				{
 					fprintf(out, "\t\t\t\treturn static_cast<%s>(0);\n",
-						convertType(method->returnType).c_str());
+						convertType(method->returnTypeRef).c_str());
 				}
 
 				fprintf(out, "\t\t\t}\n");
@@ -583,11 +594,11 @@ void CppGenerator::generate()
 			Parameter* exceptionParameter =
 				(!method->parameters.empty() &&
 				 parser->exceptionInterface &&
-				 method->parameters.front()->type.token.text == parser->exceptionInterface->name
+				 method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name
 				) ? method->parameters.front() : NULL;
 
 			fprintf(out, "\t\tvirtual %s %s(",
-				convertType(method->returnType).c_str(), method->name.c_str());
+				convertType(method->returnTypeRef).c_str(), method->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -603,7 +614,7 @@ void CppGenerator::generate()
 				else
 				{
 					fprintf(out, "%s %s",
-						convertType(parameter->type).c_str(), parameter->name.c_str());
+						convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 				}
 			}
 
@@ -681,7 +692,7 @@ void CHeaderGenerator::generate()
 			fprintf(out, "#define %s_%s ((%s) (%s))\n",
 				interface->name.c_str(),
 				constant->name.c_str(),
-				convertType(constant->type).c_str(),
+				convertType(constant->typeRef).c_str(),
 				constant->expr->generate(LANGUAGE_C, prefix).c_str());
 		}
 
@@ -700,7 +711,7 @@ void CHeaderGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "\t%s (*%s)(%sstruct %s* self",
-				convertType(method->returnType).c_str(),
+				convertType(method->returnTypeRef).c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
 				interface->name.c_str());
@@ -711,7 +722,7 @@ void CHeaderGenerator::generate()
 			{
 				Parameter* parameter = *k;
 
-				fprintf(out, ", %s %s", convertType(parameter->type).c_str(),
+				fprintf(out, ", %s %s", convertType(parameter->typeRef).c_str(),
 					parameter->name.c_str());
 			}
 
@@ -731,7 +742,7 @@ void CHeaderGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "CLOOP_EXTERN_C %s %s_%s(%sstruct %s* self",
-				convertType(method->returnType).c_str(),
+				convertType(method->returnTypeRef).c_str(),
 				interface->name.c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
@@ -744,7 +755,7 @@ void CHeaderGenerator::generate()
 				Parameter* parameter = *k;
 
 				fprintf(out, ", %s %s",
-					convertType(parameter->type).c_str(), parameter->name.c_str());
+					convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 			}
 
 			fprintf(out, ");\n");
@@ -791,7 +802,7 @@ void CImplGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "CLOOP_EXTERN_C %s %s_%s(%sstruct %s* self",
-				convertType(method->returnType).c_str(),
+				convertType(method->returnTypeRef).c_str(),
 				interface->name.c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
@@ -804,7 +815,7 @@ void CImplGenerator::generate()
 				Parameter* parameter = *k;
 
 				fprintf(out, ", %s %s",
-					convertType(parameter->type).c_str(), parameter->name.c_str());
+					convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 			}
 
 			fprintf(out, ")\n");
@@ -813,8 +824,11 @@ void CImplGenerator::generate()
 
 			//// TODO: checkVersion
 
-			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
 				fprintf(out, "return ");
+			}
 
 			fprintf(out, "self->vtable->%s(self", method->name.c_str());
 
@@ -888,7 +902,7 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			convertType(method->returnType);
+			convertType(method->returnTypeRef);
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -923,7 +937,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, "\t%s_%sPtr = %s(this: %s",
 				interface->name.c_str(), method->name.c_str(),
-				(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
+				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 				interface->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -936,8 +950,8 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
-				fprintf(out, ": %s", convertType(method->returnType).c_str());
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, "; cdecl;\n");
 		}
@@ -998,7 +1012,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, "\t\tconst %s = %s(%s);\n",
 				constant->name.c_str(),
-				convertType(constant->type).c_str(),
+				convertType(constant->typeRef).c_str(),
 				constant->expr->generate(LANGUAGE_PASCAL, prefix).c_str());
 		}
 
@@ -1011,7 +1025,7 @@ void PascalGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "\t\t%s %s(",
-				(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
+				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 				method->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1028,8 +1042,8 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
-				fprintf(out, ": %s", convertType(method->returnType).c_str());
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, ";\n");
 		}
@@ -1050,7 +1064,7 @@ void PascalGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "\t\t%s %s(",
-				(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
+				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 				method->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1067,8 +1081,8 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
-				fprintf(out, ": %s", convertType(method->returnType).c_str());
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, "; virtual; abstract;\n");
 		}
@@ -1093,7 +1107,7 @@ void PascalGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "%s %s.%s(",
-				(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
+				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 				interface->name.c_str(),
 				method->name.c_str());
 
@@ -1111,8 +1125,8 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
-				fprintf(out, ": %s", convertType(method->returnType).c_str());
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, ";\n");
 			fprintf(out, "begin\n");
@@ -1120,8 +1134,11 @@ void PascalGenerator::generate()
 
 			//// TODO: checkVersion
 
-			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
 				fprintf(out, "Result := ");
+			}
 
 			fprintf(out, "%sVTable(vTable).%s(Self",
 				interface->name.c_str(), method->name.c_str());
@@ -1138,7 +1155,7 @@ void PascalGenerator::generate()
 
 			if (!method->parameters.empty() &&
 				parser->exceptionInterface &&
-				method->parameters.front()->type.token.text == parser->exceptionInterface->name &&
+				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
 				!exceptionClass.empty())
 			{
 				fprintf(out, "\t%s.checkException(%s);\n", exceptionClass.c_str(),
@@ -1165,7 +1182,7 @@ void PascalGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "%s %sImpl_%sDispatcher(this: %s",
-				(method->returnType.token.type == Token::TYPE_VOID ? "procedure" : "function"),
+				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
 				interface->name.c_str(),
 				method->name.c_str(),
 				interface->name.c_str());
@@ -1181,8 +1198,8 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnType.token.type != Token::TYPE_VOID)
-				fprintf(out, ": %s", convertType(method->returnType).c_str());
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, "; cdecl;\n");
 			fprintf(out, "begin\n");
@@ -1192,8 +1209,11 @@ void PascalGenerator::generate()
 
 			fprintf(out, "\t");
 
-			if (method->returnType.token.type != Token::TYPE_VOID || method->returnType.isPointer)
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
 				fprintf(out, "Result := ");
+			}
 
 			fprintf(out, "%sImpl(this).%s(", interface->name.c_str(), method->name.c_str());
 
@@ -1216,7 +1236,7 @@ void PascalGenerator::generate()
 				Parameter* exceptionParameter =
 					(!method->parameters.empty() &&
 					 parser->exceptionInterface &&
-					 method->parameters.front()->type.token.text == parser->exceptionInterface->name
+					 method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name
 					) ? method->parameters.front() : NULL;
 
 				fprintf(out, "\texcept\n");
@@ -1290,14 +1310,14 @@ void PascalGenerator::generate()
 
 string PascalGenerator::convertParameter(const Parameter& parameter)
 {
-	return parameter.name + ": " + convertType(parameter.type);
+	return parameter.name + ": " + convertType(parameter.typeRef);
 }
 
-string PascalGenerator::convertType(const Type& type)
+string PascalGenerator::convertType(const TypeRef& typeRef)
 {
 	string name;
 
-	switch (type.token.type)
+	switch (typeRef.token.type)
 	{
 		case Token::TYPE_BOOLEAN:
 			name = "Boolean";
@@ -1332,11 +1352,11 @@ string PascalGenerator::convertType(const Type& type)
 			break;
 
 		default:
-			name = type.token.text;
+			name = typeRef.token.text;
 			break;
 	}
 
-	if (type.isPointer)
+	if (typeRef.isPointer)
 	{
 		if (pointerTypes.find(name) == pointerTypes.end())
 			pointerTypes.insert(name);

@@ -664,7 +664,7 @@ void CHeaderGenerator::generate()
 	{
 		Interface* interface = *i;
 
-		fprintf(out, "struct %s;\n", interface->name.c_str());
+		fprintf(out, "struct %s%s;\n", prefix.c_str(), interface->name.c_str());
 	}
 
 	fprintf(out, "\n\n");
@@ -680,8 +680,8 @@ void CHeaderGenerator::generate()
 		for (Interface* p = interface; p; p = p->super)
 			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
-		fprintf(out, "#define %s_VERSION %d\n\n",
-			interface->name.c_str(), (int) methods.size());
+		fprintf(out, "#define %s%s_VERSION %d\n\n",
+			prefix.c_str(), interface->name.c_str(), (int) methods.size());
 
 		for (vector<Constant*>::iterator j = interface->constants.begin();
 			 j != interface->constants.end();
@@ -689,7 +689,8 @@ void CHeaderGenerator::generate()
 		{
 			Constant* constant = *j;
 
-			fprintf(out, "#define %s_%s ((%s) (%s))\n",
+			fprintf(out, "#define %s%s_%s ((%s) (%s))\n",
+				prefix.c_str(),
 				interface->name.c_str(),
 				constant->name.c_str(),
 				convertType(constant->typeRef).c_str(),
@@ -699,9 +700,9 @@ void CHeaderGenerator::generate()
 		if (!interface->constants.empty())
 			fprintf(out, "\n");
 
-		fprintf(out, "struct %s;\n\n", interface->name.c_str());
+		fprintf(out, "struct %s%s;\n\n", prefix.c_str(), interface->name.c_str());
 
-		fprintf(out, "struct %sVTable\n", interface->name.c_str());
+		fprintf(out, "struct %s%sVTable\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "{\n");
 		fprintf(out, "\tvoid* cloopDummy[%d];\n", DUMMY_VTABLE);
 		fprintf(out, "\tuintptr_t version;\n");
@@ -710,10 +711,11 @@ void CHeaderGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t%s (*%s)(%sstruct %s* self",
+			fprintf(out, "\t%s (*%s)(%sstruct %s%s* self",
 				convertType(method->returnTypeRef).c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
+				prefix.c_str(),
 				interface->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -731,21 +733,23 @@ void CHeaderGenerator::generate()
 
 		fprintf(out, "};\n\n");
 
-		fprintf(out, "struct %s\n", interface->name.c_str());
+		fprintf(out, "struct %s%s\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "{\n");
 		fprintf(out, "\tvoid* cloopDummy[%d];\n", DUMMY_INSTANCE);
-		fprintf(out, "\tstruct %sVTable* vtable;\n", interface->name.c_str());
+		fprintf(out, "\tstruct %s%sVTable* vtable;\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "};\n\n");
 
 		for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 		{
 			Method* method = *j;
 
-			fprintf(out, "CLOOP_EXTERN_C %s %s_%s(%sstruct %s* self",
+			fprintf(out, "CLOOP_EXTERN_C %s %s%s_%s(%sstruct %s%s* self",
 				convertType(method->returnTypeRef).c_str(),
+				prefix.c_str(),
 				interface->name.c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
+				prefix.c_str(),
 				interface->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -801,11 +805,13 @@ void CImplGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "CLOOP_EXTERN_C %s %s_%s(%sstruct %s* self",
+			fprintf(out, "CLOOP_EXTERN_C %s %s%s_%s(%sstruct %s%s* self",
 				convertType(method->returnTypeRef).c_str(),
+				prefix.c_str(),
 				interface->name.c_str(),
 				method->name.c_str(),
 				(method->isConst ? "const " : ""),
+				prefix.c_str(),
 				interface->name.c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();

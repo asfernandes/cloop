@@ -34,273 +34,276 @@
 
 //--------------------------------------
 
-// StatusImpl
+// CALC_IStatusImpl
 
 
-struct StatusImpl
+struct CALC_IStatusImpl
 {
 	void* cloopDummy;
-	struct StatusVTable* vtable;
+	struct CALC_IStatusVTable* vtable;
 	int code;
 };
 
-static void StatusImpl_dispose(struct Status* self)
+static void CALC_IStatusImpl_dispose(struct CALC_IStatus* self)
 {
 	free(self);
 }
 
-static int StatusImpl_getCode(const struct Status* self)
+static int CALC_IStatusImpl_getCode(const struct CALC_IStatus* self)
 {
-	return ((struct StatusImpl*) self)->code;
+	return ((struct CALC_IStatusImpl*) self)->code;
 }
 
-static void StatusImpl_setCode(struct Status* self, int code)
+static void CALC_IStatusImpl_setCode(struct CALC_IStatus* self, int code)
 {
-	((struct StatusImpl*) self)->code = code;
+	((struct CALC_IStatusImpl*) self)->code = code;
 }
 
-struct Status* StatusImpl_create()
+struct CALC_IStatus* CALC_IStatusImpl_create()
 {
-	static struct StatusVTable vtable = {
+	static struct CALC_IStatusVTable vtable = {
 		{NULL},
-		Status_VERSION,
-		StatusImpl_dispose,
-		StatusImpl_getCode,
-		StatusImpl_setCode
+		CALC_IStatus_VERSION,
+		CALC_IStatusImpl_dispose,
+		CALC_IStatusImpl_getCode,
+		CALC_IStatusImpl_setCode
 	};
 
-	struct StatusImpl* impl = malloc(sizeof(struct StatusImpl));
+	struct CALC_IStatusImpl* impl = malloc(sizeof(struct CALC_IStatusImpl));
 	impl->vtable = &vtable;
 	impl->code = 0;
 
-	return (struct Status*) impl;
+	return (struct CALC_IStatus*) impl;
 }
 
 
 //--------------------------------------
 
-// CalculatorImpl
+// CALC_ICalculatorImpl
 
 
-struct CalculatorImpl
+struct CALC_ICalculatorImpl
 {
 	void* cloopDummy;
-	struct CalculatorVTable* vtable;
+	struct CALC_ICalculatorVTable* vtable;
 	int memory;
 };
 
-static void CalculatorImpl_dispose(struct Calculator* self)
+static void CALC_ICalculatorImpl_dispose(struct CALC_ICalculator* self)
 {
 	free(self);
 }
 
-static int CalculatorImpl_sum(const struct Calculator* self, struct Status* status, int n1, int n2)
+static int CALC_ICalculatorImpl_sum(const struct CALC_ICalculator* self,
+	struct CALC_IStatus* status, int n1, int n2)
 {
 	if (n1 + n2 > 1000)
 	{
-		Status_setCode(status, Status_ERROR_1);
+		CALC_IStatus_setCode(status, CALC_IStatus_ERROR_1);
 		return 0;
 	}
 	else
 		return n1 + n2;
 }
 
-static int CalculatorImpl_getMemory(const struct Calculator* self)
+static int CALC_ICalculatorImpl_getMemory(const struct CALC_ICalculator* self)
 {
-	return ((struct CalculatorImpl*) self)->memory;
+	return ((struct CALC_ICalculatorImpl*) self)->memory;
 }
 
-static void CalculatorImpl_setMemory(struct Calculator* self, int n)
+static void CALC_ICalculatorImpl_setMemory(struct CALC_ICalculator* self, int n)
 {
-	((struct CalculatorImpl*) self)->memory = n;
+	((struct CALC_ICalculatorImpl*) self)->memory = n;
 }
 
-static void CalculatorImpl_sumAndStore(struct Calculator* self, struct Status* status,
-	int n1, int n2)
+static void CALC_ICalculatorImpl_sumAndStore(struct CALC_ICalculator* self,
+	struct CALC_IStatus* status, int n1, int n2)
 {
-	Calculator_setMemory(self, Calculator_sum(self, status, n1, n2));
+	CALC_ICalculator_setMemory(self, CALC_ICalculator_sum(self, status, n1, n2));
 }
 
-struct Calculator* CalculatorImpl_create()
+struct CALC_ICalculator* CALC_ICalculatorImpl_create()
 {
-	static struct CalculatorVTable vtable = {
+	static struct CALC_ICalculatorVTable vtable = {
 		{NULL},
-		Calculator_VERSION,
-		CalculatorImpl_dispose,
-		CalculatorImpl_sum,
-		CalculatorImpl_getMemory,
-		CalculatorImpl_setMemory,
-		CalculatorImpl_sumAndStore
+		CALC_ICalculator_VERSION,
+		CALC_ICalculatorImpl_dispose,
+		CALC_ICalculatorImpl_sum,
+		CALC_ICalculatorImpl_getMemory,
+		CALC_ICalculatorImpl_setMemory,
+		CALC_ICalculatorImpl_sumAndStore
 	};
 
-	struct CalculatorImpl* impl = malloc(sizeof(struct CalculatorImpl));
+	struct CALC_ICalculatorImpl* impl = malloc(sizeof(struct CALC_ICalculatorImpl));
 	impl->vtable = &vtable;
 	impl->memory = 0;
 
-	return (struct Calculator*) impl;
+	return (struct CALC_ICalculator*) impl;
 }
 
 
 //--------------------------------------
 
-// Calculator2Impl
+// CALC_ICalculator2Impl
 
 
-struct Calculator2Impl
+struct CALC_ICalculator2Impl
 {
 	void* cloopDummy;
-	struct Calculator2VTable* vtable;
+	struct CALC_ICalculator2VTable* vtable;
 	int memory;
 };
 
-static void Calculator2Impl_dispose(struct Calculator2* self)
+static void CALC_ICalculator2Impl_dispose(struct CALC_ICalculator2* self)
 {
 	free(self);
 }
 
-static int Calculator2Impl_sum(const struct Calculator2* self, struct Status* status,
-	int n1, int n2)
+static int CALC_ICalculator2Impl_sum(const struct CALC_ICalculator2* self,
+	struct CALC_IStatus* status, int n1, int n2)
 {
 	if (n1 + n2 > 1000)
 	{
-		Status_setCode(status, Status_ERROR_1);
+		CALC_IStatus_setCode(status, CALC_IStatus_ERROR_1);
 		return 0;
 	}
 	else
 		return n1 + n2;
 }
 
-static int Calculator2Impl_getMemory(const struct Calculator2* self)
+static int CALC_ICalculator2Impl_getMemory(const struct CALC_ICalculator2* self)
 {
-	return ((struct Calculator2Impl*) self)->memory;
+	return ((struct CALC_ICalculator2Impl*) self)->memory;
 }
 
-static void Calculator2Impl_setMemory(struct Calculator2* self, int n)
+static void CALC_ICalculator2Impl_setMemory(struct CALC_ICalculator2* self, int n)
 {
-	((struct Calculator2Impl*) self)->memory = n;
+	((struct CALC_ICalculator2Impl*) self)->memory = n;
 }
 
-static void Calculator2Impl_sumAndStore(struct Calculator2* self, struct Status* status,
-	int n1, int n2)
+static void CALC_ICalculator2Impl_sumAndStore(struct CALC_ICalculator2* self,
+	struct CALC_IStatus* status, int n1, int n2)
 {
-	Calculator2_setMemory(self, Calculator2_sum(self, status, n1, n2));
+	CALC_ICalculator2_setMemory(self, CALC_ICalculator2_sum(self, status, n1, n2));
 }
 
-static int Calculator2Impl_multiply(const struct Calculator2* self, struct Status* status,
-	int n1, int n2)
+static int CALC_ICalculator2Impl_multiply(const struct CALC_ICalculator2* self,
+	struct CALC_IStatus* status, int n1, int n2)
 {
 	return n1 * n2;
 }
 
-static void Calculator2Impl_copyMemory(struct Calculator2* self, const struct Calculator* calculator)
+static void CALC_ICalculator2Impl_copyMemory(struct CALC_ICalculator2* self,
+	const struct CALC_ICalculator* calculator)
 {
-	Calculator2_setMemory(self, Calculator_getMemory(calculator));
+	CALC_ICalculator2_setMemory(self, CALC_ICalculator_getMemory(calculator));
 }
 
-static void Calculator2Impl_copyMemory2(struct Calculator2* self, const int* address)
+static void CALC_ICalculator2Impl_copyMemory2(struct CALC_ICalculator2* self, const int* address)
 {
-	Calculator2_setMemory(self, *address);
+	CALC_ICalculator2_setMemory(self, *address);
 }
 
-struct Calculator2* Calculator2Impl_create()
+struct CALC_ICalculator2* CALC_ICalculator2Impl_create()
 {
-	static struct Calculator2VTable vtable = {
+	static struct CALC_ICalculator2VTable vtable = {
 		{NULL},
-		Calculator2_VERSION,
-		Calculator2Impl_dispose,
-		Calculator2Impl_sum,
-		Calculator2Impl_getMemory,
-		Calculator2Impl_setMemory,
-		Calculator2Impl_sumAndStore,
-		Calculator2Impl_multiply,
-		Calculator2Impl_copyMemory,
-		Calculator2Impl_copyMemory2
+		CALC_ICalculator2_VERSION,
+		CALC_ICalculator2Impl_dispose,
+		CALC_ICalculator2Impl_sum,
+		CALC_ICalculator2Impl_getMemory,
+		CALC_ICalculator2Impl_setMemory,
+		CALC_ICalculator2Impl_sumAndStore,
+		CALC_ICalculator2Impl_multiply,
+		CALC_ICalculator2Impl_copyMemory,
+		CALC_ICalculator2Impl_copyMemory2
 	};
 
-	struct Calculator2Impl* impl = malloc(sizeof(struct Calculator2Impl));
+	struct CALC_ICalculator2Impl* impl = malloc(sizeof(struct CALC_ICalculator2Impl));
 	impl->vtable = &vtable;
 	impl->memory = 0;
 
-	return (struct Calculator2*) impl;
+	return (struct CALC_ICalculator2*) impl;
 }
 
 
 //--------------------------------------
 
-// BrokenCalculatorImpl
+// CALC_IBrokenCalculatorImpl
 
 
-static int BrokenCalculatorImpl_sum(const struct Calculator* self, struct Status* status,
-	int n1, int n2)
+static int CALC_IBrokenCalculatorImpl_sum(const struct CALC_ICalculator* self,
+	struct CALC_IStatus* status, int n1, int n2)
 {
-	return CalculatorImpl_sum(self, status, n1, n2) + 1;
+	return CALC_ICalculatorImpl_sum(self, status, n1, n2) + 1;
 }
 
-struct Calculator* BrokenCalculatorImpl_create()
+struct CALC_ICalculator* CALC_IBrokenCalculatorImpl_create()
 {
-	static struct CalculatorVTable vtable = {
+	static struct CALC_ICalculatorVTable vtable = {
 		{NULL},
-		Calculator_VERSION,
-		CalculatorImpl_dispose,
-		BrokenCalculatorImpl_sum,
-		CalculatorImpl_getMemory,
-		CalculatorImpl_setMemory,
-		CalculatorImpl_sumAndStore
+		CALC_ICalculator_VERSION,
+		CALC_ICalculatorImpl_dispose,
+		CALC_IBrokenCalculatorImpl_sum,
+		CALC_ICalculatorImpl_getMemory,
+		CALC_ICalculatorImpl_setMemory,
+		CALC_ICalculatorImpl_sumAndStore
 	};
 
-	struct CalculatorImpl* impl = malloc(sizeof(struct CalculatorImpl));
+	struct CALC_ICalculatorImpl* impl = malloc(sizeof(struct CALC_ICalculatorImpl));
 	impl->vtable = &vtable;
 	impl->memory = 0;
 
-	return (struct Calculator*) impl;
+	return (struct CALC_ICalculator*) impl;
 }
 
 
 //--------------------------------------
 
-// FactoryImpl
+// CALC_IFactoryImpl
 
 
-static void FactoryImpl_dispose(struct Factory* self)
+static void CALC_IFactoryImpl_dispose(struct CALC_IFactory* self)
 {
 	free(self);
 }
 
-static struct Status* FactoryImpl_createStatus(struct Factory* self)
+static struct CALC_IStatus* CALC_IFactoryImpl_createStatus(struct CALC_IFactory* self)
 {
-	return StatusImpl_create();
+	return CALC_IStatusImpl_create();
 }
 
-static struct Calculator* FactoryImpl_createCalculator(struct Factory* self, struct Status* status)
+static struct CALC_ICalculator* CALC_IFactoryImpl_createCalculator(struct CALC_IFactory* self,
+	struct CALC_IStatus* status)
 {
-	return CalculatorImpl_create();
+	return CALC_ICalculatorImpl_create();
 }
 
-static struct Calculator2* FactoryImpl_createCalculator2(struct Factory* self,
-	struct Status* status)
+static struct CALC_ICalculator2* CALC_IFactoryImpl_createCalculator2(struct CALC_IFactory* self,
+	struct CALC_IStatus* status)
 {
-	return Calculator2Impl_create();
+	return CALC_ICalculator2Impl_create();
 }
 
-static struct Calculator* FactoryImpl_createBrokenCalculator(struct Factory* self,
-	struct Status* status)
+static struct CALC_ICalculator* CALC_IFactoryImpl_createBrokenCalculator(struct CALC_IFactory* self,
+	struct CALC_IStatus* status)
 {
-	return BrokenCalculatorImpl_create();
+	return CALC_IBrokenCalculatorImpl_create();
 }
 
-struct Factory* FactoryImpl_create()
+struct CALC_IFactory* CALC_IFactoryImpl_create()
 {
-	static struct FactoryVTable vtable = {
+	static struct CALC_IFactoryVTable vtable = {
 		{NULL},
-		Factory_VERSION,
-		FactoryImpl_dispose,
-		FactoryImpl_createStatus,
-		FactoryImpl_createCalculator,
-		FactoryImpl_createCalculator2,
-		FactoryImpl_createBrokenCalculator
+		CALC_IFactory_VERSION,
+		CALC_IFactoryImpl_dispose,
+		CALC_IFactoryImpl_createStatus,
+		CALC_IFactoryImpl_createCalculator,
+		CALC_IFactoryImpl_createCalculator2,
+		CALC_IFactoryImpl_createBrokenCalculator
 	};
 
-	struct Factory* impl = malloc(sizeof(struct Factory));
+	struct CALC_IFactory* impl = malloc(sizeof(struct CALC_IFactory));
 	impl->vtable = &vtable;
 
 	return impl;
@@ -312,77 +315,77 @@ struct Factory* FactoryImpl_create()
 // Library entry point
 
 
-DLL_EXPORT struct Factory* createFactory()
+DLL_EXPORT struct CALC_IFactory* createFactory()
 {
-	return FactoryImpl_create();
+	return CALC_IFactoryImpl_create();
 }
 
 
 //--------------------------------------
 
 
-static void test(struct Factory* (*createFactory)())
+static void test(struct CALC_IFactory* (*createFactory)())
 {
-	struct Factory* factory = createFactory();
-	struct Status* status = (struct Status*) StatusImpl_create();
-	struct Calculator* calculator;
-	struct Calculator2* calculator2;
+	struct CALC_IFactory* factory = createFactory();
+	struct CALC_IStatus* status = (struct CALC_IStatus*) CALC_IStatusImpl_create();
+	struct CALC_ICalculator* calculator;
+	struct CALC_ICalculator2* calculator2;
 	int sum, code, address;
 
-	calculator = Factory_createCalculator(factory, status);
+	calculator = CALC_IFactory_createCalculator(factory, status);
 
 	address = 40;
 
-	Calculator_sumAndStore(calculator, status, 1, 22);
-	printf("%d\n", Calculator_getMemory(calculator));	// 23
+	CALC_ICalculator_sumAndStore(calculator, status, 1, 22);
+	printf("%d\n", CALC_ICalculator_getMemory(calculator));	// 23
 
-	Calculator_setMemory(calculator, Calculator_sum(calculator, status, 2, 33));
-	printf("%d\n", Calculator_getMemory(calculator));	// 35
+	CALC_ICalculator_setMemory(calculator, CALC_ICalculator_sum(calculator, status, 2, 33));
+	printf("%d\n", CALC_ICalculator_getMemory(calculator));	// 35
 
-	calculator2 = Factory_createCalculator2(factory, status);
+	calculator2 = CALC_IFactory_createCalculator2(factory, status);
 
-	Calculator2_copyMemory(calculator2, calculator);
-	printf("%d\n", Calculator2_getMemory(calculator2));	// 35
+	CALC_ICalculator2_copyMemory(calculator2, calculator);
+	printf("%d\n", CALC_ICalculator2_getMemory(calculator2));	// 35
 
-	Calculator2_copyMemory2(calculator2, &address);
-	printf("%d\n", Calculator2_getMemory(calculator2));	// 40
+	CALC_ICalculator2_copyMemory2(calculator2, &address);
+	printf("%d\n", CALC_ICalculator2_getMemory(calculator2));	// 40
 
-	Calculator_dispose(calculator);
-	calculator = (struct Calculator*) calculator2;
+	CALC_ICalculator_dispose(calculator);
+	calculator = (struct CALC_ICalculator*) calculator2;
 
-	Calculator_sumAndStore(calculator, status, 1, 22);
-	printf("%d\n", Calculator_getMemory(calculator));	// 23
+	CALC_ICalculator_sumAndStore(calculator, status, 1, 22);
+	printf("%d\n", CALC_ICalculator_getMemory(calculator));	// 23
 
-	Calculator_setMemory(calculator, Calculator_sum(calculator, status, 2, 33));
-	printf("%d\n", Calculator_getMemory(calculator));	// 35
+	CALC_ICalculator_setMemory(calculator, CALC_ICalculator_sum(calculator, status, 2, 33));
+	printf("%d\n", CALC_ICalculator_getMemory(calculator));	// 35
 
-	Calculator2_sumAndStore(calculator2, status, 1, 22);
-	printf("%d\n", Calculator2_getMemory(calculator2));	// 23
+	CALC_ICalculator2_sumAndStore(calculator2, status, 1, 22);
+	printf("%d\n", CALC_ICalculator2_getMemory(calculator2));	// 23
 
-	Calculator2_setMemory(calculator2, Calculator2_multiply(calculator2, status, 2, 33));
-	printf("%d\n", Calculator2_getMemory(calculator2));	// 66
+	CALC_ICalculator2_setMemory(calculator2, CALC_ICalculator2_multiply(calculator2, status, 2, 33));
+	printf("%d\n", CALC_ICalculator2_getMemory(calculator2));	// 66
 
-	Calculator_dispose(calculator);
+	CALC_ICalculator_dispose(calculator);
 
-	calculator = Factory_createBrokenCalculator(factory, status);
+	calculator = CALC_IFactory_createBrokenCalculator(factory, status);
 
-	Calculator_sumAndStore(calculator, status, 1, 22);
-	printf("%d\n", Calculator_getMemory(calculator));	// 24
+	CALC_ICalculator_sumAndStore(calculator, status, 1, 22);
+	printf("%d\n", CALC_ICalculator_getMemory(calculator));	// 24
 
-	Calculator_setMemory(calculator, Calculator_sum(calculator, status, 2, 33));
-	printf("%d\n", Calculator_getMemory(calculator));	// 36
+	CALC_ICalculator_setMemory(calculator, CALC_ICalculator_sum(calculator, status, 2, 33));
+	printf("%d\n", CALC_ICalculator_getMemory(calculator));	// 36
 
-	sum = Calculator_sum(calculator, status, 600, 600);
-	code = Status_getCode(status);
+	sum = CALC_ICalculator_sum(calculator, status, 600, 600);
+	code = CALC_IStatus_getCode(status);
 	if (code != 0)
 		printf("exception %d\n", code);	// exception 1
 	else
 		printf("%d\n", sum);
 
-	Calculator_dispose(calculator);
+	CALC_ICalculator_dispose(calculator);
 
-	Status_dispose(status);
-	Factory_dispose(factory);
+	CALC_IStatus_dispose(status);
+	CALC_IFactory_dispose(factory);
 
 	printf("\n");
 }
@@ -395,7 +398,7 @@ int main(int argc, char* argv[])
 	void* library = dlopen(argv[1], RTLD_LAZY);
 #endif
 
-	struct Factory* (*createFactory)();
+	struct CALC_IFactory* (*createFactory)();
 
 #ifdef WIN32
 	createFactory = (struct Factory* (*)()) GetProcAddress(library, "createFactory");

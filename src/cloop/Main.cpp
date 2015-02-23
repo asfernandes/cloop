@@ -68,21 +68,21 @@ static void run(int argc, const char* argv[])
 	}
 	else if (outFormat == "c-header")
 	{
-		if (argc < 5)
+		if (argc < 6)
 			throw runtime_error("Invalid command line parameters for C header output.");
 
 		string headerGuard(argv[4]);
-		string prefix;	//// TODO:
+		string prefix(argv[5]);
 
 		generator.reset(new CHeaderGenerator(outFilename, prefix, &parser, headerGuard));
 	}
 	else if (outFormat == "c-impl")
 	{
-		if (argc < 5)
+		if (argc < 6)
 			throw runtime_error("Invalid command line parameters for C implementation output.");
 
 		string includeFilename(argv[4]);
-		string prefix;	//// TODO:
+		string prefix(argv[5]);
 
 		generator.reset(new CImplGenerator(outFilename, prefix, &parser, includeFilename));
 	}

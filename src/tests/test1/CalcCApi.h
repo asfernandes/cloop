@@ -14,145 +14,145 @@
 #endif
 
 
-struct Disposable;
-struct Status;
-struct Factory;
-struct Calculator;
-struct Calculator2;
+struct CALC_IDisposable;
+struct CALC_IStatus;
+struct CALC_IFactory;
+struct CALC_ICalculator;
+struct CALC_ICalculator2;
 
 
-#define Disposable_VERSION 1
+#define CALC_IDisposable_VERSION 1
 
-struct Disposable;
+struct CALC_IDisposable;
 
-struct DisposableVTable
+struct CALC_IDisposableVTable
 {
 	void* cloopDummy[1];
 	uintptr_t version;
-	void (*dispose)(struct Disposable* self);
+	void (*dispose)(struct CALC_IDisposable* self);
 };
 
-struct Disposable
+struct CALC_IDisposable
 {
 	void* cloopDummy[1];
-	struct DisposableVTable* vtable;
+	struct CALC_IDisposableVTable* vtable;
 };
 
-CLOOP_EXTERN_C void Disposable_dispose(struct Disposable* self);
+CLOOP_EXTERN_C void CALC_IDisposable_dispose(struct CALC_IDisposable* self);
 
-#define Status_VERSION 3
+#define CALC_IStatus_VERSION 3
 
-#define Status_ERROR_1 ((int) (1))
-#define Status_ERROR_2 ((int) (2))
-#define Status_ERROR_12 ((int) (Status_ERROR_1 | Status_ERROR_2))
+#define CALC_IStatus_ERROR_1 ((int) (1))
+#define CALC_IStatus_ERROR_2 ((int) (2))
+#define CALC_IStatus_ERROR_12 ((int) (CALC_IStatus_ERROR_1 | CALC_IStatus_ERROR_2))
 
-struct Status;
+struct CALC_IStatus;
 
-struct StatusVTable
-{
-	void* cloopDummy[1];
-	uintptr_t version;
-	void (*dispose)(struct Status* self);
-	int (*getCode)(const struct Status* self);
-	void (*setCode)(struct Status* self, int code);
-};
-
-struct Status
-{
-	void* cloopDummy[1];
-	struct StatusVTable* vtable;
-};
-
-CLOOP_EXTERN_C void Status_dispose(struct Status* self);
-CLOOP_EXTERN_C int Status_getCode(const struct Status* self);
-CLOOP_EXTERN_C void Status_setCode(struct Status* self, int code);
-
-#define Factory_VERSION 5
-
-struct Factory;
-
-struct FactoryVTable
+struct CALC_IStatusVTable
 {
 	void* cloopDummy[1];
 	uintptr_t version;
-	void (*dispose)(struct Factory* self);
-	struct Status* (*createStatus)(struct Factory* self);
-	struct Calculator* (*createCalculator)(struct Factory* self, struct Status* status);
-	struct Calculator2* (*createCalculator2)(struct Factory* self, struct Status* status);
-	struct Calculator* (*createBrokenCalculator)(struct Factory* self, struct Status* status);
+	void (*dispose)(struct CALC_IStatus* self);
+	int (*getCode)(const struct CALC_IStatus* self);
+	void (*setCode)(struct CALC_IStatus* self, int code);
 };
 
-struct Factory
+struct CALC_IStatus
 {
 	void* cloopDummy[1];
-	struct FactoryVTable* vtable;
+	struct CALC_IStatusVTable* vtable;
 };
 
-CLOOP_EXTERN_C void Factory_dispose(struct Factory* self);
-CLOOP_EXTERN_C struct Status* Factory_createStatus(struct Factory* self);
-CLOOP_EXTERN_C struct Calculator* Factory_createCalculator(struct Factory* self, struct Status* status);
-CLOOP_EXTERN_C struct Calculator2* Factory_createCalculator2(struct Factory* self, struct Status* status);
-CLOOP_EXTERN_C struct Calculator* Factory_createBrokenCalculator(struct Factory* self, struct Status* status);
+CLOOP_EXTERN_C void CALC_IStatus_dispose(struct CALC_IStatus* self);
+CLOOP_EXTERN_C int CALC_IStatus_getCode(const struct CALC_IStatus* self);
+CLOOP_EXTERN_C void CALC_IStatus_setCode(struct CALC_IStatus* self, int code);
 
-#define Calculator_VERSION 5
+#define CALC_IFactory_VERSION 5
 
-struct Calculator;
+struct CALC_IFactory;
 
-struct CalculatorVTable
+struct CALC_IFactoryVTable
 {
 	void* cloopDummy[1];
 	uintptr_t version;
-	void (*dispose)(struct Calculator* self);
-	int (*sum)(const struct Calculator* self, struct Status* status, int n1, int n2);
-	int (*getMemory)(const struct Calculator* self);
-	void (*setMemory)(struct Calculator* self, int n);
-	void (*sumAndStore)(struct Calculator* self, struct Status* status, int n1, int n2);
+	void (*dispose)(struct CALC_IFactory* self);
+	struct CALC_IStatus* (*createStatus)(struct CALC_IFactory* self);
+	struct CALC_ICalculator* (*createCalculator)(struct CALC_IFactory* self, struct CALC_IStatus* status);
+	struct CALC_ICalculator2* (*createCalculator2)(struct CALC_IFactory* self, struct CALC_IStatus* status);
+	struct CALC_ICalculator* (*createBrokenCalculator)(struct CALC_IFactory* self, struct CALC_IStatus* status);
 };
 
-struct Calculator
+struct CALC_IFactory
 {
 	void* cloopDummy[1];
-	struct CalculatorVTable* vtable;
+	struct CALC_IFactoryVTable* vtable;
 };
 
-CLOOP_EXTERN_C void Calculator_dispose(struct Calculator* self);
-CLOOP_EXTERN_C int Calculator_sum(const struct Calculator* self, struct Status* status, int n1, int n2);
-CLOOP_EXTERN_C int Calculator_getMemory(const struct Calculator* self);
-CLOOP_EXTERN_C void Calculator_setMemory(struct Calculator* self, int n);
-CLOOP_EXTERN_C void Calculator_sumAndStore(struct Calculator* self, struct Status* status, int n1, int n2);
+CLOOP_EXTERN_C void CALC_IFactory_dispose(struct CALC_IFactory* self);
+CLOOP_EXTERN_C struct CALC_IStatus* CALC_IFactory_createStatus(struct CALC_IFactory* self);
+CLOOP_EXTERN_C struct CALC_ICalculator* CALC_IFactory_createCalculator(struct CALC_IFactory* self, struct CALC_IStatus* status);
+CLOOP_EXTERN_C struct CALC_ICalculator2* CALC_IFactory_createCalculator2(struct CALC_IFactory* self, struct CALC_IStatus* status);
+CLOOP_EXTERN_C struct CALC_ICalculator* CALC_IFactory_createBrokenCalculator(struct CALC_IFactory* self, struct CALC_IStatus* status);
 
-#define Calculator2_VERSION 8
+#define CALC_ICalculator_VERSION 5
 
-struct Calculator2;
+struct CALC_ICalculator;
 
-struct Calculator2VTable
+struct CALC_ICalculatorVTable
 {
 	void* cloopDummy[1];
 	uintptr_t version;
-	void (*dispose)(struct Calculator2* self);
-	int (*sum)(const struct Calculator2* self, struct Status* status, int n1, int n2);
-	int (*getMemory)(const struct Calculator2* self);
-	void (*setMemory)(struct Calculator2* self, int n);
-	void (*sumAndStore)(struct Calculator2* self, struct Status* status, int n1, int n2);
-	int (*multiply)(const struct Calculator2* self, struct Status* status, int n1, int n2);
-	void (*copyMemory)(struct Calculator2* self, const struct Calculator* calculator);
-	void (*copyMemory2)(struct Calculator2* self, const int* address);
+	void (*dispose)(struct CALC_ICalculator* self);
+	int (*sum)(const struct CALC_ICalculator* self, struct CALC_IStatus* status, int n1, int n2);
+	int (*getMemory)(const struct CALC_ICalculator* self);
+	void (*setMemory)(struct CALC_ICalculator* self, int n);
+	void (*sumAndStore)(struct CALC_ICalculator* self, struct CALC_IStatus* status, int n1, int n2);
 };
 
-struct Calculator2
+struct CALC_ICalculator
 {
 	void* cloopDummy[1];
-	struct Calculator2VTable* vtable;
+	struct CALC_ICalculatorVTable* vtable;
 };
 
-CLOOP_EXTERN_C void Calculator2_dispose(struct Calculator2* self);
-CLOOP_EXTERN_C int Calculator2_sum(const struct Calculator2* self, struct Status* status, int n1, int n2);
-CLOOP_EXTERN_C int Calculator2_getMemory(const struct Calculator2* self);
-CLOOP_EXTERN_C void Calculator2_setMemory(struct Calculator2* self, int n);
-CLOOP_EXTERN_C void Calculator2_sumAndStore(struct Calculator2* self, struct Status* status, int n1, int n2);
-CLOOP_EXTERN_C int Calculator2_multiply(const struct Calculator2* self, struct Status* status, int n1, int n2);
-CLOOP_EXTERN_C void Calculator2_copyMemory(struct Calculator2* self, const struct Calculator* calculator);
-CLOOP_EXTERN_C void Calculator2_copyMemory2(struct Calculator2* self, const int* address);
+CLOOP_EXTERN_C void CALC_ICalculator_dispose(struct CALC_ICalculator* self);
+CLOOP_EXTERN_C int CALC_ICalculator_sum(const struct CALC_ICalculator* self, struct CALC_IStatus* status, int n1, int n2);
+CLOOP_EXTERN_C int CALC_ICalculator_getMemory(const struct CALC_ICalculator* self);
+CLOOP_EXTERN_C void CALC_ICalculator_setMemory(struct CALC_ICalculator* self, int n);
+CLOOP_EXTERN_C void CALC_ICalculator_sumAndStore(struct CALC_ICalculator* self, struct CALC_IStatus* status, int n1, int n2);
+
+#define CALC_ICalculator2_VERSION 8
+
+struct CALC_ICalculator2;
+
+struct CALC_ICalculator2VTable
+{
+	void* cloopDummy[1];
+	uintptr_t version;
+	void (*dispose)(struct CALC_ICalculator2* self);
+	int (*sum)(const struct CALC_ICalculator2* self, struct CALC_IStatus* status, int n1, int n2);
+	int (*getMemory)(const struct CALC_ICalculator2* self);
+	void (*setMemory)(struct CALC_ICalculator2* self, int n);
+	void (*sumAndStore)(struct CALC_ICalculator2* self, struct CALC_IStatus* status, int n1, int n2);
+	int (*multiply)(const struct CALC_ICalculator2* self, struct CALC_IStatus* status, int n1, int n2);
+	void (*copyMemory)(struct CALC_ICalculator2* self, const struct CALC_ICalculator* calculator);
+	void (*copyMemory2)(struct CALC_ICalculator2* self, const int* address);
+};
+
+struct CALC_ICalculator2
+{
+	void* cloopDummy[1];
+	struct CALC_ICalculator2VTable* vtable;
+};
+
+CLOOP_EXTERN_C void CALC_ICalculator2_dispose(struct CALC_ICalculator2* self);
+CLOOP_EXTERN_C int CALC_ICalculator2_sum(const struct CALC_ICalculator2* self, struct CALC_IStatus* status, int n1, int n2);
+CLOOP_EXTERN_C int CALC_ICalculator2_getMemory(const struct CALC_ICalculator2* self);
+CLOOP_EXTERN_C void CALC_ICalculator2_setMemory(struct CALC_ICalculator2* self, int n);
+CLOOP_EXTERN_C void CALC_ICalculator2_sumAndStore(struct CALC_ICalculator2* self, struct CALC_IStatus* status, int n1, int n2);
+CLOOP_EXTERN_C int CALC_ICalculator2_multiply(const struct CALC_ICalculator2* self, struct CALC_IStatus* status, int n1, int n2);
+CLOOP_EXTERN_C void CALC_ICalculator2_copyMemory(struct CALC_ICalculator2* self, const struct CALC_ICalculator* calculator);
+CLOOP_EXTERN_C void CALC_ICalculator2_copyMemory2(struct CALC_ICalculator2* self, const int* address);
 
 
 #endif	// CALC_C_API_H

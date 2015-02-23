@@ -92,6 +92,8 @@ Token& Lexer::getToken(Token& token)
 			token.type = Token::TYPE_NOT_IMPLEMENTED;
 		else if (token.text == "struct")
 			token.type = Token::TYPE_STRUCT;
+		else if (token.text == "typedef")
+			token.type = Token::TYPE_TYPEDEF;
 		else if (token.text == "version")
 			token.type = Token::TYPE_VERSION;
 		// types

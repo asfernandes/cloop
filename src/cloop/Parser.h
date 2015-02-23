@@ -37,7 +37,8 @@ public:
 	enum Type
 	{
 		TYPE_INTERFACE,
-		TYPE_STRUCT
+		TYPE_STRUCT,
+		TYPE_TYPEDEF
 	};
 
 protected:
@@ -137,6 +138,16 @@ public:
 };
 
 
+class Typedef : public BaseType
+{
+public:
+	Typedef()
+		: BaseType(TYPE_TYPEDEF)
+	{
+	}
+};
+
+
 class Parser
 {
 public:
@@ -145,6 +156,7 @@ public:
 	void parse();
 	void parseInterface(bool exception);
 	void parseStruct();
+	void parseTypedef();
 	void parseItem();
 	void parseConstant(const TypeRef& typeRef, const std::string& name);
 	void parseMethod(const TypeRef& returnTypeRef, const std::string& name, Expr* notImplementedExpr);

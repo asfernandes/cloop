@@ -76,6 +76,12 @@ void Parser::parse()
 				parseStruct();
 				break;
 
+			case Token::TYPE_TYPEDEF:
+				if (exception)
+					error(token, "Cannot use attribute exception in typedef.");
+				parseTypedef();
+				break;
+
 			default:
 				syntaxError(token);
 				break;
@@ -154,6 +160,16 @@ void Parser::parseStruct()
 
 	ztruct->name = getToken(token, Token::TYPE_IDENTIFIER).text;
 	typesByName.insert(pair<string, BaseType*>(ztruct->name, ztruct));
+
+	getToken(token, TOKEN(';'));
+}
+
+void Parser::parseTypedef()
+{
+	Typedef* typeDef = new Typedef();
+
+	typeDef->name = getToken(token, Token::TYPE_IDENTIFIER).text;
+	typesByName.insert(pair<string, BaseType*>(typeDef->name, typeDef));
 
 	getToken(token, TOKEN(';'));
 }

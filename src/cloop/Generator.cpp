@@ -105,8 +105,8 @@ string CBasedGenerator::convertType(const TypeRef& typeRef)
 			break;
 
 		case Token::TYPE_IDENTIFIER:
-			ret += string(cPlusPlus ? "" : "struct ") +
-				(typeRef.type == BaseType::TYPE_STRUCT ? "" : prefix) + typeRef.token.text;
+			ret += string(cPlusPlus || typeRef.type == BaseType::TYPE_TYPEDEF ? "" : "struct ") +
+				(typeRef.type == BaseType::TYPE_INTERFACE ? prefix : "") + typeRef.token.text;
 
 			if (typeRef.type == BaseType::TYPE_INTERFACE)
 				ret += "*";

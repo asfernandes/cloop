@@ -13,6 +13,19 @@ type
 	Calculator = class;
 	Calculator2 = class;
 
+CalcException = class(Exception)
+public
+	constructor create(code: Integer);
+
+	function getCode: Integer;
+
+	class procedure checkException(status: Status);
+	class procedure catchException(status: Status; e: Exception);
+
+private
+	code: Integer;
+end;
+
 	IntegerPtr = ^Integer;
 
 	Disposable_disposePtr = procedure(this: Disposable); cdecl;
@@ -150,19 +163,6 @@ type
 		procedure copyMemory(calculator: Calculator); virtual; abstract;
 		procedure copyMemory2(address: IntegerPtr); virtual; abstract;
 	end;
-
-CalcException = class(Exception)
-public
-	constructor create(code: Integer);
-
-	function getCode: Integer;
-
-	class procedure checkException(status: Status);
-	class procedure catchException(status: Status; e: Exception);
-
-private
-	code: Integer;
-end;
 
 implementation
 

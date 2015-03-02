@@ -889,10 +889,12 @@ void PascalGenerator::generate()
 		 ++i)
 	{
 		Interface* interface = *i;
-		fprintf(out, "\t%s = class;\n", interface->name.c_str());
+		fprintf(out, "\t%s = class;\n", escapeName(interface->name).c_str());
 	}
 
 	fprintf(out, "\n");
+
+	insertFile(interfaceFile);
 
 	// Pass at every type to fill pointerTypes. We need it in advance.
 
@@ -941,10 +943,13 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
+			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+				 !method->returnTypeRef.isPointer;
+
 			fprintf(out, "\t%s_%sPtr = %s(this: %s",
-				interface->name.c_str(), method->name.c_str(),
-				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
-				interface->name.c_str());
+				escapeName(interface->name).c_str(), escapeName(method->name).c_str(),
+				(isProcedure ? "procedure" : "function"),
+				escapeName(interface->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -956,7 +961,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+			if (!isProcedure)
 				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, "; cdecl;\n");
@@ -971,7 +976,7 @@ void PascalGenerator::generate()
 	{
 		Interface* interface = *i;
 
-		fprintf(out, "\t%sVTable = class", interface->name.c_str());
+		fprintf(out, "\t%sVTable = class", escapeName(interface->name).c_str());
 
 		if (interface->super)
 			fprintf(out, "(%sVTable)", interface->super->name.c_str());
@@ -987,13 +992,13 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t\t%s: %s_%sPtr;\n", method->name.c_str(), interface->name.c_str(),
-				method->name.c_str());
+			fprintf(out, "\t\t%s: %s_%sPtr;\n", escapeName(method->name).c_str(),
+				escapeName(interface->name).c_str(), escapeName(method->name).c_str());
 		}
 
 		fprintf(out, "\tend;\n\n");
 
-		fprintf(out, "\t%s = class", interface->name.c_str());
+		fprintf(out, "\t%s = class", escapeName(interface->name).c_str());
 
 		if (interface->super)
 			fprintf(out, "(%s)", interface->super->name.c_str());
@@ -1001,7 +1006,7 @@ void PascalGenerator::generate()
 		fprintf(out, "\n");
 
 		if (!interface->super)
-			fprintf(out, "\t\tvTable: %sVTable;\n\n", interface->name.c_str());
+			fprintf(out, "\t\tvTable: %sVTable;\n\n", escapeName(interface->name).c_str());
 
 		unsigned version = 0;
 
@@ -1030,9 +1035,12 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
+			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+				 !method->returnTypeRef.isPointer;
+
 			fprintf(out, "\t\t%s %s(",
-				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
-				method->name.c_str());
+				(isProcedure ? "procedure" : "function"),
+				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1048,7 +1056,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+			if (!isProcedure)
 				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, ";\n");
@@ -1057,7 +1065,7 @@ void PascalGenerator::generate()
 		fprintf(out, "\tend;\n\n");
 
 		fprintf(out, "\t%sImpl = class(%s)\n",
-			interface->name.c_str(), interface->name.c_str());
+			escapeName(interface->name).c_str(), escapeName(interface->name).c_str());
 		fprintf(out, "\t\tconstructor create;\n\n");
 
 		deque<Method*> methods;
@@ -1069,9 +1077,12 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
+			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+				 !method->returnTypeRef.isPointer;
+
 			fprintf(out, "\t\t%s %s(",
-				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
-				method->name.c_str());
+				(isProcedure ? "procedure" : "function"),
+				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1087,7 +1098,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+			if (!isProcedure)
 				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, "; virtual; abstract;\n");
@@ -1095,8 +1106,6 @@ void PascalGenerator::generate()
 
 		fprintf(out, "\tend;\n\n");
 	}
-
-	insertFile(interfaceFile);
 
 	fprintf(out, "implementation\n\n");
 
@@ -1112,10 +1121,13 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
+			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+				 !method->returnTypeRef.isPointer;
+
 			fprintf(out, "%s %s.%s(",
-				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
-				interface->name.c_str(),
-				method->name.c_str());
+				(isProcedure ? "procedure" : "function"),
+				escapeName(interface->name).c_str(),
+				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1131,7 +1143,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+			if (!isProcedure)
 				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, ";\n");
@@ -1140,21 +1152,18 @@ void PascalGenerator::generate()
 
 			//// TODO: checkVersion
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
-				method->returnTypeRef.isPointer)
-			{
+			if (!isProcedure)
 				fprintf(out, "Result := ");
-			}
 
 			fprintf(out, "%sVTable(vTable).%s(Self",
-				interface->name.c_str(), method->name.c_str());
+				escapeName(interface->name).c_str(), escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
 				 ++k)
 			{
 				Parameter* parameter = *k;
-				fprintf(out, ", %s", parameter->name.c_str());
+				fprintf(out, ", %s", escapeName(parameter->name).c_str());
 			}
 
 			fprintf(out, ");\n");
@@ -1165,7 +1174,7 @@ void PascalGenerator::generate()
 				!exceptionClass.empty())
 			{
 				fprintf(out, "\t%s.checkException(%s);\n", exceptionClass.c_str(),
-					method->parameters.front()->name.c_str());
+					escapeName(method->parameters.front()->name).c_str());
 			}
 
 			fprintf(out, "end;\n\n");
@@ -1187,11 +1196,14 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
+			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+				 !method->returnTypeRef.isPointer;
+
 			fprintf(out, "%s %sImpl_%sDispatcher(this: %s",
-				(method->returnTypeRef.token.type == Token::TYPE_VOID ? "procedure" : "function"),
-				interface->name.c_str(),
-				method->name.c_str(),
-				interface->name.c_str());
+				(isProcedure ? "procedure" : "function"),
+				escapeName(interface->name).c_str(),
+				escapeName(method->name).c_str(),
+				escapeName(interface->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1204,7 +1216,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, ")");
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID)
+			if (!isProcedure)
 				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, "; cdecl;\n");
@@ -1215,13 +1227,11 @@ void PascalGenerator::generate()
 
 			fprintf(out, "\t");
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
-				method->returnTypeRef.isPointer)
-			{
+			if (!isProcedure)
 				fprintf(out, "Result := ");
-			}
 
-			fprintf(out, "%sImpl(this).%s(", interface->name.c_str(), method->name.c_str());
+			fprintf(out, "%sImpl(this).%s(", escapeName(interface->name).c_str(),
+				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1232,7 +1242,7 @@ void PascalGenerator::generate()
 				if (k != method->parameters.begin())
 					fprintf(out, ", ");
 
-				fprintf(out, "%s", parameter->name.c_str());
+				fprintf(out, "%s", escapeName(parameter->name).c_str());
 			}
 
 			fprintf(out, ");\n");
@@ -1248,7 +1258,7 @@ void PascalGenerator::generate()
 				fprintf(out, "\texcept\n");
 				fprintf(out, "\t\ton e: Exception do %s.catchException(%s, e);\n",
 					exceptionClass.c_str(),
-					(exceptionParameter ? exceptionParameter->name.c_str() : "nil"));
+					(exceptionParameter ? escapeName(exceptionParameter->name).c_str() : "nil"));
 
 				fprintf(out, "\tend\n");
 			}
@@ -1258,11 +1268,11 @@ void PascalGenerator::generate()
 
 		fprintf(out, "var\n");
 		fprintf(out, "\t%sImpl_vTable: %sVTable;\n\n",
-			interface->name.c_str(), interface->name.c_str());
+			escapeName(interface->name).c_str(), escapeName(interface->name).c_str());
 
-		fprintf(out, "constructor %sImpl.create;\n", interface->name.c_str());
+		fprintf(out, "constructor %sImpl.create;\n", escapeName(interface->name).c_str());
 		fprintf(out, "begin\n");
-		fprintf(out, "\tvTable := %sImpl_vTable;\n", interface->name.c_str());
+		fprintf(out, "\tvTable := %sImpl_vTable;\n", escapeName(interface->name).c_str());
 		fprintf(out, "end;\n\n");
 	}
 
@@ -1282,19 +1292,19 @@ void PascalGenerator::generate()
 			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
 		fprintf(out, "\t%sImpl_vTable := %sVTable.create;\n",
-			interface->name.c_str(), interface->name.c_str());
+			escapeName(interface->name).c_str(), escapeName(interface->name).c_str());
 		fprintf(out, "\t%sImpl_vTable.version := %d;\n",
-			interface->name.c_str(), (int) methods.size());
+			escapeName(interface->name).c_str(), (int) methods.size());
 
 		for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 		{
 			Method* method = *j;
 
 			fprintf(out, "\t%sImpl_vTable.%s := @%sImpl_%sDispatcher;\n",
-				interface->name.c_str(),
-				method->name.c_str(),
-				interface->name.c_str(),
-				method->name.c_str());
+				escapeName(interface->name).c_str(),
+				escapeName(method->name).c_str(),
+				escapeName(interface->name).c_str(),
+				escapeName(method->name).c_str());
 		}
 
 		fprintf(out, "\n");
@@ -1307,7 +1317,7 @@ void PascalGenerator::generate()
 		 ++i)
 	{
 		Interface* interface = *i;
-		fprintf(out, "\t%sImpl_vTable.destroy;\n", interface->name.c_str());
+		fprintf(out, "\t%sImpl_vTable.destroy;\n", escapeName(interface->name).c_str());
 	}
 
 	fprintf(out, "\n");
@@ -1316,7 +1326,7 @@ void PascalGenerator::generate()
 
 string PascalGenerator::convertParameter(const Parameter& parameter)
 {
-	return parameter.name + ": " + convertType(parameter.typeRef);
+	return escapeName(parameter.name) + ": " + convertType(parameter.typeRef);
 }
 
 string PascalGenerator::convertType(const TypeRef& typeRef)
@@ -1364,6 +1374,9 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 
 	if (typeRef.isPointer)
 	{
+		if (name == "void")
+			return "Pointer";
+
 		if (pointerTypes.find(name) == pointerTypes.end())
 			pointerTypes.insert(name);
 
@@ -1371,6 +1384,23 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 	}
 
 	return name;
+}
+
+string PascalGenerator::escapeName(const string& name)
+{
+	//// TODO: Create a table of keywords.
+
+	if (name == "file" ||
+		name == "function" ||
+		name == "procedure" ||
+		name == "set" ||
+		name == "to" ||
+		name == "type")
+	{
+		return name + "_";
+	}
+	else
+		return name;
 }
 
 void PascalGenerator::insertFile(const string& filename)

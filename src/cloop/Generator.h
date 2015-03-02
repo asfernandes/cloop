@@ -130,6 +130,7 @@ public:
 private:
 	std::string convertParameter(const Parameter& parameter);
 	std::string convertType(const TypeRef& typeRef);
+	std::string escapeName(const std::string& name);
 
 	void insertFile(const std::string& filename);
 

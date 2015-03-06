@@ -7,6 +7,10 @@ interface
 uses Classes, SysUtils;
 
 type
+{$IFNDEF FPC}
+	QWord = UInt64;
+{$ENDIF}
+
 	Disposable = class;
 	Status = class;
 	Factory = class;

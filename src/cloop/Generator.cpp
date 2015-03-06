@@ -883,6 +883,9 @@ void PascalGenerator::generate()
 	fprintf(out, ";\n\n");
 
 	fprintf(out, "type\n");
+	fprintf(out, "{$IFNDEF FPC}\n");
+	fprintf(out, "\tQWord = UInt64;\n");
+	fprintf(out, "{$ENDIF}\n\n");
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
 		 i != parser->interfaces.end();

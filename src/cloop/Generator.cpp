@@ -1355,7 +1355,7 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 			break;
 
 		case Token::TYPE_STRING:
-			name = "PChar";
+			name = "PAnsiChar";
 			break;
 
 		case Token::TYPE_UCHAR:

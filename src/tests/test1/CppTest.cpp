@@ -86,9 +86,15 @@ public:
 		delegate->setCode(code);
 	}
 
+	static void clearException(StatusWrapper* status)
+	{
+		if (status->code != 0)
+			status->setCode(0);
+	}
+
 	static void checkException(StatusWrapper* status)
 	{
-		if (status->getCode() != 0)
+		if (status->code != 0)
 			throw CalcException(status);
 	}
 

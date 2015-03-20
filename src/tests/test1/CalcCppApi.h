@@ -135,6 +135,7 @@ namespace calc
 
 		template <typename StatusType> ICalculator* createCalculator(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ICalculator* ret = static_cast<VTable*>(this->cloopVTable)->createCalculator(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -142,6 +143,7 @@ namespace calc
 
 		template <typename StatusType> ICalculator2* createCalculator2(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ICalculator2* ret = static_cast<VTable*>(this->cloopVTable)->createCalculator2(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -149,6 +151,7 @@ namespace calc
 
 		template <typename StatusType> ICalculator* createBrokenCalculator(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ICalculator* ret = static_cast<VTable*>(this->cloopVTable)->createBrokenCalculator(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -181,6 +184,7 @@ namespace calc
 
 		template <typename StatusType> int sum(StatusType* status, int n1, int n2) const
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->sum(this, status, n1, n2);
 			StatusType::checkException(status);
 			return ret;
@@ -213,6 +217,7 @@ namespace calc
 				StatusType::checkException(status);
 				return;
 			}
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->sumAndStore(this, status, n1, n2);
 			StatusType::checkException(status);
 		}
@@ -243,6 +248,7 @@ namespace calc
 
 		template <typename StatusType> int multiply(StatusType* status, int n1, int n2) const
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->multiply(this, status, n1, n2);
 			StatusType::checkException(status);
 			return ret;

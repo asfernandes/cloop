@@ -361,6 +361,15 @@ void CppGenerator::generate()
 				fprintf(out, "\t\t\t}\n");
 			}
 
+			if (!statusName.empty())
+			{
+				fprintf(out, "\t\t\t");
+
+				fprintf(out, "StatusType::clearException(%s)", statusName.c_str());
+
+				fprintf(out, ";\n");
+			}
+
 			fprintf(out, "\t\t\t");
 
 			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||

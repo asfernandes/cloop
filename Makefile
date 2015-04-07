@@ -1,5 +1,7 @@
 MODULES	:= cloop tests tests/test1
 
+WITH_FPC	:= 1
+
 TARGET	:= release
 
 CC	:= gcc
@@ -127,11 +129,15 @@ $(BIN_DIR)/test1-pascal$(SHRLIB_EXT): \
 	$(SRC_DIR)/tests/test1/PascalLibrary.dpr \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
+ifeq ($(WITH_FPC),1)
 	fpc $(FPC_FLAGS) -fPIC -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.dpr
+endif
 
 $(BIN_DIR)/test1-pascal$(EXE_EXT): \
 	$(SRC_DIR)/tests/test1/PascalClasses.pas \
 	$(SRC_DIR)/tests/test1/PascalTest.dpr \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
+ifeq ($(WITH_FPC),1)
 	fpc $(FPC_FLAGS) -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(EXE_EXT) $(SRC_DIR)/tests/test1/PascalTest.dpr
+endif

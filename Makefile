@@ -59,7 +59,8 @@ all: mkdirs \
 	$(BIN_DIR)/test1-cpp$(SHRLIB_EXT)	\
 	$(BIN_DIR)/test1-cpp$(EXE_EXT)	\
 	$(BIN_DIR)/test1-pascal$(SHRLIB_EXT)	\
-	$(BIN_DIR)/test1-pascal$(EXE_EXT)
+	$(BIN_DIR)/test1-pascal$(EXE_EXT)	\
+	$(SRC_DIR)/tests/test1/java/src/main/java/com/github/asfernandes/cloop/tests/test1/ICalc.java
 
 mkdirs: $(OBJ_DIRS) $(BIN_DIR) $(LIB_DIR)
 
@@ -99,6 +100,10 @@ $(SRC_DIR)/tests/test1/CalcPascalApi.pas: $(BIN_DIR)/cloop \
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl pascal $@ CalcPascalApi "SysUtils" \
 		$(SRC_DIR)/tests/test1/CalcPascalApi.interface.pas \
 		$(SRC_DIR)/tests/test1/CalcPascalApi.implementation.pas CalcException
+
+$(SRC_DIR)/tests/test1/java/src/main/java/com/github/asfernandes/cloop/tests/test1/ICalc.java: \
+	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
+	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl jna $@ com.github.asfernandes.cloop.tests.test1.ICalc CalcException I
 
 $(SRC_DIR)/tests/test1/CppTest.cpp: $(SRC_DIR)/tests/test1/CalcCppApi.h
 

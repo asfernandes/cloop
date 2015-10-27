@@ -145,4 +145,24 @@ private:
 };
 
 
+class JnaGenerator : public FileGenerator
+{
+public:
+	JnaGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+		const std::string& className, const std::string& exceptionClass);
+
+public:
+	virtual void generate();
+
+private:
+	std::string convertType(const TypeRef& typeRef, bool forReturn);
+	std::string escapeName(const std::string& name);
+
+private:
+	Parser* parser;
+	std::string className;
+	std::string exceptionClass;
+};
+
+
 #endif	// CLOOP_GENERATOR_H

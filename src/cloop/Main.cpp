@@ -101,6 +101,17 @@ static void run(int argc, const char* argv[])
 		generator.reset(new PascalGenerator(outFilename, prefix, &parser, unitName,
 			additionalUses, interfaceFile, implementationFile, exceptionClass));
 	}
+	else if (outFormat == "jna")
+	{
+		if (argc < 7)
+			throw runtime_error("Invalid command line parameters for JNA output.");
+
+		string className(argv[4]);
+		string exceptionClass(argv[5]);
+		string prefix(argv[6]);
+
+		generator.reset(new JnaGenerator(outFilename, prefix, &parser, className, exceptionClass));
+	}
 	else
 		throw runtime_error("Invalid output format.");
 

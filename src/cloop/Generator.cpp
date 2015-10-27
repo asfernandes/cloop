@@ -49,6 +49,9 @@ FileGenerator::FileGenerator(const string& filename, const string& prefix)
 	: prefix(prefix)
 {
 	out = fopen(filename.c_str(), "w+");
+
+	if (!out)
+		throw runtime_error(string("Error creating output file '") + filename + "'.");
 }
 
 FileGenerator::~FileGenerator()
@@ -1432,4 +1435,362 @@ void PascalGenerator::insertFile(const string& filename)
 		fwrite(buffer, 1, count, out);
 
 	fclose(in);
+}
+
+
+//--------------------------------------
+
+
+JnaGenerator::JnaGenerator(const string& filename, const string& prefix, Parser* parser,
+		const string& className, const string& exceptionClass)
+	: FileGenerator(filename, prefix),
+	  parser(parser),
+	  className(className),
+	  exceptionClass(exceptionClass)
+{
+}
+
+void JnaGenerator::generate()
+{
+	fprintf(out, "// %s\n\n", AUTOGEN_MSG);
+
+	string::size_type lastDot = className.rfind('.');
+	string::size_type classStart;
+
+	if (lastDot != string::npos)
+	{
+		fprintf(out, "package %s;\n", className.substr(0, lastDot).c_str());
+		fprintf(out, "\n");
+		fprintf(out, "\n");
+
+		classStart = lastDot + 1;
+	}
+	else
+		classStart = 0;
+
+	fprintf(out, "public interface %s extends com.sun.jna.Library\n",
+		className.substr(classStart).c_str());
+	fprintf(out, "{\n");
+
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		if (i != parser->interfaces.begin())
+			fprintf(out, "\n");
+
+		Interface* interface = *i;
+
+		fprintf(out, "\tpublic static abstract class %s%s extends ",
+			prefix.c_str(), escapeName(interface->name).c_str());
+
+		if (interface->super)
+			fprintf(out, "%s%s", prefix.c_str(), escapeName(interface->super->name).c_str());
+		else
+			fprintf(out, "com.sun.jna.Structure");
+
+		fprintf(out, "\n");
+		fprintf(out, "\t{\n");
+
+		//// TODO: version
+
+		for (vector<Constant*>::iterator j = interface->constants.begin();
+			 j != interface->constants.end();
+			 ++j)
+		{
+			Constant* constant = *j;
+
+			fprintf(out, "\t\tpublic static %s %s = %s;\n",
+				convertType(constant->typeRef, false).c_str(),
+				constant->name.c_str(),
+				constant->expr->generate(LANGUAGE_JAVA, prefix).c_str());
+		}
+
+		if (!interface->constants.empty())
+			fprintf(out, "\n");
+
+		fprintf(out, "\t\tpublic static class VTable extends ");
+
+		if (interface->super)
+			fprintf(out, "%s%s.VTable", prefix.c_str(), escapeName(interface->super->name).c_str());
+		else
+			fprintf(out, "com.sun.jna.Structure implements com.sun.jna.Structure.ByReference");
+
+		fprintf(out, "\n");
+		fprintf(out, "\t\t{\n");
+
+		for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+		{
+			Method* method = *j;
+
+			fprintf(out, "\t\t\tpublic static interface Callback_%s extends com.sun.jna.Callback\n",
+				escapeName(method->name).c_str());
+			fprintf(out, "\t\t\t{\n");
+			fprintf(out, "\t\t\t\tpublic %s invoke(%s%s self",
+				convertType(method->returnTypeRef, true).c_str(),
+				prefix.c_str(),
+				escapeName(interface->name).c_str());
+
+			for (vector<Parameter*>::iterator k = method->parameters.begin();
+				 k != method->parameters.end();
+				 ++k)
+			{
+				Parameter* parameter = *k;
+
+				fprintf(out, ", %s %s",
+					convertType(parameter->typeRef, false).c_str(),
+					escapeName(parameter->name).c_str());
+			}
+
+			fprintf(out, ");\n");
+			fprintf(out, "\t\t\t}\n");
+			fprintf(out, "\n");
+		}
+
+		if (!interface->super)
+		{
+			fprintf(out, "\t\t\tpublic com.sun.jna.Pointer cloopDummy;\n");
+			fprintf(out, "\t\t\tpublic com.sun.jna.Pointer version;\n");
+			fprintf(out, "\n");
+		}
+
+		for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+		{
+			Method* method = *j;
+
+			fprintf(out, "\t\t\tpublic Callback_%s %s;\n",
+				escapeName(method->name).c_str(),
+				escapeName(method->name).c_str());
+		}
+
+		if (!interface->methods.empty())
+			fprintf(out, "\n");
+
+		fprintf(out, "\t\t\t@Override\n");
+		fprintf(out, "\t\t\tprotected java.util.List<String> getFieldOrder()\n");
+		fprintf(out, "\t\t\t{\n");
+
+		if (interface->super)
+			fprintf(out, "\t\t\t\tjava.util.List<String> fields = super.getFieldOrder();\n");
+		else
+			fprintf(out, "\t\t\t\tjava.util.List<String> fields = new java.util.ArrayList<String>();\n");
+
+		if (!interface->super || interface->methods.size() != 0)
+		{
+			fprintf(out, "\t\t\t\tfields.addAll(java.util.Arrays.asList(");
+
+			if (!interface->super)
+				fprintf(out, "\"cloopDummy\", \"version\"");
+
+			bool first = interface->super != NULL;
+
+			for (vector<Method*>::iterator j = interface->methods.begin();
+				 j != interface->methods.end();
+				 ++j)
+			{
+				Method* method = *j;
+
+				if (first)
+					first = false;
+				else
+					fprintf(out, ", ");
+
+				fprintf(out, "\"%s\"", escapeName(method->name).c_str());
+			}
+
+			fprintf(out, "));\n");
+		}
+
+		fprintf(out, "\t\t\t\treturn fields;\n");
+		fprintf(out, "\t\t\t}\n");
+		fprintf(out, "\t\t}\n");
+
+		for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+		{
+			Method* method = *j;
+
+			fprintf(out, "\n");
+			fprintf(out, "\t\tpublic %s %s(",
+				convertType(method->returnTypeRef, true).c_str(),
+				escapeName(method->name).c_str());
+
+			for (vector<Parameter*>::iterator k = method->parameters.begin();
+				 k != method->parameters.end();
+				 ++k)
+			{
+				Parameter* parameter = *k;
+
+				if (k != method->parameters.begin())
+					fprintf(out, ", ");
+
+				fprintf(out, "%s %s",
+					convertType(parameter->typeRef, false).c_str(),
+					escapeName(parameter->name).c_str());
+			}
+
+			bool mayThrow = !method->parameters.empty() &&
+				parser->exceptionInterface &&
+				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
+				!exceptionClass.empty();
+
+			fprintf(out, ")");
+
+			if (mayThrow)
+				fprintf(out, " throws %s", exceptionClass.c_str());
+
+			fprintf(out, "\n");
+			fprintf(out, "\t\t{\n");
+			fprintf(out, "\t\t\tVTable vTable = getVTable();\n");
+
+			fprintf(out, "\t\t\t");
+
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
+				fprintf(out, "%s result = ", convertType(method->returnTypeRef, true).c_str());
+			}
+
+			fprintf(out, "vTable.%s.invoke(this", escapeName(method->name).c_str());
+
+			for (vector<Parameter*>::iterator k = method->parameters.begin();
+				 k != method->parameters.end();
+				 ++k)
+			{
+				Parameter* parameter = *k;
+				fprintf(out, ", %s", escapeName(parameter->name).c_str());
+			}
+
+			fprintf(out, ");");
+			fprintf(out, "\n");
+
+			if (!method->parameters.empty() &&
+				parser->exceptionInterface &&
+				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
+				!exceptionClass.empty())
+			{
+				fprintf(out, "\t\t\t%s.checkException(%s);\n", exceptionClass.c_str(),
+					escapeName(method->parameters.front()->name).c_str());
+			}
+
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
+				fprintf(out, "\t\t\treturn result;\n");
+			}
+
+			fprintf(out, "\t\t}\n");
+		}
+
+		if (!interface->super)
+		{
+			fprintf(out, "\n");
+			fprintf(out, "\t\tpublic com.sun.jna.Pointer cloopDummy;\n");
+			fprintf(out, "\n");
+			fprintf(out, "\t\t@Override\n");
+			fprintf(out, "\t\tprotected java.util.List<String> getFieldOrder()\n");
+			fprintf(out, "\t\t{\n");
+			fprintf(out, "\t\t\tjava.util.List<String> fields = new java.util.ArrayList<String>();\n");
+			fprintf(out, "\t\t\tfields.addAll(java.util.Arrays.asList(\"cloopDummy\", \"cloopVTable\"));\n");
+			fprintf(out, "\t\t\treturn fields;\n");
+			fprintf(out, "\t\t}\n");
+			fprintf(out, "\n");
+			fprintf(out, "\t\tpublic abstract <T extends VTable> T getVTable();\n");
+		}
+
+		fprintf(out, "\t}\n");
+		fprintf(out, "\n");
+
+		Interface* base = interface;
+		while (base->super)
+			base = base->super;
+
+		fprintf(out, "\tpublic static class %s%sImpl extends %s%s\n",
+			prefix.c_str(), escapeName(interface->name).c_str(),
+			prefix.c_str(), escapeName(interface->name).c_str());
+		fprintf(out, "\t{\n");
+		fprintf(out, "\t\tpublic VTable cloopVTable;\n");
+		fprintf(out, "\n");
+		fprintf(out, "\t\t@SuppressWarnings(\"unchecked\")\n");
+		fprintf(out, "\t\t@Override\n");
+		fprintf(out, "\t\tpublic <T extends %s%s.VTable> T getVTable()\n",
+			prefix.c_str(), escapeName(base->name).c_str());
+		fprintf(out, "\t\t{\n");
+		fprintf(out, "\t\t\treturn (T) cloopVTable;\n");
+		fprintf(out, "\t\t}\n");
+		fprintf(out, "\t}\n");
+	}
+
+	fprintf(out, "}\n");
+}
+
+string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
+{
+	string name;
+
+	switch (typeRef.token.type)
+	{
+		case Token::TYPE_BOOLEAN:
+			name = "boolean";
+			break;
+
+		case Token::TYPE_INT:
+			name = "int";
+			break;
+
+		case Token::TYPE_INT64:
+			name = "long";
+			break;
+
+		case Token::TYPE_INTPTR:
+			name = "NativeLong";
+			break;
+
+		case Token::TYPE_STRING:
+			name = "String";
+			break;
+
+		case Token::TYPE_UCHAR:
+			name = "byte";
+			break;
+
+		case Token::TYPE_UINT:
+			name = "int";
+			break;
+
+		case Token::TYPE_UINT64:
+			name = "long";
+			break;
+
+		default:
+			if (typeRef.token.type == Token::TYPE_IDENTIFIER)
+				name = prefix;
+
+			name += typeRef.token.text;
+
+			if (typeRef.token.type == Token::TYPE_IDENTIFIER && forReturn)
+				name += "Impl";
+			break;
+	}
+
+	if (typeRef.isPointer)
+	{
+		if (name == "void")
+			return "com.sun.jna.Pointer";
+		else
+			name += "[]";
+	}
+
+	return name;
+}
+
+string JnaGenerator::escapeName(const string& name)
+{
+	//// TODO: Create a table of keywords.
+	return name;
 }

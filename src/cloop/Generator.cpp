@@ -1748,7 +1748,7 @@ string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
 			break;
 
 		case Token::TYPE_INTPTR:
-			name = "NativeLong";
+			name = "com.sun.jna.NativeLong";
 			break;
 
 		case Token::TYPE_STRING:
@@ -1768,13 +1768,20 @@ string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
 			break;
 
 		default:
-			if (typeRef.token.type == Token::TYPE_IDENTIFIER)
+			if (typeRef.type == BaseType::TYPE_INTERFACE &&
+				typeRef.token.type == Token::TYPE_IDENTIFIER)
+			{
 				name = prefix;
+			}
 
 			name += typeRef.token.text;
 
-			if (typeRef.token.type == Token::TYPE_IDENTIFIER && forReturn)
+			if (typeRef.type == BaseType::TYPE_INTERFACE &&
+				typeRef.token.type == Token::TYPE_IDENTIFIER && forReturn)
+			{
 				name += "Impl";
+			}
+
 			break;
 	}
 

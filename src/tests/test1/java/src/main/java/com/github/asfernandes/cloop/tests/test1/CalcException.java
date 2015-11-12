@@ -36,6 +36,11 @@ public class CalcException extends Exception
 		return code;
 	}
 
+	public static void catchException(ICalc.IStatus status, Throwable t)
+	{
+		status.setCode(ICalc.IStatus.ERROR_1);
+	}
+
 	public static void checkException(ICalc.IStatus status) throws CalcException
 	{
 		int code = status.getCode();

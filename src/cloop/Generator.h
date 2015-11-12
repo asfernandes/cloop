@@ -155,7 +155,8 @@ public:
 	virtual void generate();
 
 private:
-	std::string convertType(const TypeRef& typeRef, bool forReturn);
+	std::string convertType(const TypeRef& typeRef);
+	std::string literalForError(const TypeRef& typeRef);
 	std::string escapeName(const std::string& name);
 
 private:

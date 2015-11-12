@@ -24,5 +24,5 @@ package com.github.asfernandes.cloop.tests.test1;
 
 public interface Calc extends ICalc
 {
-	public IFactoryImpl createFactory();
+	public IFactory createFactory();
 }

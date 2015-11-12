@@ -34,51 +34,51 @@ public class CalcTest
 	@Test
 	public void test() throws CalcException
 	{
-		Calc calc = (Calc) Native.loadLibrary("test1-c.so", Calc.class);
+		Calc calc = (Calc) Native.loadLibrary("test1-cpp.so", Calc.class);
 		IFactory factory = calc.createFactory();
 		IStatus status = factory.createStatus();
 
 		ICalculator calculator = factory.createCalculator(status);
 
 		calculator.sumAndStore(status, 1, 22);
-		Assert.assertEquals(calculator.getMemory(), 23);
+		Assert.assertEquals(23, calculator.getMemory());
 
 		calculator.setMemory(calculator.sum(status, 2, 33));
-		Assert.assertEquals(calculator.getMemory(), 35);
+		Assert.assertEquals(35, calculator.getMemory());
 
 		ICalculator2 calculator2 = factory.createCalculator2(status);
 
 		calculator2.copyMemory(calculator);
-		Assert.assertEquals(calculator2.getMemory(), 35);
+		Assert.assertEquals(35, calculator2.getMemory());
 
 		int[] address = new int[] {40};
 		calculator2.copyMemory2(address);
-		Assert.assertEquals(calculator2.getMemory(), 40);
+		Assert.assertEquals(40, calculator2.getMemory());
 
 		calculator.dispose();
 		calculator = calculator2;
 
 		calculator.sumAndStore(status, 1, 22);
-		Assert.assertEquals(calculator.getMemory(), 23);
+		Assert.assertEquals(23, calculator.getMemory());
 
 		calculator.setMemory(calculator.sum(status, 2, 33));
-		Assert.assertEquals(calculator.getMemory(), 35);
+		Assert.assertEquals(35, calculator.getMemory());
 
 		calculator2.sumAndStore(status, 1, 22);
-		Assert.assertEquals(calculator2.getMemory(), 23);
+		Assert.assertEquals(23, calculator2.getMemory());
 
 		calculator2.setMemory(calculator2.multiply(status, 2, 33));
-		Assert.assertEquals(calculator2.getMemory(), 66);
+		Assert.assertEquals(66, calculator2.getMemory());
 
 		calculator.dispose();
 
 		calculator = factory.createBrokenCalculator(status);
 
 		calculator.sumAndStore(status, 1, 22);
-		Assert.assertEquals(calculator.getMemory(), 24);
+		Assert.assertEquals(24, calculator.getMemory());
 
 		calculator.setMemory(calculator.sum(status, 2, 33));
-		Assert.assertEquals(calculator.getMemory(), 36);
+		Assert.assertEquals(36, calculator.getMemory());
 
 		int code = -1;
 		try
@@ -90,7 +90,60 @@ public class CalcTest
 			code = e.getCode();
 		}
 
-		Assert.assertEquals(code, IStatus.ERROR_1);
+		Assert.assertEquals(IStatus.ERROR_1, code);
+
+		class MyStatusImpl extends IStatusImpl
+		{
+			private int code = -2;
+
+			@Override
+			public void dispose()
+			{
+			}
+
+			@Override
+			public int getCode()
+			{
+				return code;
+			}
+
+			@Override
+			public void setCode(int code)
+			{
+				this.code = code;
+			}
+		}
+
+		status = new MyStatusImpl();
+
+		Assert.assertEquals(-2, (code = status.getCode()));
+
+		try
+		{
+			calculator.sum(status, 600, 600);
+		}
+		catch (CalcException e)
+		{
+			code = e.getCode();
+		}
+
+		Assert.assertEquals(IStatus.ERROR_1, code);
+
+		factory.setStatusFactory(new IStatusFactoryImpl() {
+			@Override
+			public void dispose()
+			{
+			}
+
+			@Override
+			public IStatus createStatus()
+			{
+				return new MyStatusImpl();
+			}
+		});
+
+		status = factory.createStatus();
+		Assert.assertEquals(-2, (/*code =*/ status.getCode()));
 
 		calculator.dispose();
 		factory.dispose();

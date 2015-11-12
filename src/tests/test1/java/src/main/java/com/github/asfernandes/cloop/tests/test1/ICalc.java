@@ -5,7 +5,7 @@ package com.github.asfernandes.cloop.tests.test1;
 
 public interface ICalc extends com.sun.jna.Library
 {
-	public static abstract class IDisposable extends com.sun.jna.Structure
+	public static class IDisposable extends com.sun.jna.Structure
 	{
 		public static class VTable extends com.sun.jna.Structure implements com.sun.jna.Structure.ByReference
 		{
@@ -16,6 +16,26 @@ public interface ICalc extends com.sun.jna.Library
 
 			public com.sun.jna.Pointer cloopDummy;
 			public com.sun.jna.Pointer version;
+
+			public VTable(com.sun.jna.Pointer pointer)
+			{
+				super(pointer);
+			}
+
+			public VTable(IDisposable obj)
+			{
+				dispose = new Callback_dispose() {
+					@Override
+					public void invoke(IDisposable self)
+					{
+						obj.dispose();
+					}
+				};
+			}
+
+			public VTable()
+			{
+			}
 
 			public Callback_dispose dispose;
 
@@ -28,13 +48,9 @@ public interface ICalc extends com.sun.jna.Library
 			}
 		}
 
-		public void dispose()
-		{
-			VTable vTable = getVTable();
-			vTable.dispose.invoke(this);
-		}
-
 		public com.sun.jna.Pointer cloopDummy;
+		public com.sun.jna.Pointer cloopVTable;
+		private volatile VTable vTable;
 
 		@Override
 		protected java.util.List<String> getFieldOrder()
@@ -44,22 +60,50 @@ public interface ICalc extends com.sun.jna.Library
 			return fields;
 		}
 
-		public abstract <T extends VTable> T getVTable();
-	}
-
-	public static class IDisposableImpl extends IDisposable
-	{
-		public VTable cloopVTable;
-
 		@SuppressWarnings("unchecked")
-		@Override
-		public <T extends IDisposable.VTable> T getVTable()
+		public final <T extends VTable> T getVTable()
 		{
-			return (T) cloopVTable;
+			if (vTable == null)
+			{
+				synchronized (cloopVTable)
+				{
+					if (vTable == null)
+					{
+						vTable = createVTable();
+						vTable.read();
+					}
+				}
+			}
+
+			return (T) vTable;
+		}
+
+		protected VTable createVTable()
+		{
+			return new VTable(cloopVTable);
+		}
+
+		public void dispose()
+		{
+			VTable vTable = getVTable();
+			vTable.dispose.invoke(this);
 		}
 	}
 
-	public static abstract class IStatus extends IDisposable
+	public static abstract class IDisposableImpl extends IDisposable
+	{
+		{
+			VTable vTable = new VTable(this);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
+		@Override
+		public abstract void dispose();
+	}
+
+	public static class IStatus extends IDisposable
 	{
 		public static int ERROR_1 = 1;
 		public static int ERROR_2 = 2;
@@ -77,6 +121,36 @@ public interface ICalc extends com.sun.jna.Library
 				public void invoke(IStatus self, int code);
 			}
 
+			public VTable(com.sun.jna.Pointer pointer)
+			{
+				super(pointer);
+			}
+
+			public VTable(IStatus obj)
+			{
+				super(obj);
+
+				getCode = new Callback_getCode() {
+					@Override
+					public int invoke(IStatus self)
+					{
+						return obj.getCode();
+					}
+				};
+
+				setCode = new Callback_setCode() {
+					@Override
+					public void invoke(IStatus self, int code)
+					{
+						obj.setCode(code);
+					}
+				};
+			}
+
+			public VTable()
+			{
+			}
+
 			public Callback_getCode getCode;
 			public Callback_setCode setCode;
 
@@ -87,6 +161,12 @@ public interface ICalc extends com.sun.jna.Library
 				fields.addAll(java.util.Arrays.asList("getCode", "setCode"));
 				return fields;
 			}
+		}
+
+		@Override
+		protected VTable createVTable()
+		{
+			return new VTable(cloopVTable);
 		}
 
 		public int getCode()
@@ -103,101 +183,292 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static class IStatusImpl extends IStatus
+	public static abstract class IStatusImpl extends IStatus
 	{
-		public VTable cloopVTable;
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public <T extends IDisposable.VTable> T getVTable()
 		{
-			return (T) cloopVTable;
+			VTable vTable = new VTable(this);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
 		}
+
+		@Override
+		public abstract int getCode();
+
+		@Override
+		public abstract void setCode(int code);
+
+		@Override
+		public abstract void dispose();
 	}
 
-	public static abstract class IFactory extends IDisposable
+	public static class IStatusFactory extends IDisposable
 	{
 		public static class VTable extends IDisposable.VTable
 		{
 			public static interface Callback_createStatus extends com.sun.jna.Callback
 			{
-				public IStatusImpl invoke(IFactory self);
+				public IStatus invoke(IStatusFactory self);
+			}
+
+			public VTable(com.sun.jna.Pointer pointer)
+			{
+				super(pointer);
+			}
+
+			public VTable(IStatusFactory obj)
+			{
+				super(obj);
+
+				createStatus = new Callback_createStatus() {
+					@Override
+					public IStatus invoke(IStatusFactory self)
+					{
+						return obj.createStatus();
+					}
+				};
+			}
+
+			public VTable()
+			{
+			}
+
+			public Callback_createStatus createStatus;
+
+			@Override
+			protected java.util.List<String> getFieldOrder()
+			{
+				java.util.List<String> fields = super.getFieldOrder();
+				fields.addAll(java.util.Arrays.asList("createStatus"));
+				return fields;
+			}
+		}
+
+		@Override
+		protected VTable createVTable()
+		{
+			return new VTable(cloopVTable);
+		}
+
+		public IStatus createStatus()
+		{
+			VTable vTable = getVTable();
+			IStatus result = vTable.createStatus.invoke(this);
+			return result;
+		}
+	}
+
+	public static abstract class IStatusFactoryImpl extends IStatusFactory
+	{
+		{
+			VTable vTable = new VTable(this);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
+		@Override
+		public abstract IStatus createStatus();
+
+		@Override
+		public abstract void dispose();
+	}
+
+	public static class IFactory extends IDisposable
+	{
+		public static class VTable extends IDisposable.VTable
+		{
+			public static interface Callback_createStatus extends com.sun.jna.Callback
+			{
+				public IStatus invoke(IFactory self);
 			}
 
 			public static interface Callback_createCalculator extends com.sun.jna.Callback
 			{
-				public ICalculatorImpl invoke(IFactory self, IStatus status);
+				public ICalculator invoke(IFactory self, IStatus status);
 			}
 
 			public static interface Callback_createCalculator2 extends com.sun.jna.Callback
 			{
-				public ICalculator2Impl invoke(IFactory self, IStatus status);
+				public ICalculator2 invoke(IFactory self, IStatus status);
 			}
 
 			public static interface Callback_createBrokenCalculator extends com.sun.jna.Callback
 			{
-				public ICalculatorImpl invoke(IFactory self, IStatus status);
+				public ICalculator invoke(IFactory self, IStatus status);
+			}
+
+			public static interface Callback_setStatusFactory extends com.sun.jna.Callback
+			{
+				public void invoke(IFactory self, IStatusFactory statusFactory);
+			}
+
+			public VTable(com.sun.jna.Pointer pointer)
+			{
+				super(pointer);
+			}
+
+			public VTable(IFactory obj)
+			{
+				super(obj);
+
+				createStatus = new Callback_createStatus() {
+					@Override
+					public IStatus invoke(IFactory self)
+					{
+						return obj.createStatus();
+					}
+				};
+
+				createCalculator = new Callback_createCalculator() {
+					@Override
+					public ICalculator invoke(IFactory self, IStatus status)
+					{
+						try
+						{
+							return obj.createCalculator(status);
+						}
+						catch (Throwable t)
+						{
+							CalcException.catchException(status, t);
+							return null;
+						}
+					}
+				};
+
+				createCalculator2 = new Callback_createCalculator2() {
+					@Override
+					public ICalculator2 invoke(IFactory self, IStatus status)
+					{
+						try
+						{
+							return obj.createCalculator2(status);
+						}
+						catch (Throwable t)
+						{
+							CalcException.catchException(status, t);
+							return null;
+						}
+					}
+				};
+
+				createBrokenCalculator = new Callback_createBrokenCalculator() {
+					@Override
+					public ICalculator invoke(IFactory self, IStatus status)
+					{
+						try
+						{
+							return obj.createBrokenCalculator(status);
+						}
+						catch (Throwable t)
+						{
+							CalcException.catchException(status, t);
+							return null;
+						}
+					}
+				};
+
+				setStatusFactory = new Callback_setStatusFactory() {
+					@Override
+					public void invoke(IFactory self, IStatusFactory statusFactory)
+					{
+						obj.setStatusFactory(statusFactory);
+					}
+				};
+			}
+
+			public VTable()
+			{
 			}
 
 			public Callback_createStatus createStatus;
 			public Callback_createCalculator createCalculator;
 			public Callback_createCalculator2 createCalculator2;
 			public Callback_createBrokenCalculator createBrokenCalculator;
+			public Callback_setStatusFactory setStatusFactory;
 
 			@Override
 			protected java.util.List<String> getFieldOrder()
 			{
 				java.util.List<String> fields = super.getFieldOrder();
-				fields.addAll(java.util.Arrays.asList("createStatus", "createCalculator", "createCalculator2", "createBrokenCalculator"));
+				fields.addAll(java.util.Arrays.asList("createStatus", "createCalculator", "createCalculator2", "createBrokenCalculator", "setStatusFactory"));
 				return fields;
 			}
 		}
 
-		public IStatusImpl createStatus()
-		{
-			VTable vTable = getVTable();
-			IStatusImpl result = vTable.createStatus.invoke(this);
-			return result;
-		}
-
-		public ICalculatorImpl createCalculator(IStatus status) throws CalcException
-		{
-			VTable vTable = getVTable();
-			ICalculatorImpl result = vTable.createCalculator.invoke(this, status);
-			CalcException.checkException(status);
-			return result;
-		}
-
-		public ICalculator2Impl createCalculator2(IStatus status) throws CalcException
-		{
-			VTable vTable = getVTable();
-			ICalculator2Impl result = vTable.createCalculator2.invoke(this, status);
-			CalcException.checkException(status);
-			return result;
-		}
-
-		public ICalculatorImpl createBrokenCalculator(IStatus status) throws CalcException
-		{
-			VTable vTable = getVTable();
-			ICalculatorImpl result = vTable.createBrokenCalculator.invoke(this, status);
-			CalcException.checkException(status);
-			return result;
-		}
-	}
-
-	public static class IFactoryImpl extends IFactory
-	{
-		public VTable cloopVTable;
-
-		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends IDisposable.VTable> T getVTable()
+		protected VTable createVTable()
 		{
-			return (T) cloopVTable;
+			return new VTable(cloopVTable);
+		}
+
+		public IStatus createStatus()
+		{
+			VTable vTable = getVTable();
+			IStatus result = vTable.createStatus.invoke(this);
+			return result;
+		}
+
+		public ICalculator createCalculator(IStatus status) throws CalcException
+		{
+			VTable vTable = getVTable();
+			ICalculator result = vTable.createCalculator.invoke(this, status);
+			CalcException.checkException(status);
+			return result;
+		}
+
+		public ICalculator2 createCalculator2(IStatus status) throws CalcException
+		{
+			VTable vTable = getVTable();
+			ICalculator2 result = vTable.createCalculator2.invoke(this, status);
+			CalcException.checkException(status);
+			return result;
+		}
+
+		public ICalculator createBrokenCalculator(IStatus status) throws CalcException
+		{
+			VTable vTable = getVTable();
+			ICalculator result = vTable.createBrokenCalculator.invoke(this, status);
+			CalcException.checkException(status);
+			return result;
+		}
+
+		public void setStatusFactory(IStatusFactory statusFactory)
+		{
+			VTable vTable = getVTable();
+			vTable.setStatusFactory.invoke(this, statusFactory);
 		}
 	}
 
-	public static abstract class ICalculator extends IDisposable
+	public static abstract class IFactoryImpl extends IFactory
+	{
+		{
+			VTable vTable = new VTable(this);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
+		@Override
+		public abstract IStatus createStatus();
+
+		@Override
+		public abstract ICalculator createCalculator(IStatus status) throws CalcException;
+
+		@Override
+		public abstract ICalculator2 createCalculator2(IStatus status) throws CalcException;
+
+		@Override
+		public abstract ICalculator createBrokenCalculator(IStatus status) throws CalcException;
+
+		@Override
+		public abstract void setStatusFactory(IStatusFactory statusFactory);
+
+		@Override
+		public abstract void dispose();
+	}
+
+	public static class ICalculator extends IDisposable
 	{
 		public static class VTable extends IDisposable.VTable
 		{
@@ -221,6 +492,67 @@ public interface ICalc extends com.sun.jna.Library
 				public void invoke(ICalculator self, IStatus status, int n1, int n2);
 			}
 
+			public VTable(com.sun.jna.Pointer pointer)
+			{
+				super(pointer);
+			}
+
+			public VTable(ICalculator obj)
+			{
+				super(obj);
+
+				sum = new Callback_sum() {
+					@Override
+					public int invoke(ICalculator self, IStatus status, int n1, int n2)
+					{
+						try
+						{
+							return obj.sum(status, n1, n2);
+						}
+						catch (Throwable t)
+						{
+							CalcException.catchException(status, t);
+							return 0;
+						}
+					}
+				};
+
+				getMemory = new Callback_getMemory() {
+					@Override
+					public int invoke(ICalculator self)
+					{
+						return obj.getMemory();
+					}
+				};
+
+				setMemory = new Callback_setMemory() {
+					@Override
+					public void invoke(ICalculator self, int n)
+					{
+						obj.setMemory(n);
+					}
+				};
+
+				sumAndStore = new Callback_sumAndStore() {
+					@Override
+					public void invoke(ICalculator self, IStatus status, int n1, int n2)
+					{
+						try
+						{
+							obj.sumAndStore(status, n1, n2);
+						}
+						catch (Throwable t)
+						{
+							CalcException.catchException(status, t);
+						}
+					}
+				};
+			}
+
+			public VTable()
+			{
+			}
+
 			public Callback_sum sum;
 			public Callback_getMemory getMemory;
 			public Callback_setMemory setMemory;
@@ -233,6 +565,12 @@ public interface ICalc extends com.sun.jna.Library
 				fields.addAll(java.util.Arrays.asList("sum", "getMemory", "setMemory", "sumAndStore"));
 				return fields;
 			}
+		}
+
+		@Override
+		protected VTable createVTable()
+		{
+			return new VTable(cloopVTable);
 		}
 
 		public int sum(IStatus status, int n1, int n2) throws CalcException
@@ -264,19 +602,32 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static class ICalculatorImpl extends ICalculator
+	public static abstract class ICalculatorImpl extends ICalculator
 	{
-		public VTable cloopVTable;
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public <T extends IDisposable.VTable> T getVTable()
 		{
-			return (T) cloopVTable;
+			VTable vTable = new VTable(this);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
 		}
+
+		@Override
+		public abstract int sum(IStatus status, int n1, int n2) throws CalcException;
+
+		@Override
+		public abstract int getMemory();
+
+		@Override
+		public abstract void setMemory(int n);
+
+		@Override
+		public abstract void sumAndStore(IStatus status, int n1, int n2) throws CalcException;
+
+		@Override
+		public abstract void dispose();
 	}
 
-	public static abstract class ICalculator2 extends ICalculator
+	public static class ICalculator2 extends ICalculator
 	{
 		public static class VTable extends ICalculator.VTable
 		{
@@ -295,6 +646,52 @@ public interface ICalc extends com.sun.jna.Library
 				public void invoke(ICalculator2 self, int[] address);
 			}
 
+			public VTable(com.sun.jna.Pointer pointer)
+			{
+				super(pointer);
+			}
+
+			public VTable(ICalculator2 obj)
+			{
+				super(obj);
+
+				multiply = new Callback_multiply() {
+					@Override
+					public int invoke(ICalculator2 self, IStatus status, int n1, int n2)
+					{
+						try
+						{
+							return obj.multiply(status, n1, n2);
+						}
+						catch (Throwable t)
+						{
+							CalcException.catchException(status, t);
+							return 0;
+						}
+					}
+				};
+
+				copyMemory = new Callback_copyMemory() {
+					@Override
+					public void invoke(ICalculator2 self, ICalculator calculator)
+					{
+						obj.copyMemory(calculator);
+					}
+				};
+
+				copyMemory2 = new Callback_copyMemory2() {
+					@Override
+					public void invoke(ICalculator2 self, int[] address)
+					{
+						obj.copyMemory2(address);
+					}
+				};
+			}
+
+			public VTable()
+			{
+			}
+
 			public Callback_multiply multiply;
 			public Callback_copyMemory copyMemory;
 			public Callback_copyMemory2 copyMemory2;
@@ -306,6 +703,12 @@ public interface ICalc extends com.sun.jna.Library
 				fields.addAll(java.util.Arrays.asList("multiply", "copyMemory", "copyMemory2"));
 				return fields;
 			}
+		}
+
+		@Override
+		protected VTable createVTable()
+		{
+			return new VTable(cloopVTable);
 		}
 
 		public int multiply(IStatus status, int n1, int n2) throws CalcException
@@ -329,15 +732,37 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static class ICalculator2Impl extends ICalculator2
+	public static abstract class ICalculator2Impl extends ICalculator2
 	{
-		public VTable cloopVTable;
-
-		@SuppressWarnings("unchecked")
-		@Override
-		public <T extends IDisposable.VTable> T getVTable()
 		{
-			return (T) cloopVTable;
+			VTable vTable = new VTable(this);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
 		}
+
+		@Override
+		public abstract int multiply(IStatus status, int n1, int n2) throws CalcException;
+
+		@Override
+		public abstract void copyMemory(ICalculator calculator);
+
+		@Override
+		public abstract void copyMemory2(int[] address);
+
+		@Override
+		public abstract int sum(IStatus status, int n1, int n2) throws CalcException;
+
+		@Override
+		public abstract int getMemory();
+
+		@Override
+		public abstract void setMemory(int n);
+
+		@Override
+		public abstract void sumAndStore(IStatus status, int n1, int n2) throws CalcException;
+
+		@Override
+		public abstract void dispose();
 	}
 }

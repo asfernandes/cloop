@@ -1501,7 +1501,7 @@ void JnaGenerator::generate()
 			Constant* constant = *j;
 
 			fprintf(out, "\t\tpublic static %s %s = %s;\n",
-				convertType(constant->typeRef).c_str(),
+				convertType(constant->typeRef, false).c_str(),
 				constant->name.c_str(),
 				constant->expr->generate(LANGUAGE_JAVA, prefix).c_str());
 		}
@@ -1529,7 +1529,7 @@ void JnaGenerator::generate()
 				escapeName(method->name).c_str());
 			fprintf(out, "\t\t\t{\n");
 			fprintf(out, "\t\t\t\tpublic %s invoke(%s%s self",
-				convertType(method->returnTypeRef).c_str(),
+				convertType(method->returnTypeRef, true).c_str(),
 				prefix.c_str(),
 				escapeName(interface->name).c_str());
 
@@ -1540,7 +1540,7 @@ void JnaGenerator::generate()
 				Parameter* parameter = *k;
 
 				fprintf(out, ", %s %s",
-					convertType(parameter->typeRef).c_str(),
+					convertType(parameter->typeRef, false).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
@@ -1582,7 +1582,7 @@ void JnaGenerator::generate()
 				escapeName(method->name).c_str(), escapeName(method->name).c_str());
 			fprintf(out, "\t\t\t\t\t@Override\n");
 			fprintf(out, "\t\t\t\t\tpublic %s invoke(%s%s self",
-				convertType(method->returnTypeRef).c_str(),
+				convertType(method->returnTypeRef, true).c_str(),
 				prefix.c_str(),
 				escapeName(interface->name).c_str());
 
@@ -1593,7 +1593,7 @@ void JnaGenerator::generate()
 				Parameter* parameter = *k;
 
 				fprintf(out, ", %s %s",
-					convertType(parameter->typeRef).c_str(),
+					convertType(parameter->typeRef, false).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
@@ -1778,7 +1778,7 @@ void JnaGenerator::generate()
 
 			fprintf(out, "\n");
 			fprintf(out, "\t\tpublic %s %s(",
-				convertType(method->returnTypeRef).c_str(),
+				convertType(method->returnTypeRef, true).c_str(),
 				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1791,7 +1791,7 @@ void JnaGenerator::generate()
 					fprintf(out, ", ");
 
 				fprintf(out, "%s %s",
-					convertType(parameter->typeRef).c_str(),
+					convertType(parameter->typeRef, false).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
@@ -1814,7 +1814,7 @@ void JnaGenerator::generate()
 			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
 				method->returnTypeRef.isPointer)
 			{
-				fprintf(out, "%s result = ", convertType(method->returnTypeRef).c_str());
+				fprintf(out, "%s result = ", convertType(method->returnTypeRef, true).c_str());
 			}
 
 			fprintf(out, "vTable.%s.invoke(this", escapeName(method->name).c_str());
@@ -1874,7 +1874,7 @@ void JnaGenerator::generate()
 				fprintf(out, "\n");
 				fprintf(out, "\t\t@Override\n");
 				fprintf(out, "\t\tpublic abstract %s %s(",
-					convertType(method->returnTypeRef).c_str(),
+					convertType(method->returnTypeRef, true).c_str(),
 					escapeName(method->name).c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1887,7 +1887,7 @@ void JnaGenerator::generate()
 						fprintf(out, ", ");
 
 					fprintf(out, "%s %s",
-						convertType(parameter->typeRef).c_str(),
+						convertType(parameter->typeRef, false).c_str(),
 						escapeName(parameter->name).c_str());
 				}
 
@@ -1911,7 +1911,7 @@ void JnaGenerator::generate()
 	fprintf(out, "}\n");
 }
 
-string JnaGenerator::convertType(const TypeRef& typeRef)
+string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
 {
 	string name;
 
@@ -1965,7 +1965,7 @@ string JnaGenerator::convertType(const TypeRef& typeRef)
 
 	if (typeRef.isPointer)
 	{
-		if (name == "void")
+		if (forReturn || name == "void")
 			return "com.sun.jna.Pointer";
 		else
 			name += "[]";

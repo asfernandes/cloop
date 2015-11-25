@@ -5,7 +5,51 @@ package com.github.asfernandes.cloop.tests.test1;
 
 public interface ICalc extends com.sun.jna.Library
 {
-	public static class IDisposable extends com.sun.jna.Structure
+	public static interface IDisposableIntf
+	{
+		public void dispose();
+	}
+
+	public static interface IStatusIntf extends IDisposableIntf
+	{
+		public static int ERROR_1 = 1;
+		public static int ERROR_2 = 2;
+		public static int ERROR_12 = IStatusIntf.ERROR_1 | IStatusIntf.ERROR_2;
+
+		public int getCode();
+		public void setCode(int code);
+	}
+
+	public static interface IStatusFactoryIntf extends IDisposableIntf
+	{
+		public IStatus createStatus();
+	}
+
+	public static interface IFactoryIntf extends IDisposableIntf
+	{
+		public IStatus createStatus();
+		public ICalculator createCalculator(IStatus status) throws CalcException;
+		public ICalculator2 createCalculator2(IStatus status) throws CalcException;
+		public ICalculator createBrokenCalculator(IStatus status) throws CalcException;
+		public void setStatusFactory(IStatusFactory statusFactory);
+	}
+
+	public static interface ICalculatorIntf extends IDisposableIntf
+	{
+		public int sum(IStatus status, int n1, int n2) throws CalcException;
+		public int getMemory();
+		public void setMemory(int n);
+		public void sumAndStore(IStatus status, int n1, int n2) throws CalcException;
+	}
+
+	public static interface ICalculator2Intf extends ICalculatorIntf
+	{
+		public int multiply(IStatus status, int n1, int n2) throws CalcException;
+		public void copyMemory(ICalculator calculator);
+		public void copyMemory2(int[] address);
+	}
+
+	public static class IDisposable extends com.sun.jna.Structure implements IDisposableIntf
 	{
 		public static class VTable extends com.sun.jna.Structure implements com.sun.jna.Structure.ByReference
 		{
@@ -22,7 +66,7 @@ public interface ICalc extends com.sun.jna.Library
 				super(pointer);
 			}
 
-			public VTable(IDisposable obj)
+			public VTable(IDisposableIntf obj)
 			{
 				dispose = new Callback_dispose() {
 					@Override
@@ -78,6 +122,18 @@ public interface ICalc extends com.sun.jna.Library
 			return (T) vTable;
 		}
 
+		public IDisposable()
+		{
+		}
+
+		public IDisposable(IDisposableIntf obj)
+		{
+			VTable vTable = new VTable(obj);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
 		protected VTable createVTable()
 		{
 			return new VTable(cloopVTable);
@@ -90,25 +146,8 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static abstract class IDisposableImpl extends IDisposable
+	public static class IStatus extends IDisposable implements IStatusIntf
 	{
-		{
-			VTable vTable = new VTable(this);
-			vTable.write();
-			cloopVTable = vTable.getPointer();
-			write();
-		}
-
-		@Override
-		public abstract void dispose();
-	}
-
-	public static class IStatus extends IDisposable
-	{
-		public static int ERROR_1 = 1;
-		public static int ERROR_2 = 2;
-		public static int ERROR_12 = IStatus.ERROR_1 | IStatus.ERROR_2;
-
 		public static class VTable extends IDisposable.VTable
 		{
 			public static interface Callback_getCode extends com.sun.jna.Callback
@@ -126,7 +165,7 @@ public interface ICalc extends com.sun.jna.Library
 				super(pointer);
 			}
 
-			public VTable(IStatus obj)
+			public VTable(IStatusIntf obj)
 			{
 				super(obj);
 
@@ -163,6 +202,18 @@ public interface ICalc extends com.sun.jna.Library
 			}
 		}
 
+		public IStatus()
+		{
+		}
+
+		public IStatus(IStatusIntf obj)
+		{
+			VTable vTable = new VTable(obj);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
 		@Override
 		protected VTable createVTable()
 		{
@@ -183,26 +234,7 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static abstract class IStatusImpl extends IStatus
-	{
-		{
-			VTable vTable = new VTable(this);
-			vTable.write();
-			cloopVTable = vTable.getPointer();
-			write();
-		}
-
-		@Override
-		public abstract int getCode();
-
-		@Override
-		public abstract void setCode(int code);
-
-		@Override
-		public abstract void dispose();
-	}
-
-	public static class IStatusFactory extends IDisposable
+	public static class IStatusFactory extends IDisposable implements IStatusFactoryIntf
 	{
 		public static class VTable extends IDisposable.VTable
 		{
@@ -216,7 +248,7 @@ public interface ICalc extends com.sun.jna.Library
 				super(pointer);
 			}
 
-			public VTable(IStatusFactory obj)
+			public VTable(IStatusFactoryIntf obj)
 			{
 				super(obj);
 
@@ -244,6 +276,18 @@ public interface ICalc extends com.sun.jna.Library
 			}
 		}
 
+		public IStatusFactory()
+		{
+		}
+
+		public IStatusFactory(IStatusFactoryIntf obj)
+		{
+			VTable vTable = new VTable(obj);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
 		@Override
 		protected VTable createVTable()
 		{
@@ -258,23 +302,7 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static abstract class IStatusFactoryImpl extends IStatusFactory
-	{
-		{
-			VTable vTable = new VTable(this);
-			vTable.write();
-			cloopVTable = vTable.getPointer();
-			write();
-		}
-
-		@Override
-		public abstract IStatus createStatus();
-
-		@Override
-		public abstract void dispose();
-	}
-
-	public static class IFactory extends IDisposable
+	public static class IFactory extends IDisposable implements IFactoryIntf
 	{
 		public static class VTable extends IDisposable.VTable
 		{
@@ -308,7 +336,7 @@ public interface ICalc extends com.sun.jna.Library
 				super(pointer);
 			}
 
-			public VTable(IFactory obj)
+			public VTable(IFactoryIntf obj)
 			{
 				super(obj);
 
@@ -396,6 +424,18 @@ public interface ICalc extends com.sun.jna.Library
 			}
 		}
 
+		public IFactory()
+		{
+		}
+
+		public IFactory(IFactoryIntf obj)
+		{
+			VTable vTable = new VTable(obj);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
 		@Override
 		protected VTable createVTable()
 		{
@@ -440,35 +480,7 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static abstract class IFactoryImpl extends IFactory
-	{
-		{
-			VTable vTable = new VTable(this);
-			vTable.write();
-			cloopVTable = vTable.getPointer();
-			write();
-		}
-
-		@Override
-		public abstract IStatus createStatus();
-
-		@Override
-		public abstract ICalculator createCalculator(IStatus status) throws CalcException;
-
-		@Override
-		public abstract ICalculator2 createCalculator2(IStatus status) throws CalcException;
-
-		@Override
-		public abstract ICalculator createBrokenCalculator(IStatus status) throws CalcException;
-
-		@Override
-		public abstract void setStatusFactory(IStatusFactory statusFactory);
-
-		@Override
-		public abstract void dispose();
-	}
-
-	public static class ICalculator extends IDisposable
+	public static class ICalculator extends IDisposable implements ICalculatorIntf
 	{
 		public static class VTable extends IDisposable.VTable
 		{
@@ -497,7 +509,7 @@ public interface ICalc extends com.sun.jna.Library
 				super(pointer);
 			}
 
-			public VTable(ICalculator obj)
+			public VTable(ICalculatorIntf obj)
 			{
 				super(obj);
 
@@ -567,6 +579,18 @@ public interface ICalc extends com.sun.jna.Library
 			}
 		}
 
+		public ICalculator()
+		{
+		}
+
+		public ICalculator(ICalculatorIntf obj)
+		{
+			VTable vTable = new VTable(obj);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
 		@Override
 		protected VTable createVTable()
 		{
@@ -602,32 +626,7 @@ public interface ICalc extends com.sun.jna.Library
 		}
 	}
 
-	public static abstract class ICalculatorImpl extends ICalculator
-	{
-		{
-			VTable vTable = new VTable(this);
-			vTable.write();
-			cloopVTable = vTable.getPointer();
-			write();
-		}
-
-		@Override
-		public abstract int sum(IStatus status, int n1, int n2) throws CalcException;
-
-		@Override
-		public abstract int getMemory();
-
-		@Override
-		public abstract void setMemory(int n);
-
-		@Override
-		public abstract void sumAndStore(IStatus status, int n1, int n2) throws CalcException;
-
-		@Override
-		public abstract void dispose();
-	}
-
-	public static class ICalculator2 extends ICalculator
+	public static class ICalculator2 extends ICalculator implements ICalculator2Intf
 	{
 		public static class VTable extends ICalculator.VTable
 		{
@@ -651,7 +650,7 @@ public interface ICalc extends com.sun.jna.Library
 				super(pointer);
 			}
 
-			public VTable(ICalculator2 obj)
+			public VTable(ICalculator2Intf obj)
 			{
 				super(obj);
 
@@ -705,6 +704,18 @@ public interface ICalc extends com.sun.jna.Library
 			}
 		}
 
+		public ICalculator2()
+		{
+		}
+
+		public ICalculator2(ICalculator2Intf obj)
+		{
+			VTable vTable = new VTable(obj);
+			vTable.write();
+			cloopVTable = vTable.getPointer();
+			write();
+		}
+
 		@Override
 		protected VTable createVTable()
 		{
@@ -730,39 +741,5 @@ public interface ICalc extends com.sun.jna.Library
 			VTable vTable = getVTable();
 			vTable.copyMemory2.invoke(this, address);
 		}
-	}
-
-	public static abstract class ICalculator2Impl extends ICalculator2
-	{
-		{
-			VTable vTable = new VTable(this);
-			vTable.write();
-			cloopVTable = vTable.getPointer();
-			write();
-		}
-
-		@Override
-		public abstract int multiply(IStatus status, int n1, int n2) throws CalcException;
-
-		@Override
-		public abstract void copyMemory(ICalculator calculator);
-
-		@Override
-		public abstract void copyMemory2(int[] address);
-
-		@Override
-		public abstract int sum(IStatus status, int n1, int n2) throws CalcException;
-
-		@Override
-		public abstract int getMemory();
-
-		@Override
-		public abstract void setMemory(int n);
-
-		@Override
-		public abstract void sumAndStore(IStatus status, int n1, int n2) throws CalcException;
-
-		@Override
-		public abstract void dispose();
 	}
 }

@@ -94,8 +94,11 @@ string ConstantExpr::generate(Language language, const string& prefix)
 			break;
 
 		case LANGUAGE_PASCAL:
-		case LANGUAGE_JAVA:
 			retPrefix = prefix + interface->name + ".";
+			break;
+
+		case LANGUAGE_JAVA:
+			retPrefix = prefix + interface->name + "Intf.";
 			break;
 	}
 

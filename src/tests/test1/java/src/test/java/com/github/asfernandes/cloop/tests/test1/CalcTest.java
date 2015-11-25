@@ -92,7 +92,7 @@ public class CalcTest
 
 		Assert.assertEquals(IStatus.ERROR_1, code);
 
-		class MyStatusImpl extends IStatusImpl
+		class MyStatusIntf implements IStatusIntf
 		{
 			private int code = -2;
 
@@ -114,7 +114,7 @@ public class CalcTest
 			}
 		}
 
-		status = new MyStatusImpl();
+		status = new IStatus(new MyStatusIntf());
 
 		Assert.assertEquals(-2, (code = status.getCode()));
 
@@ -129,7 +129,7 @@ public class CalcTest
 
 		Assert.assertEquals(IStatus.ERROR_1, code);
 
-		factory.setStatusFactory(new IStatusFactoryImpl() {
+		factory.setStatusFactory(new IStatusFactory(new IStatusFactoryIntf() {
 			@Override
 			public void dispose()
 			{
@@ -138,9 +138,9 @@ public class CalcTest
 			@Override
 			public IStatus createStatus()
 			{
-				return new MyStatusImpl();
+				return new IStatus(new MyStatusIntf());
 			}
-		});
+		}));
 
 		status = factory.createStatus();
 		Assert.assertEquals(-2, (/*code =*/ status.getCode()));

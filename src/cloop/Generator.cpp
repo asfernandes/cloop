@@ -1481,16 +1481,19 @@ void JnaGenerator::generate()
 
 		Interface* interface = *i;
 
-		fprintf(out, "\tpublic static class %s%s extends ",
+		fprintf(out, "\tpublic static interface %s%sIntf",
 			prefix.c_str(), escapeName(interface->name).c_str());
 
 		if (interface->super)
-			fprintf(out, "%s%s", prefix.c_str(), escapeName(interface->super->name).c_str());
-		else
-			fprintf(out, "com.sun.jna.Structure");
+		{
+			fprintf(out, " extends %s%sIntf",
+				prefix.c_str(), escapeName(interface->super->name).c_str());
+		}
 
 		fprintf(out, "\n");
 		fprintf(out, "\t{\n");
+
+
 
 		//// TODO: version
 
@@ -1508,6 +1511,65 @@ void JnaGenerator::generate()
 
 		if (!interface->constants.empty())
 			fprintf(out, "\n");
+
+
+		for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+		{
+			Method* method = *j;
+
+			fprintf(out, "\t\tpublic %s %s(",
+				convertType(method->returnTypeRef, true).c_str(),
+				escapeName(method->name).c_str());
+
+			for (vector<Parameter*>::iterator k = method->parameters.begin();
+				 k != method->parameters.end();
+				 ++k)
+			{
+				Parameter* parameter = *k;
+
+				if (k != method->parameters.begin())
+					fprintf(out, ", ");
+
+				fprintf(out, "%s %s",
+					convertType(parameter->typeRef, false).c_str(),
+					escapeName(parameter->name).c_str());
+			}
+
+			bool mayThrow = !method->parameters.empty() &&
+				parser->exceptionInterface &&
+				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
+				!exceptionClass.empty();
+
+			fprintf(out, ")");
+
+			if (mayThrow)
+				fprintf(out, " throws %s", exceptionClass.c_str());
+
+			fprintf(out, ";\n");
+		}
+
+		fprintf(out, "\t}\n");
+	}
+
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		Interface* interface = *i;
+
+		fprintf(out, "\n");
+		fprintf(out, "\tpublic static class %s%s extends ",
+			prefix.c_str(), escapeName(interface->name).c_str());
+
+		if (interface->super)
+			fprintf(out, "%s%s", prefix.c_str(), escapeName(interface->super->name).c_str());
+		else
+			fprintf(out, "com.sun.jna.Structure");
+
+		fprintf(out, " implements %s%sIntf\n", prefix.c_str(), escapeName(interface->name).c_str());
+		fprintf(out, "\t{\n");
 
 		fprintf(out, "\t\tpublic static class VTable extends ");
 
@@ -1562,7 +1624,7 @@ void JnaGenerator::generate()
 		fprintf(out, "\t\t\t}\n");
 		fprintf(out, "\n");
 
-		fprintf(out, "\t\t\tpublic VTable(%s%s obj)\n",
+		fprintf(out, "\t\t\tpublic VTable(%s%sIntf obj)\n",
 			prefix.c_str(), escapeName(interface->name).c_str());
 		fprintf(out, "\t\t\t{\n");
 
@@ -1757,13 +1819,28 @@ void JnaGenerator::generate()
 			fprintf(out, "\n");
 			fprintf(out, "\t\t\treturn (T) vTable;\n");
 			fprintf(out, "\t\t}\n");
-			fprintf(out, "\n");
 		}
-		else
-		{
-			fprintf(out, "\n");
+
+		fprintf(out, "\n");
+
+		fprintf(out, "\t\tpublic %s%s()\n", prefix.c_str(), escapeName(interface->name).c_str());
+		fprintf(out, "\t\t{\n");
+		fprintf(out, "\t\t}\n");
+		fprintf(out, "\n");
+
+		fprintf(out, "\t\tpublic %s%s(%s%sIntf obj)\n",
+			prefix.c_str(), escapeName(interface->name).c_str(),
+			prefix.c_str(), escapeName(interface->name).c_str());
+		fprintf(out, "\t\t{\n");
+		fprintf(out, "\t\t\tVTable vTable = new VTable(obj);\n");
+		fprintf(out, "\t\t\tvTable.write();\n");
+		fprintf(out, "\t\t\tcloopVTable = vTable.getPointer();\n");
+		fprintf(out, "\t\t\twrite();\n");
+		fprintf(out, "\t\t}\n");
+		fprintf(out, "\n");
+
+		if (interface->super)
 			fprintf(out, "\t\t@Override\n");
-		}
 
 		fprintf(out, "\t\tprotected VTable createVTable()\n");
 		fprintf(out, "\t\t{\n");
@@ -1846,63 +1923,6 @@ void JnaGenerator::generate()
 			}
 
 			fprintf(out, "\t\t}\n");
-		}
-
-		fprintf(out, "\t}\n");
-
-		fprintf(out, "\n");
-
-		fprintf(out, "\tpublic static abstract class %s%sImpl extends %s%s\n",
-			prefix.c_str(), escapeName(interface->name).c_str(),
-			prefix.c_str(), escapeName(interface->name).c_str());
-		fprintf(out, "\t{\n");
-		fprintf(out, "\t\t{\n");
-		fprintf(out, "\t\t\tVTable vTable = new VTable(this);\n");
-		fprintf(out, "\t\t\tvTable.write();\n");
-		fprintf(out, "\t\t\tcloopVTable = vTable.getPointer();\n");
-		fprintf(out, "\t\t\twrite();\n");
-		fprintf(out, "\t\t}\n");
-
-		for (Interface* curInterface = interface; curInterface; curInterface = curInterface->super)
-		{
-			for (vector<Method*>::iterator j = curInterface->methods.begin();
-				 j != curInterface->methods.end();
-				 ++j)
-			{
-				Method* method = *j;
-
-				fprintf(out, "\n");
-				fprintf(out, "\t\t@Override\n");
-				fprintf(out, "\t\tpublic abstract %s %s(",
-					convertType(method->returnTypeRef, true).c_str(),
-					escapeName(method->name).c_str());
-
-				for (vector<Parameter*>::iterator k = method->parameters.begin();
-					 k != method->parameters.end();
-					 ++k)
-				{
-					Parameter* parameter = *k;
-
-					if (k != method->parameters.begin())
-						fprintf(out, ", ");
-
-					fprintf(out, "%s %s",
-						convertType(parameter->typeRef, false).c_str(),
-						escapeName(parameter->name).c_str());
-				}
-
-				bool mayThrow = !method->parameters.empty() &&
-					parser->exceptionInterface &&
-					method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
-					!exceptionClass.empty();
-
-				fprintf(out, ")");
-
-				if (mayThrow)
-					fprintf(out, " throws %s", exceptionClass.c_str());
-
-				fprintf(out, ";\n");
-			}
 		}
 
 		fprintf(out, "\t}\n");

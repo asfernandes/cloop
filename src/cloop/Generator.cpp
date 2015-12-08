@@ -1792,7 +1792,7 @@ void JnaGenerator::generate()
 			fprintf(out, "\n");
 			fprintf(out, "\t\tpublic com.sun.jna.Pointer cloopDummy;\n");
 			fprintf(out, "\t\tpublic com.sun.jna.Pointer cloopVTable;\n");
-			fprintf(out, "\t\tprivate volatile VTable vTable;\n");
+			fprintf(out, "\t\tprotected volatile VTable vTable;\n");
 			fprintf(out, "\n");
 			fprintf(out, "\t\t@Override\n");
 			fprintf(out, "\t\tprotected java.util.List<String> getFieldOrder()\n");
@@ -1832,7 +1832,7 @@ void JnaGenerator::generate()
 			prefix.c_str(), escapeName(interface->name).c_str(),
 			prefix.c_str(), escapeName(interface->name).c_str());
 		fprintf(out, "\t\t{\n");
-		fprintf(out, "\t\t\tVTable vTable = new VTable(obj);\n");
+		fprintf(out, "\t\t\tvTable = new VTable(obj);\n");
 		fprintf(out, "\t\t\tvTable.write();\n");
 		fprintf(out, "\t\t\tcloopVTable = vTable.getPointer();\n");
 		fprintf(out, "\t\t\twrite();\n");

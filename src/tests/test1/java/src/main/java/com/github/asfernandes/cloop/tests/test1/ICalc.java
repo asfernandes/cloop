@@ -94,7 +94,7 @@ public interface ICalc extends com.sun.jna.Library
 
 		public com.sun.jna.Pointer cloopDummy;
 		public com.sun.jna.Pointer cloopVTable;
-		private volatile VTable vTable;
+		protected volatile VTable vTable;
 
 		@Override
 		protected java.util.List<String> getFieldOrder()
@@ -128,7 +128,7 @@ public interface ICalc extends com.sun.jna.Library
 
 		public IDisposable(IDisposableIntf obj)
 		{
-			VTable vTable = new VTable(obj);
+			vTable = new VTable(obj);
 			vTable.write();
 			cloopVTable = vTable.getPointer();
 			write();
@@ -208,7 +208,7 @@ public interface ICalc extends com.sun.jna.Library
 
 		public IStatus(IStatusIntf obj)
 		{
-			VTable vTable = new VTable(obj);
+			vTable = new VTable(obj);
 			vTable.write();
 			cloopVTable = vTable.getPointer();
 			write();
@@ -282,7 +282,7 @@ public interface ICalc extends com.sun.jna.Library
 
 		public IStatusFactory(IStatusFactoryIntf obj)
 		{
-			VTable vTable = new VTable(obj);
+			vTable = new VTable(obj);
 			vTable.write();
 			cloopVTable = vTable.getPointer();
 			write();
@@ -430,7 +430,7 @@ public interface ICalc extends com.sun.jna.Library
 
 		public IFactory(IFactoryIntf obj)
 		{
-			VTable vTable = new VTable(obj);
+			vTable = new VTable(obj);
 			vTable.write();
 			cloopVTable = vTable.getPointer();
 			write();
@@ -585,7 +585,7 @@ public interface ICalc extends com.sun.jna.Library
 
 		public ICalculator(ICalculatorIntf obj)
 		{
-			VTable vTable = new VTable(obj);
+			vTable = new VTable(obj);
 			vTable.write();
 			cloopVTable = vTable.getPointer();
 			write();
@@ -710,7 +710,7 @@ public interface ICalc extends com.sun.jna.Library
 
 		public ICalculator2(ICalculator2Intf obj)
 		{
-			VTable vTable = new VTable(obj);
+			vTable = new VTable(obj);
 			vTable.write();
 			cloopVTable = vTable.getPointer();
 			write();

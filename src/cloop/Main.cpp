@@ -92,14 +92,42 @@ static void run(int argc, const char* argv[])
 			throw runtime_error("Invalid command line parameters for Pascal output.");
 
 		string unitName(argv[4]);
-		string additionalUses(argc > 5 ? argv[5] : "");
-		string interfaceFile(argc > 6 ? argv[6] : "");
-		string implementationFile(argc > 7 ? argv[7] : "");
-		string exceptionClass(argc > 8 ? argv[8] : "");
-		string prefix;	//// TODO:
 
-		generator.reset(new PascalGenerator(outFilename, prefix, &parser, unitName,
-			additionalUses, interfaceFile, implementationFile, exceptionClass));
+		struct pascalSwitch
+		{
+			const char* sw;
+			string val;
+		};
+		pascalSwitch sw[] = {
+			{"--uses", ""}, {"--interfaceFile", ""}, {"--implementationFile", ""},
+			{"--exceptionClass", ""}, {"--prefix", ""}, {"--functionsFile", ""},
+			{NULL, ""} };
+
+		argv += 5;
+		argc -= 5;
+		for (; argc >= 2; argc -= 2, argv += 2)
+		{
+			string key = argv[0];
+			bool found = false;
+			for (pascalSwitch* cur = sw; cur->sw; ++cur)
+			{
+				if (cur->sw == key)
+				{
+					if (!cur->val.empty())
+						throw runtime_error("Repeated switch " + key);
+					found = true;
+					cur->val = argv[1];
+					break;
+				}
+			}
+			if (!found)
+				throw runtime_error("Unknown switch " + key);
+		}
+
+		generator.reset(new PascalGenerator(outFilename, sw[4].val/*prefix*/, &parser, unitName,
+			sw[0].val/*additionalUses*/, sw[1].val/*interfaceFile*/,
+			sw[2].val/*implementationFile*/, sw[3].val/*exceptionClass*/,
+			sw[5].val/*functionsFile*/));
 	}
 	else if (outFormat == "jna")
 	{

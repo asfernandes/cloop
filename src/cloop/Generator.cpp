@@ -870,14 +870,15 @@ void CImplGenerator::generate()
 
 PascalGenerator::PascalGenerator(const string& filename, const string& prefix, Parser* parser,
 		const string& unitName, const std::string& additionalUses, const std::string& interfaceFile,
-		const std::string& implementationFile, const std::string& exceptionClass)
+		const std::string& implementationFile, const std::string& exceptionClass, const std::string& functionsFile)
 	: FileGenerator(filename, prefix),
 	  parser(parser),
 	  unitName(unitName),
 	  additionalUses(additionalUses),
 	  interfaceFile(interfaceFile),
 	  implementationFile(implementationFile),
-	  exceptionClass(exceptionClass)
+	  exceptionClass(exceptionClass),
+	  functionsFile(functionsFile)
 {
 }
 
@@ -904,7 +905,7 @@ void PascalGenerator::generate()
 		 ++i)
 	{
 		Interface* interface = *i;
-		fprintf(out, "\t%s = class;\n", escapeName(interface->name).c_str());
+		fprintf(out, "\t%s = class;\n", escapeName(interface->name, true).c_str());
 	}
 
 	fprintf(out, "\n");
@@ -962,9 +963,9 @@ void PascalGenerator::generate()
 				 !method->returnTypeRef.isPointer;
 
 			fprintf(out, "\t%s_%sPtr = %s(this: %s",
-				escapeName(interface->name).c_str(), escapeName(method->name).c_str(),
+				escapeName(interface->name, true).c_str(), escapeName(method->name).c_str(),
 				(isProcedure ? "procedure" : "function"),
-				escapeName(interface->name).c_str());
+				escapeName(interface->name, true).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -994,7 +995,7 @@ void PascalGenerator::generate()
 		fprintf(out, "\t%sVTable = class", escapeName(interface->name).c_str());
 
 		if (interface->super)
-			fprintf(out, "(%sVTable)", interface->super->name.c_str());
+			fprintf(out, "(%sVTable)", escapeName(interface->super->name).c_str());
 
 		fprintf(out, "\n");
 
@@ -1008,15 +1009,15 @@ void PascalGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "\t\t%s: %s_%sPtr;\n", escapeName(method->name).c_str(),
-				escapeName(interface->name).c_str(), escapeName(method->name).c_str());
+				escapeName(interface->name, true).c_str(), escapeName(method->name).c_str());
 		}
 
 		fprintf(out, "\tend;\n\n");
 
-		fprintf(out, "\t%s = class", escapeName(interface->name).c_str());
+		fprintf(out, "\t%s = class", escapeName(interface->name, true).c_str());
 
 		if (interface->super)
-			fprintf(out, "(%s)", interface->super->name.c_str());
+			fprintf(out, "(%s)", escapeName(interface->super->name, true).c_str());
 
 		fprintf(out, "\n");
 
@@ -1080,7 +1081,7 @@ void PascalGenerator::generate()
 		fprintf(out, "\tend;\n\n");
 
 		fprintf(out, "\t%sImpl = class(%s)\n",
-			escapeName(interface->name).c_str(), escapeName(interface->name).c_str());
+			escapeName(interface->name, true).c_str(), escapeName(interface->name, true).c_str());
 		fprintf(out, "\t\tconstructor create;\n\n");
 
 		deque<Method*> methods;
@@ -1122,6 +1123,8 @@ void PascalGenerator::generate()
 		fprintf(out, "\tend;\n\n");
 	}
 
+	insertFile(functionsFile);
+
 	fprintf(out, "implementation\n\n");
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
@@ -1141,7 +1144,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, "%s %s.%s(",
 				(isProcedure ? "procedure" : "function"),
-				escapeName(interface->name).c_str(),
+				escapeName(interface->name, true).c_str(),
 				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1216,9 +1219,9 @@ void PascalGenerator::generate()
 
 			fprintf(out, "%s %sImpl_%sDispatcher(this: %s",
 				(isProcedure ? "procedure" : "function"),
-				escapeName(interface->name).c_str(),
+				escapeName(interface->name, true).c_str(),
 				escapeName(method->name).c_str(),
-				escapeName(interface->name).c_str());
+				escapeName(interface->name, true).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1245,7 +1248,7 @@ void PascalGenerator::generate()
 			if (!isProcedure)
 				fprintf(out, "Result := ");
 
-			fprintf(out, "%sImpl(this).%s(", escapeName(interface->name).c_str(),
+			fprintf(out, "%sImpl(this).%s(", escapeName(interface->name, true).c_str(),
 				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1283,11 +1286,11 @@ void PascalGenerator::generate()
 
 		fprintf(out, "var\n");
 		fprintf(out, "\t%sImpl_vTable: %sVTable;\n\n",
-			escapeName(interface->name).c_str(), escapeName(interface->name).c_str());
+			escapeName(interface->name, true).c_str(), escapeName(interface->name).c_str());
 
-		fprintf(out, "constructor %sImpl.create;\n", escapeName(interface->name).c_str());
+		fprintf(out, "constructor %sImpl.create;\n", escapeName(interface->name, true).c_str());
 		fprintf(out, "begin\n");
-		fprintf(out, "\tvTable := %sImpl_vTable;\n", escapeName(interface->name).c_str());
+		fprintf(out, "\tvTable := %sImpl_vTable;\n", escapeName(interface->name, true).c_str());
 		fprintf(out, "end;\n\n");
 	}
 
@@ -1307,18 +1310,18 @@ void PascalGenerator::generate()
 			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
 		fprintf(out, "\t%sImpl_vTable := %sVTable.create;\n",
-			escapeName(interface->name).c_str(), escapeName(interface->name).c_str());
+			escapeName(interface->name, true).c_str(), escapeName(interface->name).c_str());
 		fprintf(out, "\t%sImpl_vTable.version := %d;\n",
-			escapeName(interface->name).c_str(), (int) methods.size());
+			escapeName(interface->name, true).c_str(), (int) methods.size());
 
 		for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 		{
 			Method* method = *j;
 
 			fprintf(out, "\t%sImpl_vTable.%s := @%sImpl_%sDispatcher;\n",
-				escapeName(interface->name).c_str(),
+				escapeName(interface->name, true).c_str(),
 				escapeName(method->name).c_str(),
-				escapeName(interface->name).c_str(),
+				escapeName(interface->name, true).c_str(),
 				escapeName(method->name).c_str());
 		}
 
@@ -1332,7 +1335,7 @@ void PascalGenerator::generate()
 		 ++i)
 	{
 		Interface* interface = *i;
-		fprintf(out, "\t%sImpl_vTable.destroy;\n", escapeName(interface->name).c_str());
+		fprintf(out, "\t%sImpl_vTable.destroy;\n", escapeName(interface->name, true).c_str());
 	}
 
 	fprintf(out, "\n");
@@ -1382,6 +1385,10 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 			name = "QWord";
 			break;
 
+		case Token::TYPE_IDENTIFIER:
+			name = (typeRef.type == BaseType::TYPE_INTERFACE ? prefix : "") + typeRef.token.text;
+			break;
+
 		default:
 			name = typeRef.token.text;
 			break;
@@ -1401,7 +1408,7 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 	return name;
 }
 
-string PascalGenerator::escapeName(const string& name)
+string PascalGenerator::escapeName(string name, bool interfaceName)
 {
 	//// TODO: Create a table of keywords.
 
@@ -1412,10 +1419,13 @@ string PascalGenerator::escapeName(const string& name)
 		name == "to" ||
 		name == "type")
 	{
-		return name + "_";
+		name += "_";
 	}
-	else
-		return name;
+
+	if (interfaceName)
+		name = prefix + name;
+
+	return name;
 }
 
 void PascalGenerator::insertFile(const string& filename)

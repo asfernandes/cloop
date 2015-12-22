@@ -122,7 +122,7 @@ public:
 	PascalGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
 		const std::string& unitName, const std::string& additionalUses,
 		const std::string& interfaceFile, const std::string& implementationFile,
-		const std::string& exceptionClass);
+		const std::string& exceptionClass, const std::string& functionsFile);
 
 public:
 	virtual void generate();
@@ -130,7 +130,7 @@ public:
 private:
 	std::string convertParameter(const Parameter& parameter);
 	std::string convertType(const TypeRef& typeRef);
-	std::string escapeName(const std::string& name);
+	std::string escapeName(std::string name, bool interfaceName = false);
 
 	void insertFile(const std::string& filename);
 
@@ -141,6 +141,7 @@ private:
 	std::string interfaceFile;
 	std::string implementationFile;
 	std::string exceptionClass;
+	std::string functionsFile;
 	std::set<std::string> pointerTypes;
 };
 

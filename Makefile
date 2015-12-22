@@ -29,7 +29,7 @@ OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
 
 C_FLAGS := -ggdb -fPIC -MMD -MP -W -Wall -Wno-unused-parameter
 CXX_FLAGS := $(C_FLAGS)
-FPC_FLAGS := -Mdelphi
+FPC_FLAGS := -Mdelphi -fPIC
 
 ifeq ($(TARGET),release)
 	CXX_FLAGS += -O3
@@ -97,9 +97,11 @@ $(SRC_DIR)/tests/test1/CalcPascalApi.pas: $(BIN_DIR)/cloop \
 	$(SRC_DIR)/tests/test1/Interface.idl \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.interface.pas \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.implementation.pas
-	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl pascal $@ CalcPascalApi "SysUtils" \
-		$(SRC_DIR)/tests/test1/CalcPascalApi.interface.pas \
-		$(SRC_DIR)/tests/test1/CalcPascalApi.implementation.pas CalcException
+	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl pascal $@ CalcPascalApi \
+		--uses "SysUtils" \
+		--interfaceFile $(SRC_DIR)/tests/test1/CalcPascalApi.interface.pas \
+		--implementationFile $(SRC_DIR)/tests/test1/CalcPascalApi.implementation.pas \
+		--exceptionClass CalcException
 
 $(SRC_DIR)/tests/test1/java/src/main/java/com/github/asfernandes/cloop/tests/test1/ICalc.java: \
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
@@ -135,7 +137,7 @@ $(BIN_DIR)/test1-pascal$(SHRLIB_EXT): \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
 ifeq ($(WITH_FPC),1)
-	fpc $(FPC_FLAGS) -fPIC -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.dpr
+	fpc $(FPC_FLAGS) -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.dpr
 endif
 
 $(BIN_DIR)/test1-pascal$(EXE_EXT): \

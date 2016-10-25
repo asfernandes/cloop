@@ -167,4 +167,20 @@ private:
 };
 
 
+class JsonGenerator : public FileGenerator
+{
+public:
+	JsonGenerator(const std::string& filename, Parser* parser);
+
+public:
+	virtual void generate();
+
+private:
+	std::string convertType(const TypeRef& typeRef);
+
+private:
+	Parser* parser;
+};
+
+
 #endif	// CLOOP_GENERATOR_H

@@ -1503,8 +1503,6 @@ void JnaGenerator::generate()
 		fprintf(out, "\n");
 		fprintf(out, "\t{\n");
 
-
-
 		//// TODO: version
 
 		for (vector<Constant*>::iterator j = interface->constants.begin();
@@ -2032,4 +2030,139 @@ string JnaGenerator::escapeName(const string& name)
 {
 	//// TODO: Create a table of keywords.
 	return name;
+}
+
+
+//--------------------------------------
+
+
+JsonGenerator::JsonGenerator(const string& filename, Parser* parser)
+	: FileGenerator(filename, ""),
+	  parser(parser)
+{
+}
+
+void JsonGenerator::generate()
+{
+	fprintf(out, "{\n");
+	fprintf(out, "\t\"library\":\n");
+	fprintf(out, "\t{\n");
+
+	fprintf(out, "\t\t\"interfaces\":\n");
+	fprintf(out, "\t\t[\n");
+
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		Interface* interface = *i;
+
+		fprintf(out, "\t\t\t{\n");
+		fprintf(out, "\t\t\t\t\"name\": \"%s\",\n", interface->name.c_str());
+		fprintf(out, "\t\t\t\t\"version\": %d,\n", interface->version);
+
+		if (interface->super)
+			fprintf(out, "\t\t\t\t\"extends\": \"%s\",\n", interface->super->name.c_str());
+
+		fprintf(out, "\t\t\t\t\"constants\":\n");
+		fprintf(out, "\t\t\t\t[\n");
+
+		for (vector<Constant*>::iterator j = interface->constants.begin();
+			 j != interface->constants.end();
+			 ++j)
+		{
+			Constant* constant = *j;
+
+			fprintf(out, "\t\t\t\t\t{\n");
+			fprintf(out, "\t\t\t\t\t\t\"name\": \"%s\",\n", constant->name.c_str());
+			fprintf(out, "\t\t\t\t\t\t\"type\": %s,\n", convertType(constant->typeRef).c_str());
+			fprintf(out, "\t\t\t\t\t\t\"expr\": %s\n",
+				constant->expr->generate(LANGUAGE_JSON, prefix).c_str());
+
+			fprintf(out, "\t\t\t\t\t}");
+
+			if (j + 1 != interface->constants.end())
+				fprintf(out, ",");
+
+			fprintf(out, "\n");
+		}
+
+		fprintf(out, "\t\t\t\t],\n");
+
+		fprintf(out, "\t\t\t\t\"methods\":\n");
+		fprintf(out, "\t\t\t\t[\n");
+
+		for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+		{
+			Method* method = *j;
+
+			fprintf(out, "\t\t\t\t\t{\n");
+			fprintf(out, "\t\t\t\t\t\t\"name\": \"%s\",\n", method->name.c_str());
+			fprintf(out, "\t\t\t\t\t\t\"version\": %d,\n", method->version);
+			fprintf(out, "\t\t\t\t\t\t\"returnType\": %s,\n",
+				convertType(method->returnTypeRef).c_str());
+
+			bool mayThrow = !method->parameters.empty() &&
+				parser->exceptionInterface &&
+				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name;
+
+			fprintf(out, "\t\t\t\t\t\t\"mayThrow\": \"%s\",\n", (mayThrow ? "true" : "false"));
+
+			if (method->notImplementedExpr)
+			{
+				fprintf(out, "\t\t\t\t\t\t\"notImplementedExpr\": %s,\n",
+					method->notImplementedExpr->generate(LANGUAGE_JSON, prefix).c_str());
+			}
+
+			fprintf(out, "\t\t\t\t\t\t\"parameters\":\n");
+			fprintf(out, "\t\t\t\t\t\t[\n");
+
+			for (vector<Parameter*>::iterator k = method->parameters.begin();
+				 k != method->parameters.end();
+				 ++k)
+			{
+				Parameter* parameter = *k;
+
+				fprintf(out, "\t\t\t\t\t\t\t{\n");
+				fprintf(out, "\t\t\t\t\t\t\t\t\"name\": \"%s\",\n", parameter->name.c_str());
+				fprintf(out, "\t\t\t\t\t\t\t\t\"type\": %s\n",
+					convertType(parameter->typeRef).c_str());
+				fprintf(out, "\t\t\t\t\t\t\t}");
+
+				if (k + 1 != method->parameters.end())
+					fprintf(out, ", ");
+
+				fprintf(out, "\n");
+			}
+
+			fprintf(out, "\t\t\t\t\t\t]\n");
+			fprintf(out, "\t\t\t\t\t}");
+
+			if (j + 1 != interface->methods.end())
+				fprintf(out, ",");
+
+			fprintf(out, "\n");
+		}
+
+		fprintf(out, "\t\t\t\t]\n");
+
+		fprintf(out, "\t\t\t}");
+
+		if (i + 1 != parser->interfaces.end())
+			fprintf(out, ",");
+
+		fprintf(out, "\n");
+	}
+
+	fprintf(out, "\t\t]\n");
+	fprintf(out, "\t}\n");
+	fprintf(out, "}\n");
+}
+
+string JsonGenerator::convertType(const TypeRef& typeRef)
+{
+	return "{ \"name\": \"" + typeRef.token.text +
+		"\", \"pointer\": " + (typeRef.isPointer ? "true" : "false") + " }";
 }

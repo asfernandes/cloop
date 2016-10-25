@@ -36,8 +36,13 @@ IntLiteralExpr::IntLiteralExpr(int value)
 
 string IntLiteralExpr::generate(Language language, const string& prefix)
 {
-	char buffer[64];
-	sprintf(buffer, "%d", value);
+	char buffer[128];
+
+	if (language == LANGUAGE_JSON)
+		sprintf(buffer, "{ \"type\": \"int-literal\", \"value\": %d }", value);
+	else
+		sprintf(buffer, "%d", value);
+
 	return buffer;
 }
 
@@ -52,7 +57,15 @@ BooleanLiteralExpr::BooleanLiteralExpr(bool value)
 
 string BooleanLiteralExpr::generate(Language language, const string& prefix)
 {
-	return value ? "true" : "false";
+	if (language == LANGUAGE_JSON)
+	{
+		char buffer[64];
+		sprintf(buffer, "{ \"type\": \"boolean-literal\", \"value\": %s }",
+			(value ? "true" : "false"));
+		return buffer;
+	}
+	else
+		return value ? "true" : "false";
 }
 
 
@@ -66,7 +79,10 @@ NegateExpr::NegateExpr(Expr* expr)
 
 std::string NegateExpr::generate(Language language, const string& prefix)
 {
-	return "-" + expr->generate(language, prefix);
+	if (language == LANGUAGE_JSON)
+		return "{ \"type\": \"-\", \"args\": [ " + expr->generate(language, prefix) + " ] }";
+	else
+		return "-" + expr->generate(language, prefix);
 }
 
 
@@ -100,6 +116,10 @@ string ConstantExpr::generate(Language language, const string& prefix)
 		case LANGUAGE_JAVA:
 			retPrefix = prefix + interface->name + "Intf.";
 			break;
+
+		case LANGUAGE_JSON:
+			return "{ \"type\": \"constant\", \"interface\": \"" + interface->name +
+				"\", \"name\": \"" + name + "\" }";
 	}
 
 	return retPrefix + name;
@@ -117,7 +137,16 @@ BitwiseOrExpr::BitwiseOrExpr(Expr* expr1, Expr* expr2)
 
 string BitwiseOrExpr::generate(Language language, const string& prefix)
 {
-	return expr1->generate(language, prefix) +
-		(language == LANGUAGE_PASCAL ? " or " : " | ") +
-		expr2->generate(language, prefix);
+	if (language == LANGUAGE_JSON)
+	{
+		return "{ \"type\": \"|\", \"args\": [ " +
+			expr1->generate(language, prefix) + ", " +
+			expr2->generate(language, prefix) + " ] }";
+	}
+	else
+	{
+		return expr1->generate(language, prefix) +
+			(language == LANGUAGE_PASCAL ? " or " : " | ") +
+			expr2->generate(language, prefix);
+	}
 }

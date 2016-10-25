@@ -140,6 +140,8 @@ static void run(int argc, const char* argv[])
 
 		generator.reset(new JnaGenerator(outFilename, prefix, &parser, className, exceptionClass));
 	}
+	else if (outFormat == "json")
+		generator.reset(new JsonGenerator(outFilename, &parser));
 	else
 		throw runtime_error("Invalid output format.");
 

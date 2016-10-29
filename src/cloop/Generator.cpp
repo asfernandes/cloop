@@ -2164,5 +2164,7 @@ void JsonGenerator::generate()
 string JsonGenerator::convertType(const TypeRef& typeRef)
 {
 	return "{ \"name\": \"" + typeRef.token.text +
-		"\", \"pointer\": " + (typeRef.isPointer ? "true" : "false") + " }";
+		"\", \"isPointer\": " + (typeRef.isPointer ? "true" : "false") +
+		", \"isConst\": " + (typeRef.isConst ? "true" : "false") +
+		" }";
 }

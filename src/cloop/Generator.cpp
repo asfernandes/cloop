@@ -2108,7 +2108,7 @@ void JsonGenerator::generate()
 				parser->exceptionInterface &&
 				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name;
 
-			fprintf(out, "\t\t\t\t\t\t\"mayThrow\": \"%s\",\n", (mayThrow ? "true" : "false"));
+			fprintf(out, "\t\t\t\t\t\t\"mayThrow\": %s,\n", (mayThrow ? "true" : "false"));
 
 			if (method->notImplementedExpr)
 			{

@@ -310,7 +310,7 @@ Expr* Parser::parsePrimaryExpr()
 			int base = len > 2 && tolower(p[1]) == 'x' ? 16 : 10;
 			long val = strtol(p, NULL, base);
 
-			return new IntLiteralExpr((int) val);
+			return new IntLiteralExpr((int) val, base == 16);
 		}
 
 		case Token::TYPE_IDENTIFIER:

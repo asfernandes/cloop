@@ -89,7 +89,7 @@ namespace calc
 		static const unsigned VERSION = 2;
 
 		static const int ERROR_1 = 1;
-		static const int ERROR_2 = 2;
+		static const int ERROR_2 = 0x2;
 		static const int ERROR_12 = IStatus::ERROR_1 | IStatus::ERROR_2;
 
 		int getCode() const

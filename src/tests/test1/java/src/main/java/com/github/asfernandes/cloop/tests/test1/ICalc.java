@@ -13,7 +13,7 @@ public interface ICalc extends com.sun.jna.Library
 	public static interface IStatusIntf extends IDisposableIntf
 	{
 		public static int ERROR_1 = 1;
-		public static int ERROR_2 = 2;
+		public static int ERROR_2 = 0x2;
 		public static int ERROR_12 = IStatusIntf.ERROR_1 | IStatusIntf.ERROR_2;
 
 		public int getCode();

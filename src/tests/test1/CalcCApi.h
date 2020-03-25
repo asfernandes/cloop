@@ -44,7 +44,7 @@ CLOOP_EXTERN_C void CALC_IDisposable_dispose(struct CALC_IDisposable* self);
 #define CALC_IStatus_VERSION 3
 
 #define CALC_IStatus_ERROR_1 ((int) (1))
-#define CALC_IStatus_ERROR_2 ((int) (2))
+#define CALC_IStatus_ERROR_2 ((int) (0x2))
 #define CALC_IStatus_ERROR_12 ((int) (CALC_IStatus_ERROR_1 | CALC_IStatus_ERROR_2))
 
 struct CALC_IStatus;

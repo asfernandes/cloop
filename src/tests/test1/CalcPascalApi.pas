@@ -82,7 +82,7 @@ end;
 	Status = class(Disposable)
 		const VERSION = 3;
 		const ERROR_1 = Integer(1);
-		const ERROR_2 = Integer(2);
+		const ERROR_2 = Integer($2);
 		const ERROR_12 = Integer(Status.ERROR_1 or Status.ERROR_2);
 
 		function getCode(): Integer;

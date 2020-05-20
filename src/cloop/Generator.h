@@ -150,13 +150,14 @@ class JnaGenerator : public FileGenerator
 {
 public:
 	JnaGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
-		const std::string& className, const std::string& exceptionClass);
+		const std::string& className, const std::string& exceptionClass,
+		const std::string& extendLibrary);
 
 public:
 	virtual void generate();
 
 private:
-	std::string convertType(const TypeRef& typeRef, bool forReturn);
+	std::string convertType(const TypeRef& typeRef, bool forReturn, bool eventCallback);
 	std::string literalForError(const TypeRef& typeRef);
 	std::string escapeName(const std::string& name);
 
@@ -164,6 +165,7 @@ private:
 	Parser* parser;
 	std::string className;
 	std::string exceptionClass;
+	std::string extendLibrary;
 };
 
 

@@ -1454,11 +1454,13 @@ void PascalGenerator::insertFile(const string& filename)
 
 
 JnaGenerator::JnaGenerator(const string& filename, const string& prefix, Parser* parser,
-		const string& className, const string& exceptionClass)
+	const string& className, const string& exceptionClass,
+	const string& extendLibrary)
 	: FileGenerator(filename, prefix),
 	  parser(parser),
 	  className(className),
-	  exceptionClass(exceptionClass)
+	  exceptionClass(exceptionClass),
+	  extendLibrary(extendLibrary)
 {
 }
 
@@ -1480,8 +1482,15 @@ void JnaGenerator::generate()
 	else
 		classStart = 0;
 
-	fprintf(out, "public interface %s extends com.sun.jna.Library\n",
-		className.substr(classStart).c_str());
+
+
+    if (extendLibrary.empty())
+        fprintf(out, "public interface %s extends com.sun.jna.Library\n",
+            className.substr(classStart).c_str());
+    else
+        fprintf(out, "public interface %s extends %s\n",
+            className.substr(classStart).c_str(),
+            extendLibrary.c_str());
 	fprintf(out, "{\n");
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
@@ -1514,7 +1523,7 @@ void JnaGenerator::generate()
 			Constant* constant = *j;
 
 			fprintf(out, "\t\tpublic static %s %s = %s;\n",
-				convertType(constant->typeRef, false).c_str(),
+				convertType(constant->typeRef, false, (constant->name.find("eventCallback") != std::string::npos)).c_str(),
 				constant->name.c_str(),
 				constant->expr->generate(LANGUAGE_JAVA, prefix).c_str());
 		}
@@ -1530,7 +1539,7 @@ void JnaGenerator::generate()
 			Method* method = *j;
 
 			fprintf(out, "\t\tpublic %s %s(",
-				convertType(method->returnTypeRef, true).c_str(),
+				convertType(method->returnTypeRef, true, false).c_str(),
 				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1543,7 +1552,7 @@ void JnaGenerator::generate()
 					fprintf(out, ", ");
 
 				fprintf(out, "%s %s",
-					convertType(parameter->typeRef, false).c_str(),
+					convertType(parameter->typeRef, false, (method->name.find("eventCallback") != std::string::npos)).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
@@ -1601,7 +1610,7 @@ void JnaGenerator::generate()
 				escapeName(method->name).c_str());
 			fprintf(out, "\t\t\t{\n");
 			fprintf(out, "\t\t\t\tpublic %s invoke(%s%s self",
-				convertType(method->returnTypeRef, true).c_str(),
+				convertType(method->returnTypeRef, true, false).c_str(),
 				prefix.c_str(),
 				escapeName(interface->name).c_str());
 
@@ -1612,7 +1621,7 @@ void JnaGenerator::generate()
 				Parameter* parameter = *k;
 
 				fprintf(out, ", %s %s",
-					convertType(parameter->typeRef, false).c_str(),
+					convertType(parameter->typeRef, false, (method->name.find("eventCallback") != std::string::npos)).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
@@ -1634,7 +1643,7 @@ void JnaGenerator::generate()
 		fprintf(out, "\t\t\t}\n");
 		fprintf(out, "\n");
 
-		fprintf(out, "\t\t\tpublic VTable(%s%sIntf obj)\n",
+		fprintf(out, "\t\t\tpublic VTable(final %s%sIntf obj)\n",
 			prefix.c_str(), escapeName(interface->name).c_str());
 		fprintf(out, "\t\t\t{\n");
 
@@ -1654,7 +1663,7 @@ void JnaGenerator::generate()
 				escapeName(method->name).c_str(), escapeName(method->name).c_str());
 			fprintf(out, "\t\t\t\t\t@Override\n");
 			fprintf(out, "\t\t\t\t\tpublic %s invoke(%s%s self",
-				convertType(method->returnTypeRef, true).c_str(),
+				convertType(method->returnTypeRef, true, false).c_str(),
 				prefix.c_str(),
 				escapeName(interface->name).c_str());
 
@@ -1665,7 +1674,7 @@ void JnaGenerator::generate()
 				Parameter* parameter = *k;
 
 				fprintf(out, ", %s %s",
-					convertType(parameter->typeRef, false).c_str(),
+					convertType(parameter->typeRef, false, (method->name.find("eventCallback") != std::string::npos)).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
@@ -1838,7 +1847,7 @@ void JnaGenerator::generate()
 		fprintf(out, "\t\t}\n");
 		fprintf(out, "\n");
 
-		fprintf(out, "\t\tpublic %s%s(%s%sIntf obj)\n",
+		fprintf(out, "\t\tpublic %s%s(final %s%sIntf obj)\n",
 			prefix.c_str(), escapeName(interface->name).c_str(),
 			prefix.c_str(), escapeName(interface->name).c_str());
 		fprintf(out, "\t\t{\n");
@@ -1865,7 +1874,7 @@ void JnaGenerator::generate()
 
 			fprintf(out, "\n");
 			fprintf(out, "\t\tpublic %s %s(",
-				convertType(method->returnTypeRef, true).c_str(),
+				convertType(method->returnTypeRef, true, false).c_str(),
 				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1878,7 +1887,7 @@ void JnaGenerator::generate()
 					fprintf(out, ", ");
 
 				fprintf(out, "%s %s",
-					convertType(parameter->typeRef, false).c_str(),
+					convertType(parameter->typeRef, false, (method->name.find("eventCallback") != std::string::npos)).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
@@ -1901,7 +1910,7 @@ void JnaGenerator::generate()
 			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
 				method->returnTypeRef.isPointer)
 			{
-				fprintf(out, "%s result = ", convertType(method->returnTypeRef, true).c_str());
+				fprintf(out, "%s result = ", convertType(method->returnTypeRef, true, false).c_str());
 			}
 
 			fprintf(out, "vTable.%s.invoke(this", escapeName(method->name).c_str());
@@ -1941,7 +1950,7 @@ void JnaGenerator::generate()
 	fprintf(out, "}\n");
 }
 
-string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
+string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn, bool eventCallback)
 {
 	string name;
 
@@ -1988,15 +1997,29 @@ string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
 			{
 				name = prefix;
 			}
+			if (typeRef.token.text == "ISC_QUAD" || typeRef.token.text == "isc_stmt_handle" ||
+					typeRef.token.text == "isc_tr_handle")
+			{
+				name = "com.sun.jna.ptr.LongByReference";
+			}
+			else
+			{
+				name += typeRef.token.text;
+			}
 
-			name += typeRef.token.text;
+
 			break;
 	}
 
 	if (typeRef.isPointer)
 	{
-		if (forReturn || name == "void")
+		if (forReturn || name == "void" || name == "int" || eventCallback)
 			return "com.sun.jna.Pointer";
+		else if (name == "com.sun.jna.ptr.LongByReference")
+		{
+			// nothing
+
+		}
 		else
 			name += "[]";
 	}

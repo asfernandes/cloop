@@ -138,7 +138,11 @@ static void run(int argc, const char* argv[])
 		string exceptionClass(argv[5]);
 		string prefix(argv[6]);
 
-		generator.reset(new JnaGenerator(outFilename, prefix, &parser, className, exceptionClass));
+		string extendLibrary;
+		if (argc == 8)
+			extendLibrary = argv[7];
+
+		generator.reset(new JnaGenerator(outFilename, prefix, &parser, className, exceptionClass, extendLibrary));
 	}
 	else if (outFormat == "json")
 		generator.reset(new JsonGenerator(outFilename, &parser));

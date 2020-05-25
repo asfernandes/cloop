@@ -1514,7 +1514,7 @@ void JnaGenerator::generate()
 		fprintf(out, "\n");
 		fprintf(out, "\t{\n");
 
-		//// TODO: version
+		fprintf(out, "\t\tpublic int VERSION = %u;\n\n", interface->version);
 
 		for (vector<Constant*>::iterator j = interface->constants.begin();
 			 j != interface->constants.end();
@@ -1633,7 +1633,7 @@ void JnaGenerator::generate()
 		if (!interface->super)
 		{
 			fprintf(out, "\t\t\tpublic com.sun.jna.Pointer cloopDummy;\n");
-			fprintf(out, "\t\t\tpublic com.sun.jna.Pointer version;\n");
+			fprintf(out, "\t\t\tpublic int version;\n");
 			fprintf(out, "\n");
 		}
 
@@ -1905,6 +1905,22 @@ void JnaGenerator::generate()
 			fprintf(out, "\t\t{\n");
 			fprintf(out, "\t\t\tVTable vTable = getVTable();\n");
 
+			fprintf(out, "\t\t\tif (vTable.%s == null) {\n", escapeName(method->name).c_str());
+			if (method->parameters.size() > 0 && method->parameters[0]->name == "status" && method->parameters[0]->typeRef.type == BaseType::TYPE_INTERFACE &&
+				method->parameters[0]->typeRef.token.type == Token::TYPE_IDENTIFIER)
+				fprintf(out, "\t\t\t\t%s.setVersionError(status, this.getClass().getName(), vTable.version, I%sIntf.VERSION);\n", exceptionClass.c_str(), escapeName(interface->name).c_str());
+			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				method->returnTypeRef.isPointer)
+			{
+				fprintf(out, "\t\t\t\treturn %s;\n",
+					literalForError(method->returnTypeRef).c_str());
+			} 
+			else
+			{
+				fprintf(out, "\t\t\t\treturn;\n");
+			}
+
+			fprintf(out, "\t\t\t}\n");
 			fprintf(out, "\t\t\t");
 
 			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||

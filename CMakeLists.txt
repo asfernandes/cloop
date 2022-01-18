@@ -17,6 +17,9 @@ add_executable(
     src/cloop/Parser.h
 )
 
+# Code uses std::auto_ptr
+set_property(TARGET cloop PROPERTY CXX_STANDARD 98)
+
 # ---- Install rules ----
 
 if(CMAKE_SKIP_INSTALL_RULES)

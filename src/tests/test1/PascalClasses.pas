@@ -130,7 +130,7 @@ end;
 function MyCalculatorImpl.sum(status: Status; n1: Integer; n2: Integer): Integer;
 begin
 	if (n1 + n2 > 1000) then
-		raise CalcException.create(Status.ERROR_1)
+		raise CalcException.create(StatusImpl.ERROR_1)
 	else
 		Result := n1 + n2;
 end;
@@ -170,7 +170,7 @@ end;
 function MyCalculator2Impl.sum(status: Status; n1: Integer; n2: Integer): Integer;
 begin
 	if (n1 + n2 > 1000) then
-		raise CalcException.create(Status.ERROR_1)
+		raise CalcException.create(StatusImpl.ERROR_1)
 	else
 		Result := n1 + n2;
 end;
@@ -230,24 +230,24 @@ end;
 function MyFactoryImpl.createStatus(): Status;
 begin
 	if (statusFactory = nil) then
-		Result := MyStatusImpl.create
+		Result := MyStatusImpl.create.asStatus
 	else
 		Result := statusFactory.createStatus();
 end;
 
 function MyFactoryImpl.createCalculator(status: Status): Calculator;
 begin
-	Result := MyCalculatorImpl.create;
+	Result := MyCalculatorImpl.create.asCalculator;
 end;
 
 function MyFactoryImpl.createCalculator2(status: Status): Calculator2;
 begin
-	Result := MyCalculator2Impl.create;
+	Result := MyCalculator2Impl.create.asCalculator2;
 end;
 
 function MyFactoryImpl.createBrokenCalculator(status: Status): Calculator;
 begin
-	Result := MyBrokenCalculatorImpl.create;
+	Result := MyBrokenCalculatorImpl.create.asCalculator;
 end;
 
 procedure MyFactoryImpl.setStatusFactory(statusFactory: StatusFactory);

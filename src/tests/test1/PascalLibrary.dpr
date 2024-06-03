@@ -31,7 +31,7 @@ uses CalcPascalApi, PascalClasses;
 
 function createFactory: Factory; cdecl;
 begin
-	Result := MyFactoryImpl.create();
+	Result := MyFactoryImpl.create().asFactory;
 end;
 
 exports

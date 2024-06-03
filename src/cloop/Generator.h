@@ -131,7 +131,16 @@ private:
 	std::string convertParameter(const Parameter& parameter);
 	std::string convertType(const TypeRef& typeRef);
 	std::string escapeName(std::string name, bool interfaceName = false);
-
+	bool isInterfaceName(std::string name);
+	void outputAllVTableMethods(Interface* interface);
+	void outputAllConstants(Interface* interface);
+	void outputAllMethods(Interface* interface);
+	void outputAllImplementationMethods(Interface* interface, std::string interfaceName);
+	void outputAllDispatcherMethods(Interface* interface);
+	void outputAllvTableInitialisers(Interface* interface);
+	void outputAllConstInlineFunctionDeclarations(Interface* interface);
+	void outputAllConstAccessFunctions(Interface* interface, std::string interfaceName = "");
+	
 	void insertFile(const std::string& filename);
 
 private:

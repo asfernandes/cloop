@@ -115,7 +115,7 @@ string ConstantExpr::generate(Language language, const string& prefix)
 			break;
 
 		case LANGUAGE_PASCAL:
-			retPrefix = prefix + interface->name + ".";
+			retPrefix = prefix + interface->name + "Impl" + ".";
 			break;
 
 		case LANGUAGE_JAVA:

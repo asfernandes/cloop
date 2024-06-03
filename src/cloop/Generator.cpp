@@ -894,8 +894,11 @@ PascalGenerator::PascalGenerator(const string& filename, const string& prefix, P
 void PascalGenerator::generate()
 {
 	fprintf(out, "{ %s }\n\n", AUTOGEN_MSG);
+	fprintf(out, "{ $DEFINE USEFBEXCEPTION}\n{ $DEFINE STATIC_LINK_TO_FIREBIRD_LIBRARY}\n\n");
+	fprintf(out, "{$WARNINGS OFF}\n");
 
-	fprintf(out, "{$IFDEF FPC}\n{$MODE DELPHI}\n{$OBJECTCHECKS OFF}\n{$ENDIF}\n\n");
+	fprintf(out, "{$IFDEF FPC}\n{$MODE DELPHI}\n{$ENDIF}\n\n");
+	fprintf(out,"{$IFDEF MSWINDOWS}\n{$DEFINE WINDOWS}\n{$ENDIF}\n\n");
 
 	fprintf(out, "unit %s;\n\n", unitName.c_str());
 	fprintf(out, "interface\n\n");
@@ -911,16 +914,20 @@ void PascalGenerator::generate()
 	fprintf(out, "\tQWord = UInt64;\n");
 	fprintf(out, "{$ENDIF}\n\n");
 
+
+	//Forward declarations for each interface 
+	
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
 		 i != parser->interfaces.end();
 		 ++i)
 	{
 		Interface* interface = *i;
-		fprintf(out, "\t%s = class;\n", escapeName(interface->name, true).c_str());
+		
+		fprintf(out,"\t%s = ^T%s;\n",escapeName(interface->name,true).c_str(),escapeName(interface->name).c_str());
 	}
-
+	
 	fprintf(out, "\n");
-
+	
 	insertFile(interfaceFile);
 
 	// Pass at every type to fill pointerTypes. We need it in advance.
@@ -930,6 +937,9 @@ void PascalGenerator::generate()
 		 ++i)
 	{
 		Interface* interface = *i;
+		
+		//convert the type names and parameter names in each of the interface's method
+		//and add to pointertypes if a pointer
 
 		for (vector<Method*>::iterator j = interface->methods.begin();
 			 j != interface->methods.end();
@@ -948,15 +958,23 @@ void PascalGenerator::generate()
 			}
 		}
 	}
+	
+	//output the pointer types
 
 	for (set<string>::iterator i = pointerTypes.begin(); i != pointerTypes.end(); ++i)
 	{
 		string type = *i;
-		fprintf(out, "\t%sPtr = ^%s;\n", type.c_str(), type.c_str());
+		if (type.compare("Byte") == 0) //special case - Delphi defines PByte as a type
+		  fprintf(out, "\t%sPtr = P%s;\n", type.c_str(), type.c_str());
+		else
+		  fprintf(out, "\t%sPtr = ^%s;\n", type.c_str(), type.c_str());
 	}
 
 	if (!pointerTypes.empty())
 		fprintf(out, "\n");
+		
+	
+//now output type definitions for a pointer to each proc/function
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
 		 i != parser->interfaces.end();
@@ -996,118 +1014,110 @@ void PascalGenerator::generate()
 	}
 
 	fprintf(out, "\n");
-
+	
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
 		 i != parser->interfaces.end();
 		 ++i)
 	{
 		Interface* interface = *i;
 
-		fprintf(out, "\t%sVTable = class", escapeName(interface->name).c_str());
+		//output vTable
 
-		if (interface->super)
-			fprintf(out, "(%sVTable)", escapeName(interface->super->name).c_str());
-
-		fprintf(out, "\n");
-
-		if (!interface->super)
-			fprintf(out, "\t\tversion: NativeInt;\n");
-
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
-		{
-			Method* method = *j;
-
-			fprintf(out, "\t\t%s: %s_%sPtr;\n", escapeName(method->name).c_str(),
-				escapeName(interface->name, true).c_str(), escapeName(method->name).c_str());
-		}
-
+		fprintf(out,"\tP%sVTable = ^%sVTable;\n",escapeName(interface->name).c_str(),escapeName(interface->name).c_str());
+		fprintf(out, "\t%sVTable = record\n\t  NullPtr: pointer;\n\t  version: NativeInt;\n", escapeName(interface->name).c_str());
+		
+		outputAllVTableMethods(interface);
+		
 		fprintf(out, "\tend;\n\n");
 
-		fprintf(out, "\t%s = class", escapeName(interface->name, true).c_str());
+		//forward reference needed to implementation class
+		fprintf(out, "\t%sImpl = class;\n\n",
+			escapeName(interface->name, true).c_str());
+				
 
+		//output interface declaration
+
+		fprintf(out,"\tT%s = record\n",escapeName(interface->name).c_str());
+		fprintf(out,"\tprivate\n");
+		fprintf(out,"\t  FNullPtr: pointer;\n");
+		fprintf(out,"\t  FvTable: P%sVTable;\n", escapeName(interface->name).c_str());
+		fprintf(out,"\t  FObject: TObject; {Only valid when interface provided by an implementation class }\n");
+        fprintf(out,"\t  function this: %s; inline;\n",escapeName(interface->name,true).c_str());
+
+		fprintf(out,"\tpublic\n");
+ 		fprintf(out,"\t  function is%sImpl: boolean;\n",escapeName(interface->name, true).c_str());
+
+		fprintf(out,"\t  function as%sImpl: %sImpl;\n",  escapeName(interface->name,true).c_str(),
+ 	                                                                escapeName(interface->name, true).c_str());	
+	    fprintf(out,"\t  property vTable: P%sVTable read FvTable;\n", escapeName(interface->name).c_str());
+	    
+		fprintf(out,"\tpublic\n\t  {interface constants accessed using inline functions}\n");
+		fprintf(out,"\t  function VERSION: NativeInt; inline;\n");
+		outputAllConstInlineFunctionDeclarations(interface);
+	    
+		unsigned totalMethods = 0;
+
+		for (Interface* p = interface; p; p = p->super)
+			totalMethods += p->methods.size();
+			
+		if (totalMethods)
+		{
+		  fprintf(out, "\tpublic\n\t  {Firebird OOAPI methods}\n");
+		
+		  outputAllMethods(interface);
+	    }
+		
+		fprintf(out,"\tend;\n\n");
+
+		
+		//output implementation class
+		
 		if (interface->super)
-			fprintf(out, "(%s)", escapeName(interface->super->name, true).c_str());
-
-		fprintf(out, "\n");
-
-		if (!interface->super)
-			fprintf(out, "\t\tvTable: %sVTable;\n\n", escapeName(interface->name).c_str());
-
+  		  fprintf(out, "\t%sImpl = class(%sImpl)\n",
+			escapeName(interface->name, true).c_str(), escapeName(interface->super->name, true).c_str());
+		else
+  		  fprintf(out, "\t%sImpl = class\n",
+			escapeName(interface->name, true).c_str());
+			
+		fprintf(out,"\tprivate\n");
+			
+		if (!interface->super) {
+		  fprintf(out,"\t  FNullPtr: pointer;\n");
+		  fprintf(out,"\t  FvTable: pointer;\n");
+		  fprintf(out,"\t  FObject: TObject;\n");
+		}
+		fprintf(out,"\t  function getVTable: P%sVTable;\n", escapeName(interface->name).c_str());
+		  
 		unsigned version = 0;
 
 		for (Interface* p = interface; p; p = p->super)
 			version += p->methods.size();
 
-		fprintf(out, "\t\tconst VERSION = %d;\n", version);
+		fprintf(out, "\tpublic\n\t  const VERSION = %d;\n", version);
+		
+		outputAllConstants(interface);
+		
+		fprintf(out,"\tpublic\n\t  constructor create;\n");
+		fprintf(out,"\t  function as%s: %s;\n",escapeName(interface->name, true).c_str(),escapeName(interface->name, true).c_str());
+		fprintf(out,"\t  class function is%sImpl(intf: %s): boolean;\n",escapeName(interface->name, true).c_str(),
+		                                                                escapeName(interface->name, true).c_str());
+  	      
+  	    fprintf(out,"\t  property vTable: P%sVTable read getVTable;\n",escapeName(interface->name).c_str());
+  	      
 
-		for (vector<Constant*>::iterator j = interface->constants.begin();
-			 j != interface->constants.end();
-			 ++j)
+		if (interface->methods.size())
 		{
-			Constant* constant = *j;
+		  fprintf(out,"\tpublic\n\t  {Firebird OOAPI interface}\n");
 
-			fprintf(out, "\t\tconst %s = %s(%s);\n",
-				constant->name.c_str(),
-				convertType(constant->typeRef).c_str(),
-				constant->expr->generate(LANGUAGE_PASCAL, prefix).c_str());
-		}
-
-		fprintf(out, "\n");
-
-		for (vector<Method*>::iterator j = interface->methods.begin();
+ 	      for (vector<Method*>::iterator j = interface->methods.begin();
 			 j != interface->methods.end();
 			 ++j)
-		{
+	      {
 			Method* method = *j;
-
 			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
 				 !method->returnTypeRef.isPointer;
 
-			fprintf(out, "\t\t%s %s(",
-				(isProcedure ? "procedure" : "function"),
-				escapeName(method->name).c_str());
-
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
-			{
-				Parameter* parameter = *k;
-
-				if (k != method->parameters.begin())
-					fprintf(out, "; ");
-
-				fprintf(out, "%s", convertParameter(*parameter).c_str());
-			}
-
-			fprintf(out, ")");
-
-			if (!isProcedure)
-				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
-
-			fprintf(out, ";\n");
-		}
-
-		fprintf(out, "\tend;\n\n");
-
-		fprintf(out, "\t%sImpl = class(%s)\n",
-			escapeName(interface->name, true).c_str(), escapeName(interface->name, true).c_str());
-		fprintf(out, "\t\tconstructor create;\n\n");
-
-		deque<Method*> methods;
-
-		for (Interface* p = interface; p; p = p->super)
-			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
-
-		for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
-		{
-			Method* method = *j;
-
-			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
-				 !method->returnTypeRef.isPointer;
-
-			fprintf(out, "\t\t%s %s(",
+			fprintf(out, "\t  %s %s(",
 				(isProcedure ? "procedure" : "function"),
 				escapeName(method->name).c_str());
 
@@ -1129,33 +1139,267 @@ void PascalGenerator::generate()
 				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
 
 			fprintf(out, "; virtual; abstract;\n");
+		  }
 		}
 
 		fprintf(out, "\tend;\n\n");
 	}
-
+	fprintf(out,"\n");
+	
 	insertFile(functionsFile);
-
+	
 	fprintf(out, "implementation\n\n");
+	
+	fprintf(out,"resourcestring\n");
+	fprintf(out,"\terrNotImplementationObject = 'interface is not an implementation of %s';\n\n","%s");
+	
+	//for each interface output the implementation methods
 
 	for (vector<Interface*>::iterator i = parser->interfaces.begin();
 		 i != parser->interfaces.end();
 		 ++i)
 	{
 		Interface* interface = *i;
+		
+		//output the common methods and class operators
+		
+		                
+		fprintf(out,"function T%s.this: %s;\n",
+		                              escapeName(interface->name).c_str(),
+		                              escapeName(interface->name,true).c_str());
+	    fprintf(out,"begin\n");
+	    fprintf(out,"  Result := %s(@FNullPtr);\n",escapeName(interface->name,true).c_str());
+ 	    fprintf(out,"end;\n\n");
+		
+ 	    fprintf(out,"function T%s.is%sImpl: boolean;\n",escapeName(interface->name).c_str(),
+ 	                                                              escapeName(interface->name, true).c_str());
+	    fprintf(out,"begin\n");
+ 	    fprintf(out,"  Result := %sImpl.is%sImpl(this);\n",escapeName(interface->name, true).c_str(),
+ 	                                                              escapeName(interface->name, true).c_str());
+ 	    fprintf(out,"end;\n\n");
+ 	    
+		fprintf(out,"function T%s.as%sImpl: %sImpl;\n",  escapeName(interface->name).c_str(),
+		                                                      escapeName(interface->name,true).c_str(),
+		                                                      escapeName(interface->name,true).c_str());
+	    fprintf(out,"begin\n");
+ 	    fprintf(out,"  if is%sImpl then\n",escapeName(interface->name, true).c_str());
+ 	    fprintf(out,"    Result := FObject as %sImpl\n",escapeName(interface->name, true).c_str());
+ 	    fprintf(out,"  else\n");
+ 	    fprintf(out,"    raise %s.CreateFmt(errNotImplementationObject,['%sImpl']);\n",exceptionClass.c_str(),escapeName(interface->name, true).c_str());
+ 	    fprintf(out,"end;\n\n");
+ 	    
+		//Access methods for constants
+		
+		fprintf(out,"function T%s.VERSION: NativeInt;\n",escapeName(interface->name).c_str());
+	    fprintf(out,"begin\n");
+		fprintf(out,"  Result := %sImpl.VERSION;\n",escapeName(interface->name,true).c_str());
+		fprintf(out,"end;\n\n");
+		outputAllConstAccessFunctions(interface);
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
+		//Now for each implementation method
+		
+  	    outputAllImplementationMethods(interface,escapeName(interface->name));
+	}
+		
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		Interface* interface = *i;
+		
+		
+		fprintf(out,"function %sImpl.as%s:%s;\n",escapeName(interface->name, true).c_str(),
+		                                                      escapeName(interface->name, true).c_str(),
+		                                                      escapeName(interface->name, true).c_str());
+	    fprintf(out,"begin\n");
+	    fprintf(out,"  Result := %s(@FNullPtr);\n",escapeName(interface->name, true).c_str());
+ 	    fprintf(out,"end;\n\n");
+
+        outputAllDispatcherMethods(interface);
+        
+		//vtable declaration
+		fprintf(out,"var %sImpl_vTable: %sVTable = (\n", escapeName(interface->name,true).c_str(),escapeName(interface->name).c_str());
+		fprintf(out,"     NullPtr: nil;\n");
+		
+		//count methods
+		deque<Method*> methods;
+		for (Interface* p = interface; p; p = p->super)
+			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
+		fprintf(out,"     version: %d", (int) methods.size());
+		
+		outputAllvTableInitialisers(interface);
+		
+		fprintf(out,");\n\n");
+		
+		//now output the methods that depend on the vTable
+		
+		fprintf(out, "constructor %sImpl.create;\n", escapeName(interface->name, true).c_str());
+		fprintf(out, "begin\n");
+		fprintf(out, "  inherited Create;\n");
+		if (!interface->super)
+		  fprintf(out, "  FObject := self;\n");
+		fprintf(out, "  FvTable := @%sImpl_vTable;\n",escapeName(interface->name, true).c_str());
+		fprintf(out, "end;\n\n");
+		 	    
+		fprintf(out,"function %sImpl.getVTable: P%sVTable;\n", escapeName(interface->name, true).c_str(),escapeName(interface->name).c_str());
+		fprintf(out, "begin\n");
+		fprintf(out,"  Result := P%sVTable(FvTable);\n", escapeName(interface->name).c_str());
+		fprintf(out, "end;\n\n");
+		
+		fprintf(out,"class function %sImpl.is%sImpl(intf: %s): boolean;\n",escapeName(interface->name, true).c_str(),
+		                                                                escapeName(interface->name, true).c_str(),
+		                                                                escapeName(interface->name, true).c_str());		
+		fprintf(out,"begin\n");
+		fprintf(out,"  Result := (intf.vTable = @%sImpl_vTable)", escapeName(interface->name, true).c_str());
+
+		//Add a test for each subclass
+	    for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		   i != parser->interfaces.end();
+		   ++i)
+		{
+			Interface* subclass = *i;
+			if (subclass->super == interface)
+			  fprintf(out," or\n    %sImpl.is%sImpl(%s(intf))",escapeName(subclass->name, true).c_str(),
+		                                                                escapeName(subclass->name, true).c_str(),
+		                                                                escapeName(subclass->name, true).c_str());		
+		}
+		fprintf(out,";\n");
+		fprintf(out,"end;\n\n");
+	}
+	
+	insertFile(implementationFile);
+
+	fprintf(out, "\n");
+
+	fprintf(out, "end.\n");
+}
+
+void PascalGenerator::outputAllVTableMethods(Interface* interface)
+{
+	if (interface->super)
+	  outputAllVTableMethods(interface->super);
+	  
+	for (vector<Method*>::iterator j = interface->methods.begin();
 			 j != interface->methods.end();
 			 ++j)
-		{
+	{
+		Method* method = *j;
+
+		fprintf(out, "\t  %s: %s_%sPtr;\n", escapeName(method->name).c_str(),
+				escapeName(interface->name, true).c_str(), escapeName(method->name).c_str());
+	}
+}
+
+void PascalGenerator::outputAllConstants(Interface* interface)
+{
+	
+	for (vector<Constant*>::iterator j = interface->constants.begin();
+	 j != interface->constants.end();
+		 ++j)
+	{
+		Constant* constant = *j;
+
+		fprintf(out, "\t  const %s = %s(%s);\n",
+				constant->name.c_str(),
+				convertType(constant->typeRef).c_str(),
+				constant->expr->generate(LANGUAGE_PASCAL, prefix).c_str());
+	}
+}
+
+void PascalGenerator::outputAllConstInlineFunctionDeclarations(Interface* interface)
+{
+	if (interface->super)
+	  outputAllConstInlineFunctionDeclarations(interface->super);
+	  
+	for (vector<Constant*>::iterator j = interface->constants.begin();
+	        j != interface->constants.end(); ++j)
+    {
+			
+		       Constant* constant = *j;
+		       fprintf(out,"\t  function %s: %s; inline;\n",constant->name.c_str(),
+				         convertType(constant->typeRef).c_str());
+	}
+}
+
+void PascalGenerator::outputAllConstAccessFunctions(Interface* interface, std::string interfaceName)
+{
+	if (interfaceName.empty())
+	  interfaceName = interface->name;
+	  
+	if (interface->super)
+	  outputAllConstAccessFunctions(interface->super, interfaceName);
+	  
+
+  	for (vector<Constant*>::iterator j = interface->constants.begin();
+	          j != interface->constants.end(); ++j)
+	{
+			
+		       Constant* constant = *j;
+		       fprintf(out,"function T%s.%s: %s;\n",escapeName(interfaceName).c_str(),constant->name.c_str(),
+				                                       convertType(constant->typeRef).c_str());
+			   fprintf(out,"begin\n");
+			   fprintf(out,"  Result := %sImpl.%s;\n",escapeName(interface->name,true).c_str(),constant->name.c_str());
+			   fprintf(out,"end;\n\n");
+    }
+}
+
+
+void PascalGenerator::outputAllMethods(Interface* interface)
+{
+	if (interface->super)
+	  outputAllMethods(interface->super);
+
+	for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+	{
 			Method* method = *j;
 
 			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
 				 !method->returnTypeRef.isPointer;
 
-			fprintf(out, "%s %s.%s(",
+			fprintf(out, "\t  %s %s(",
 				(isProcedure ? "procedure" : "function"),
-				escapeName(interface->name, true).c_str(),
+				escapeName(method->name).c_str());
+
+			for (vector<Parameter*>::iterator k = method->parameters.begin();
+				 k != method->parameters.end();
+				 ++k)
+			{
+				Parameter* parameter = *k;
+
+				if (k != method->parameters.begin())
+					fprintf(out, "; ");
+
+				fprintf(out, "%s", convertParameter(*parameter).c_str());
+			}
+
+			fprintf(out, ")");
+
+			if (!isProcedure)
+				fprintf(out, ": %s", convertType(method->returnTypeRef).c_str());
+
+			fprintf(out, ";\n");
+	}
+}
+
+void PascalGenerator::outputAllImplementationMethods(Interface* interface, std::string interfaceName)
+{
+	if (interface->super)
+	  outputAllImplementationMethods(interface->super,interfaceName);
+	  
+	for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
+	{
+			Method* method = *j;
+
+			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+				 !method->returnTypeRef.isPointer;
+
+			fprintf(out, "%s T%s.%s(",
+				(isProcedure ? "procedure" : "function"),
+				interfaceName.c_str(),
 				escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -1184,8 +1428,11 @@ void PascalGenerator::generate()
 			if (!isProcedure)
 				fprintf(out, "Result := ");
 
-			fprintf(out, "%sVTable(vTable).%s(Self",
-				escapeName(interface->name).c_str(), escapeName(method->name).c_str());
+			if (interfaceName == interface->name)
+		      fprintf(out, "vTable^.%s(this", escapeName(method->name).c_str());
+		    else
+		      fprintf(out, "vTable^.%s(%s(this)", escapeName(method->name).c_str(),
+		                                                           escapeName(interface->name,true).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1202,20 +1449,16 @@ void PascalGenerator::generate()
 				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
 				!exceptionClass.empty())
 			{
-				fprintf(out, "\t%s.checkException(%s);\n", exceptionClass.c_str(),
+				fprintf(out, "\t{$IFDEF USEFBEXCEPTION}%s.checkException(%s);{$ENDIF}\n", exceptionClass.c_str(),
 					escapeName(method->parameters.front()->name).c_str());
 			}
 
 			fprintf(out, "end;\n\n");
-		}
 	}
+}
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
-	{
-		Interface* interface = *i;
-
+void PascalGenerator::outputAllDispatcherMethods(Interface* interface)
+{
 		deque<Method*> methods;
 
 		for (Interface* p = interface; p; p = p->super)
@@ -1232,7 +1475,7 @@ void PascalGenerator::generate()
 				(isProcedure ? "procedure" : "function"),
 				escapeName(interface->name, true).c_str(),
 				escapeName(method->name).c_str(),
-				escapeName(interface->name, true).c_str());
+				escapeName(interface->name,true).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1258,9 +1501,8 @@ void PascalGenerator::generate()
 
 			if (!isProcedure)
 				fprintf(out, "Result := ");
-
-			fprintf(out, "%sImpl(this).%s(", escapeName(interface->name, true).c_str(),
-				escapeName(method->name).c_str());
+			fprintf(out,"this.as%sImpl.%s(",escapeName(interface->name,true).c_str(),
+			                               escapeName(method->name).c_str());
 
 			for (vector<Parameter*>::iterator k = method->parameters.begin();
 				 k != method->parameters.end();
@@ -1293,77 +1535,43 @@ void PascalGenerator::generate()
 			}
 
 			fprintf(out, "end;\n\n");
-		}
-
-		fprintf(out, "var\n");
-		fprintf(out, "\t%sImpl_vTable: %sVTable;\n\n",
-			escapeName(interface->name, true).c_str(), escapeName(interface->name).c_str());
-
-		fprintf(out, "constructor %sImpl.create;\n", escapeName(interface->name, true).c_str());
-		fprintf(out, "begin\n");
-		fprintf(out, "\tvTable := %sImpl_vTable;\n", escapeName(interface->name, true).c_str());
-		fprintf(out, "end;\n\n");
 	}
+}	
 
-	insertFile(implementationFile);
-
-	fprintf(out, "initialization\n");
-
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+void PascalGenerator::outputAllvTableInitialisers(Interface* interface)
+{
+		
+	if (interface->super)
+	  outputAllvTableInitialisers(interface->super);
+	  
+	for (vector<Method*>::iterator j = interface->methods.begin();
+			 j != interface->methods.end();
+			 ++j)
 	{
-		Interface* interface = *i;
-
-		deque<Method*> methods;
-
-		for (Interface* p = interface; p; p = p->super)
-			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
-
-		fprintf(out, "\t%sImpl_vTable := %sVTable.create;\n",
-			escapeName(interface->name, true).c_str(), escapeName(interface->name).c_str());
-		fprintf(out, "\t%sImpl_vTable.version := %d;\n",
-			escapeName(interface->name, true).c_str(), (int) methods.size());
-
-		for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
-		{
 			Method* method = *j;
-
-			fprintf(out, "\t%sImpl_vTable.%s := @%sImpl_%sDispatcher;\n",
-				escapeName(interface->name, true).c_str(),
-				escapeName(method->name).c_str(),
-				escapeName(interface->name, true).c_str(),
-				escapeName(method->name).c_str());
-		}
-
-		fprintf(out, "\n");
+			fprintf(out,";\n     %s: %sImpl_%sDispatcher",escapeName(method->name).c_str(),
+			                                          escapeName(interface->name, true).c_str(),
+			                                          escapeName(method->name).c_str());
 	}
-
-	fprintf(out, "finalization\n");
-
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
-	{
-		Interface* interface = *i;
-		fprintf(out, "\t%sImpl_vTable.destroy;\n", escapeName(interface->name, true).c_str());
-	}
-
-	fprintf(out, "\n");
-	fprintf(out, "end.\n");
 }
 
-string PascalGenerator::convertParameter(const Parameter& parameter)
+
+std::string PascalGenerator::convertParameter(const Parameter& parameter)
 {
 	return escapeName(parameter.name) + ": " + convertType(parameter.typeRef);
 }
 
+
 string PascalGenerator::convertType(const TypeRef& typeRef)
 {
 	string name;
-
-	switch (typeRef.token.type)
+	
+	if (isInterfaceName(typeRef.token.text)) 
+		  name = escapeName(typeRef.token.text,true);
+	else
 	{
+	  switch (typeRef.token.type)
+	  {
 		case Token::TYPE_BOOLEAN:
 			name = "Boolean";
 			break;
@@ -1395,7 +1603,7 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 		case Token::TYPE_UINT64:
 			name = "QWord";
 			break;
-
+			
 		case Token::TYPE_IDENTIFIER:
 			name = (typeRef.type == BaseType::TYPE_INTERFACE ? prefix : "") + typeRef.token.text;
 			break;
@@ -1403,10 +1611,10 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 		default:
 			name = typeRef.token.text;
 			break;
-	}
+	  }
 
-	if (typeRef.isPointer)
-	{
+	  if (typeRef.isPointer)
+	  {
 		if (name == "void")
 			return "Pointer";
 
@@ -1414,9 +1622,23 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 			pointerTypes.insert(name);
 
 		name += "Ptr";
+	  }
 	}
 
 	return name;
+}
+
+bool PascalGenerator::isInterfaceName(std::string name)
+{
+	for (vector<Interface*>::iterator i = parser->interfaces.begin();
+		 i != parser->interfaces.end();
+		 ++i)
+	{
+		Interface* interface = *i;
+		if (interface->name == name)
+		  return true;
+	}
+	return false;
 }
 
 string PascalGenerator::escapeName(string name, bool interfaceName)
@@ -1428,7 +1650,8 @@ string PascalGenerator::escapeName(string name, bool interfaceName)
 		name == "procedure" ||
 		name == "set" ||
 		name == "to" ||
-		name == "type")
+		name == "type" ||
+		name == "record")
 	{
 		name += "_";
 	}

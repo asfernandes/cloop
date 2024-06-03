@@ -61,7 +61,7 @@ begin
 {$endif}
 
 	fact := createFactory();
-	stat := MyStatusImpl.create;
+	stat := MyStatusImpl.create.asStatus;
 
 	calc := fact.createCalculator(stat);
 
@@ -81,8 +81,10 @@ begin
 	WriteLn(calc2.getMemory());	// 35
 
 	calc.dispose();
-	calc := calc2;
-
+	
+	if calc2.isCalculator2Impl then
+	  calc := calc2.asCalculator2Impl.asCalculator;
+	  
 	calc.sumAndStore(stat, 1, 22);
 	WriteLn(calc.getMemory());	// 23
 

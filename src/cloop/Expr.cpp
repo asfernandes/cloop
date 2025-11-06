@@ -29,15 +29,18 @@ using std::string;
 //--------------------------------------
 
 
-IntLiteralExpr::IntLiteralExpr(int value)
-	: value(value)
+IntLiteralExpr::IntLiteralExpr(int value, bool hex)
+	: value(value), hex(hex)
 {
 }
 
 string IntLiteralExpr::generate(Language language, const string& prefix)
 {
 	char buffer[64];
-	sprintf(buffer, "%d", value);
+	if (hex)
+		snprintf(buffer, sizeof(buffer), "%s%x", language == LANGUAGE_PASCAL ? "$" : "0x", value);
+	else
+		snprintf(buffer, sizeof(buffer), "%d", value);
 	return buffer;
 }
 
@@ -83,19 +86,22 @@ string ConstantExpr::generate(Language language, const string& prefix)
 {
 	string retPrefix;
 
-	switch (language)
+	if (interface)
 	{
-		case LANGUAGE_C:
-			retPrefix = prefix + interface->name + "_";
-			break;
+		switch (language)
+		{
+			case LANGUAGE_C:
+				retPrefix = prefix + interface->name + "_";
+				break;
 
-		case LANGUAGE_CPP:
-			retPrefix = prefix + interface->name + "::";
-			break;
+			case LANGUAGE_CPP:
+				retPrefix = prefix + interface->name + "::";
+				break;
 
-		case LANGUAGE_PASCAL:
-			retPrefix = prefix + interface->name + ".";
-			break;
+			case LANGUAGE_PASCAL:
+				retPrefix = prefix + interface->name + ".";
+				break;
+		}
 	}
 
 	return retPrefix + name;

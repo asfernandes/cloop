@@ -40,10 +40,10 @@ struct CALC_IDisposable
 
 CLOOP_EXTERN_C void CALC_IDisposable_dispose(struct CALC_IDisposable* self);
 
-#define CALC_IStatus_VERSION 3
+#define CALC_IStatus_VERSION 2
 
 #define CALC_IStatus_ERROR_1 ((int) (1))
-#define CALC_IStatus_ERROR_2 ((int) (2))
+#define CALC_IStatus_ERROR_2 ((int) (0x2))
 #define CALC_IStatus_ERROR_12 ((int) (CALC_IStatus_ERROR_1 | CALC_IStatus_ERROR_2))
 
 struct CALC_IStatus;
@@ -67,7 +67,7 @@ CLOOP_EXTERN_C void CALC_IStatus_dispose(struct CALC_IStatus* self);
 CLOOP_EXTERN_C int CALC_IStatus_getCode(const struct CALC_IStatus* self);
 CLOOP_EXTERN_C void CALC_IStatus_setCode(struct CALC_IStatus* self, int code);
 
-#define CALC_IFactory_VERSION 5
+#define CALC_IFactory_VERSION 2
 
 struct CALC_IFactory;
 
@@ -94,7 +94,7 @@ CLOOP_EXTERN_C struct CALC_ICalculator* CALC_IFactory_createCalculator(struct CA
 CLOOP_EXTERN_C struct CALC_ICalculator2* CALC_IFactory_createCalculator2(struct CALC_IFactory* self, struct CALC_IStatus* status);
 CLOOP_EXTERN_C struct CALC_ICalculator* CALC_IFactory_createBrokenCalculator(struct CALC_IFactory* self, struct CALC_IStatus* status);
 
-#define CALC_ICalculator_VERSION 5
+#define CALC_ICalculator_VERSION 4
 
 struct CALC_ICalculator;
 
@@ -121,7 +121,7 @@ CLOOP_EXTERN_C int CALC_ICalculator_getMemory(const struct CALC_ICalculator* sel
 CLOOP_EXTERN_C void CALC_ICalculator_setMemory(struct CALC_ICalculator* self, int n);
 CLOOP_EXTERN_C void CALC_ICalculator_sumAndStore(struct CALC_ICalculator* self, struct CALC_IStatus* status, int n1, int n2);
 
-#define CALC_ICalculator2_VERSION 8
+#define CALC_ICalculator2_VERSION 6
 
 struct CALC_ICalculator2;
 

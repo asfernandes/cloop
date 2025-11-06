@@ -51,13 +51,14 @@ public:
 class IntLiteralExpr : public Expr
 {
 public:
-	IntLiteralExpr(int value);
+	IntLiteralExpr(int value, bool hex);
 
 public:
 	virtual std::string generate(Language language, const std::string& prefix);
 
 private:
 	int value;
+	bool hex;
 };
 
 

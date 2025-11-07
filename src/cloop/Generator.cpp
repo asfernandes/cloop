@@ -47,6 +47,7 @@ const char* const Generator::AUTOGEN_MSG =
 
 
 static const char* tabs = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
+
 void identify(FILE* out, unsigned ident)
 {
 	fprintf(out, "%.*s", ident, tabs);
@@ -1427,6 +1428,7 @@ void PascalGenerator::generate()
 
 				fprintf(out, "\tend\n");
 			}
+
 			fprintf(out, "end;\n\n");
 
 			if (method->stubAction)

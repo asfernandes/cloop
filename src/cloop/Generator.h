@@ -132,6 +132,7 @@ public:
 private:
 	std::string convertParameter(const Parameter& parameter);
 	std::string convertType(const TypeRef& typeRef);
+
 	std::string escapeIfaceName(std::string name)
 	{
 		return prefix + escapeName(name);

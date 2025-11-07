@@ -40,6 +40,7 @@ static string paramError(const char* generator = nullptr, const char* perGenerat
 	string text = "Invalid command line parameters. Required format: inputFile ";
 	text += generator ? generator : "outFormat (one of c-header, c-impl, c++, pascal)";
 	text += " outputFile";
+
 	if (perGenerator)
 	{
 		text += " ";
@@ -87,6 +88,7 @@ static void run(int argc, const char* argv[])
 		string headerGuard(argv[4]);
 		string prefix(argv[5]);
 		string macro;
+
 		if (argc == 7)
 			macro = argv[6];
 
@@ -105,8 +107,10 @@ static void run(int argc, const char* argv[])
 	else if (outFormat == "pascal")
 	{
 		if (argc < 5)
+		{
 			throw runtime_error(paramError("pascal", "--uses uses --interfaceFile interfaces-file "
 				"--implementationFile implementation-file --exceptionClass class-name --prefix prefix --functionsFile functions-file"));
+		}
 
 		string unitName(argv[4]);
 
@@ -122,6 +126,7 @@ static void run(int argc, const char* argv[])
 
 		argv += 5;
 		argc -= 5;
+
 		for (; argc >= 2; argc -= 2, argv += 2)
 		{
 			string key = argv[0];

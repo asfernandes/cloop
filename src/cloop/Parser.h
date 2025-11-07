@@ -44,7 +44,7 @@ public:
 	};
 
 protected:
-	BaseType(Type type)
+	explicit BaseType(Type type)
 		: type(type)
 	{
 	}
@@ -59,10 +59,10 @@ public:
 };
 
 
-class TypeRef
+class TypeRef final
 {
 public:
-	TypeRef()
+	explicit TypeRef()
 		: isConst(false),
 		  isPointer(false),
 		  type(BaseType::TYPE_INTERFACE)
@@ -78,7 +78,7 @@ public:
 };
 
 
-class Parameter
+class Parameter final
 {
 public:
 	std::string name;
@@ -86,7 +86,7 @@ public:
 };
 
 
-class Constant
+class Constant final
 {
 public:
 	std::string name;
@@ -95,10 +95,10 @@ public:
 };
 
 
-class Method
+class Method final
 {
 public:
-	Method()
+	explicit Method()
 		: notImplementedExpr(NULL),
 		  notImplementedAction(NULL),
 		  stubAction(NULL),
@@ -120,10 +120,10 @@ public:
 };
 
 
-class Interface : public BaseType
+class Interface final : public BaseType
 {
 public:
-	Interface()
+	explicit Interface()
 		: BaseType(TYPE_INTERFACE),
 		  super(NULL),
 		  version(1)
@@ -138,40 +138,40 @@ public:
 };
 
 
-class Struct : public BaseType
+class Struct final : public BaseType
 {
 public:
-	Struct()
+	explicit Struct()
 		: BaseType(TYPE_STRUCT)
 	{
 	}
 };
 
 
-class Boolean : public BaseType
+class Boolean final : public BaseType
 {
 public:
-	Boolean()
+	explicit Boolean()
 		: BaseType(TYPE_BOOLEAN)
 	{
 	}
 };
 
 
-class Typedef : public BaseType
+class Typedef final : public BaseType
 {
 public:
-	Typedef()
+	explicit Typedef()
 		: BaseType(TYPE_TYPEDEF)
 	{
 	}
 };
 
 
-class Parser
+class Parser final
 {
 public:
-	Parser(Lexer* lexer);
+	explicit Parser(Lexer* lexer);
 
 	void parse();
 	void parseInterface(bool exception);

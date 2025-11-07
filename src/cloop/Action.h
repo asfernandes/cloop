@@ -31,7 +31,7 @@
 class Method;
 class Interface;
 
-struct ActionParametersBlock
+struct ActionParametersBlock final
 {
 	FILE* out;
 	Language language;
@@ -51,10 +51,10 @@ public:
 };
 
 
-class IfThenElseAction : public Action
+class IfThenElseAction final : public Action
 {
 public:
-	IfThenElseAction()
+	explicit IfThenElseAction()
 		: exprIf(nullptr), actThen(nullptr), actElse(nullptr)
 	{ }
 
@@ -68,10 +68,10 @@ public:
 };
 
 
-class CallAction : public Action
+class CallAction final : public Action
 {
 public:
-	CallAction() = default;
+	explicit CallAction() = default;
 
 	CallAction(const CallAction&) = default;
 
@@ -87,12 +87,12 @@ public:
 };
 
 
-class DefAction : public Action
+class DefAction final : public Action
 {
 public:
 	enum DefType { DEF_NOT_IMPLEMENTED, DEF_IGNORE };
 
-	DefAction(DefType dt)
+	explicit DefAction(DefType dt)
 		: defType(dt)
 	{ }
 

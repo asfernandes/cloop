@@ -48,8 +48,8 @@ protected:
 class FileGenerator : public Generator
 {
 public:
-	FileGenerator(const std::string& filename, const std::string& prefix);
-	virtual ~FileGenerator();
+	explicit FileGenerator(const std::string& filename, const std::string& prefix);
+	~FileGenerator() override;
 
 protected:
 	FILE* out;
@@ -60,7 +60,7 @@ protected:
 class CBasedGenerator : public FileGenerator
 {
 protected:
-	CBasedGenerator(const std::string& filename, const std::string& prefix, bool cPlusPlus);
+	explicit CBasedGenerator(const std::string& filename, const std::string& prefix, bool cPlusPlus);
 
 protected:
 	std::string convertType(const TypeRef& typeRef);
@@ -70,14 +70,14 @@ protected:
 };
 
 
-class CppGenerator : public CBasedGenerator
+class CppGenerator final : public CBasedGenerator
 {
 public:
-	CppGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+	explicit CppGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
 		const std::string& headerGuard, const std::string& nameSpace);
 
 public:
-	virtual void generate();
+	void generate() override;
 
 private:
 	Parser* parser;
@@ -86,14 +86,14 @@ private:
 };
 
 
-class CHeaderGenerator : public CBasedGenerator
+class CHeaderGenerator final : public CBasedGenerator
 {
 public:
-	CHeaderGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+	explicit CHeaderGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
 		const std::string& headerGuard, const std::string& macro);
 
 public:
-	virtual void generate();
+	void generate() override;
 
 private:
 	Parser* parser;
@@ -102,14 +102,14 @@ private:
 };
 
 
-class CImplGenerator : public CBasedGenerator
+class CImplGenerator final : public CBasedGenerator
 {
 public:
-	CImplGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+	explicit CImplGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
 		const std::string& includeFilename);
 
 public:
-	virtual void generate();
+	void generate() override;
 
 private:
 	Parser* parser;
@@ -117,16 +117,16 @@ private:
 };
 
 
-class PascalGenerator : public FileGenerator
+class PascalGenerator final : public FileGenerator
 {
 public:
-	PascalGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+	explicit PascalGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
 		const std::string& unitName, const std::string& additionalUses,
 		const std::string& interfaceFile, const std::string& implementationFile,
 		const std::string& exceptionClass, const std::string& functionsFile);
 
 public:
-	virtual void generate();
+	void generate() override;
 	static std::string escapeName(std::string name);
 
 private:
@@ -152,14 +152,14 @@ private:
 };
 
 
-class JnaGenerator : public FileGenerator
+class JnaGenerator final : public FileGenerator
 {
 public:
-	JnaGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
+	explicit JnaGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
 		const std::string& className, const std::string& exceptionClass);
 
 public:
-	virtual void generate();
+	void generate() override;
 
 private:
 	std::string convertType(const TypeRef& typeRef, bool forReturn);
@@ -173,13 +173,13 @@ private:
 };
 
 
-class JsonGenerator : public FileGenerator
+class JsonGenerator final : public FileGenerator
 {
 public:
-	JsonGenerator(const std::string& filename, Parser* parser);
+	explicit JsonGenerator(const std::string& filename, Parser* parser);
 
 public:
-	virtual void generate();
+	void generate() override;
 
 private:
 	std::string convertType(const TypeRef& typeRef);

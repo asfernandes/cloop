@@ -77,10 +77,10 @@ struct Token
 };
 
 
-class Lexer
+class Lexer final
 {
 private:
-	struct Char
+	struct Char final
 	{
 		int c;
 		unsigned line;
@@ -88,7 +88,7 @@ private:
 	};
 
 public:
-	Lexer(const std::string& filename);
+	explicit Lexer(const std::string& filename);
 	~Lexer();
 
 public:

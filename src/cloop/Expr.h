@@ -50,13 +50,13 @@ public:
 };
 
 
-class IntLiteralExpr : public Expr
+class IntLiteralExpr final : public Expr
 {
 public:
-	IntLiteralExpr(int value, bool hex);
+	explicit IntLiteralExpr(int value, bool hex);
 
 public:
-	virtual std::string generate(Language language, const std::string& prefix);
+	std::string generate(Language language, const std::string& prefix) override;
 
 private:
 	int value;
@@ -64,39 +64,39 @@ private:
 };
 
 
-class BooleanLiteralExpr : public Expr
+class BooleanLiteralExpr final : public Expr
 {
 public:
-	BooleanLiteralExpr(bool value);
+	explicit BooleanLiteralExpr(bool value);
 
 public:
-	virtual std::string generate(Language language, const std::string& prefix);
+	std::string generate(Language language, const std::string& prefix) override;
 
 private:
 	bool value;
 };
 
 
-class NegateExpr : public Expr
+class NegateExpr final : public Expr
 {
 public:
-	NegateExpr(Expr* expr);
+	explicit NegateExpr(Expr* expr);
 
 public:
-	virtual std::string generate(Language language, const std::string& prefix);
+	std::string generate(Language language, const std::string& prefix) override;
 
 private:
 	Expr* expr;
 };
 
 
-class ConstantExpr : public Expr
+class ConstantExpr final : public Expr
 {
 public:
-	ConstantExpr(Interface* interface, std::string name);
+	explicit ConstantExpr(Interface* interface, std::string name);
 
 public:
-	virtual std::string generate(Language language, const std::string& prefix);
+	std::string generate(Language language, const std::string& prefix) override;
 
 private:
 	Interface* interface;
@@ -104,13 +104,13 @@ private:
 };
 
 
-class BitwiseOrExpr : public Expr
+class BitwiseOrExpr final : public Expr
 {
 public:
-	BitwiseOrExpr(Expr* expr1, Expr* expr2);
+	explicit BitwiseOrExpr(Expr* expr1, Expr* expr2);
 
 public:
-	virtual std::string generate(Language language, const std::string& prefix);
+	std::string generate(Language language, const std::string& prefix) override;
 
 private:
 	Expr* expr1;

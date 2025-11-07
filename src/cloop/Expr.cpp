@@ -39,14 +39,15 @@ string IntLiteralExpr::generate(Language language, const string& prefix)
 	char buffer[128];
 
 	if (language == LANGUAGE_JSON)		// TODO: Does json support hex constants?
-		sprintf(buffer, "{ \"type\": \"int-literal\", \"value\": %d }", value);
-	else
 	{
-		if (hex)
-			sprintf(buffer, "%s%x", language == LANGUAGE_PASCAL ? "$" : "0x", value);
-		else
-			sprintf(buffer, "%d", value);
+		snprintf(buffer, sizeof(buffer), "{ \"type\": \"int-literal\", \"value\": %d }", value);
+		return buffer;
 	}
+
+	if (hex)
+		snprintf(buffer, sizeof(buffer), "%s%x", language == LANGUAGE_PASCAL ? "$" : "0x", value);
+	else
+		snprintf(buffer, sizeof(buffer), "%d", value);
 
 	return buffer;
 }
@@ -104,27 +105,30 @@ string ConstantExpr::generate(Language language, const string& prefix)
 {
 	string retPrefix;
 
-	switch (language)
+	if (interface)
 	{
-		case LANGUAGE_C:
-			retPrefix = prefix + interface->name + "_";
-			break;
+		switch (language)
+		{
+			case LANGUAGE_C:
+				retPrefix = prefix + interface->name + "_";
+				break;
 
-		case LANGUAGE_CPP:
-			retPrefix = prefix + interface->name + "::";
-			break;
+			case LANGUAGE_CPP:
+				retPrefix = prefix + interface->name + "::";
+				break;
 
-		case LANGUAGE_PASCAL:
-			retPrefix = prefix + interface->name + ".";
-			break;
+			case LANGUAGE_PASCAL:
+				retPrefix = prefix + interface->name + ".";
+				break;
 
-		case LANGUAGE_JAVA:
-			retPrefix = prefix + interface->name + "Intf.";
-			break;
+			case LANGUAGE_JAVA:
+				retPrefix = prefix + interface->name + "Intf.";
+				break;
 
-		case LANGUAGE_JSON:
-			return "{ \"type\": \"constant\", \"interface\": \"" + interface->name +
-				"\", \"name\": \"" + name + "\" }";
+			case LANGUAGE_JSON:
+				return "{ \"type\": \"constant\", \"interface\": \"" + interface->name +
+					"\", \"name\": \"" + name + "\" }";
+		}
 	}
 
 	return retPrefix + name;

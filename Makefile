@@ -4,9 +4,11 @@ WITH_FPC	:= 1
 
 TARGET	:= release
 
-CC	:= gcc
-CXX	:= g++
+CC	?= gcc
+CXX	?= g++
 LD	:= $(CXX)
+LD_FLAGS	:=
+LIBS		:=
 
 SRC_DIR		:= src
 BUILD_DIR	:= build
@@ -28,8 +30,14 @@ OBJS_C := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS_C))
 OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
 
 C_FLAGS := -ggdb -fPIC -MMD -MP -W -Wall -Wno-unused-parameter
-CXX_FLAGS := $(C_FLAGS)
-FPC_FLAGS := -Mdelphi -fPIC
+CXX_FLAGS := $(C_FLAGS) -std=c++11
+FPC_FLAGS := -Mdelphi -Cg
+
+ifeq ($(shell uname),FreeBSD)
+	DL_LIB :=
+else
+	DL_LIB := -ldl
+endif
 
 ifeq ($(TARGET),release)
 	CXX_FLAGS += -O3
@@ -37,30 +45,37 @@ endif
 
 ifeq ($(TARGET),debug)
 	FPC_FLAGS += -g
+	LD_FLAGS += -ggdb
 endif
 
 vpath %.c $(SRC_DIRS)
 vpath %.cpp $(SRC_DIRS)
 
 define compile
-$1/%.o: %.c
+$1/%.o: %.c | $1
 	$(CC) -c $$(C_FLAGS) $$< -o $$@
 
-$1/%.o: %.cpp
+$1/%.o: %.cpp | $1
 	$(CXX) -c $$(CXX_FLAGS) $$< -o $$@
 endef
 
-.PHONY: all mkdirs clean
+.PHONY: all core tests mkdirs clean
 
-all: mkdirs \
-	$(BIN_DIR)/cloop	\
+JAVA_INTERFACE := $(SRC_DIR)/tests/test1/java/src/main/java/com/github/asfernandes/cloop/tests/test1/ICalc.java
+
+all: core tests
+
+core: mkdirs \
+	$(BIN_DIR)/cloop
+
+tests: mkdirs	\
 	$(BIN_DIR)/test1-c$(SHRLIB_EXT)	\
 	$(BIN_DIR)/test1-c$(EXE_EXT)	\
 	$(BIN_DIR)/test1-cpp$(SHRLIB_EXT)	\
 	$(BIN_DIR)/test1-cpp$(EXE_EXT)	\
 	$(BIN_DIR)/test1-pascal$(SHRLIB_EXT)	\
 	$(BIN_DIR)/test1-pascal$(EXE_EXT)	\
-	$(SRC_DIR)/tests/test1/java/src/main/java/com/github/asfernandes/cloop/tests/test1/ICalc.java
+	$(JAVA_INTERFACE)
 
 mkdirs: $(OBJ_DIRS) $(BIN_DIR) $(LIB_DIR)
 
@@ -76,13 +91,15 @@ $(foreach bdir,$(OBJ_DIRS),$(eval $(call compile,$(bdir))))
 -include $(addsuffix .d,$(basename $(OBJS_CPP)))
 
 $(BIN_DIR)/cloop: \
+	$(OBJ_DIR)/cloop/Action.o \
 	$(OBJ_DIR)/cloop/Expr.o \
 	$(OBJ_DIR)/cloop/Generator.o \
 	$(OBJ_DIR)/cloop/Lexer.o \
 	$(OBJ_DIR)/cloop/Parser.o \
 	$(OBJ_DIR)/cloop/Main.o \
+	| $(BIN_DIR)
 
-	$(LD) $^ -o $@
+	$(LD) $(LD_FLAGS) $^ -o $@ $(LIBS)
 
 $(SRC_DIR)/tests/test1/CalcCApi.h: $(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl c-header $@ CALC_C_API_H CALC_I
@@ -103,33 +120,33 @@ $(SRC_DIR)/tests/test1/CalcPascalApi.pas: $(BIN_DIR)/cloop \
 		--implementationFile $(SRC_DIR)/tests/test1/CalcPascalApi.implementation.pas \
 		--exceptionClass CalcException
 
-$(SRC_DIR)/tests/test1/java/src/main/java/com/github/asfernandes/cloop/tests/test1/ICalc.java: \
+$(SRC_DIR)/tests/test1/CppTest.cpp: $(SRC_DIR)/tests/test1/CalcCppApi.h
+
+$(JAVA_INTERFACE): \
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl
 	$(BIN_DIR)/cloop $(SRC_DIR)/tests/test1/Interface.idl jna $@ com.github.asfernandes.cloop.tests.test1.ICalc CalcException I
-
-$(SRC_DIR)/tests/test1/CppTest.cpp: $(SRC_DIR)/tests/test1/CalcCppApi.h
 
 $(BIN_DIR)/test1-c$(SHRLIB_EXT): \
 	$(OBJ_DIR)/tests/test1/CalcCApi.o \
 	$(OBJ_DIR)/tests/test1/CTest.o \
 
-	$(LD) $^ -shared -ldl -o $@
+	$(LD) $(LD_FLAGS) $^ -shared $(DL_LIB) -o $@ $(LIBS)
 
 $(BIN_DIR)/test1-c$(EXE_EXT): \
 	$(OBJ_DIR)/tests/test1/CalcCApi.o \
 	$(OBJ_DIR)/tests/test1/CTest.o \
 
-	$(LD) $^ -ldl -o $@
+	$(LD) $(LD_FLAGS) $^ $(DL_LIB) -o $@ $(LIBS)
 
 $(BIN_DIR)/test1-cpp$(SHRLIB_EXT): \
 	$(OBJ_DIR)/tests/test1/CppTest.o \
 
-	$(LD) $^ -shared -ldl -o $@
+	$(LD) $(LD_FLAGS) $^ -shared $(DL_LIB) -o $@ $(LIBS)
 
 $(BIN_DIR)/test1-cpp$(EXE_EXT): \
 	$(OBJ_DIR)/tests/test1/CppTest.o \
 
-	$(LD) $^ -ldl -o $@
+	$(LD) $(LD_FLAGS) $^ $(DL_LIB) -o $@ $(LIBS)
 
 $(BIN_DIR)/test1-pascal$(SHRLIB_EXT): \
 	$(SRC_DIR)/tests/test1/PascalClasses.pas \
@@ -137,7 +154,7 @@ $(BIN_DIR)/test1-pascal$(SHRLIB_EXT): \
 	$(SRC_DIR)/tests/test1/CalcPascalApi.pas \
 
 ifeq ($(WITH_FPC),1)
-	fpc $(FPC_FLAGS) -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.dpr
+	fpc $(FPC_FLAGS) -fPIC -FU$(OBJ_DIR)/tests/test1 -o$(BIN_DIR)/test1-pascal$(SHRLIB_EXT) $(SRC_DIR)/tests/test1/PascalLibrary.dpr
 endif
 
 $(BIN_DIR)/test1-pascal$(EXE_EXT): \

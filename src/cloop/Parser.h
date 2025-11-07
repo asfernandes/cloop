@@ -23,6 +23,7 @@
 #define CLOOP_PARSER_H
 
 #include "Lexer.h"
+#include "Action.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -38,7 +39,8 @@ public:
 	{
 		TYPE_INTERFACE,
 		TYPE_STRUCT,
-		TYPE_TYPEDEF
+		TYPE_TYPEDEF,
+		TYPE_BOOLEAN
 	};
 
 protected:
@@ -71,6 +73,8 @@ public:
 	bool isConst;
 	bool isPointer;
 	BaseType::Type type;
+
+	bool valueIsPointer();
 };
 
 
@@ -96,6 +100,8 @@ class Method
 public:
 	Method()
 		: notImplementedExpr(NULL),
+		  notImplementedAction(NULL),
+		  stubAction(NULL),
 		  version(0),
 		  isConst(false)
 	{
@@ -105,9 +111,12 @@ public:
 	TypeRef returnTypeRef;
 	std::vector<Parameter*> parameters;
 	Expr* notImplementedExpr;
+	Action* notImplementedAction;
+	Action* stubAction;
 	unsigned version;
 	bool isConst;
 	std::string onErrorFunction;
+	std::string statusName;
 };
 
 
@@ -139,6 +148,16 @@ public:
 };
 
 
+class Boolean : public BaseType
+{
+public:
+	Boolean()
+		: BaseType(TYPE_BOOLEAN)
+	{
+	}
+};
+
+
 class Typedef : public BaseType
 {
 public:
@@ -158,14 +177,21 @@ public:
 	void parseInterface(bool exception);
 	void parseStruct();
 	void parseTypedef();
+	void parseBoolean();
 	void parseItem();
 	void parseConstant(const TypeRef& typeRef, const std::string& name);
-	void parseMethod(const TypeRef& returnTypeRef, const std::string& name, Expr* notImplementedExpr, const std::string& onErrorFunction);
+	void parseMethod(const TypeRef& returnTypeRef, const std::string& name, Expr* notImplementedExpr,
+		const std::string& onErrorFunction, Action* notImplementedAction, Action* stubAction);
 
 	Expr* parseExpr();
 	Expr* parseLogicalExpr();
 	Expr* parseUnaryExpr();
 	Expr* parsePrimaryExpr();
+
+	Action* parseAction(DefAction::DefType dt);
+	Action* parseIfThenElseAction(DefAction::DefType dt);
+	Action* parseCallAction();
+	Action* parseDefAction(DefAction::DefType dt);
 
 private:
 	void checkType(TypeRef& typeRef);
@@ -174,8 +200,8 @@ private:
 
 	TypeRef parseTypeRef();
 
-	void syntaxError(const Token& token);
-	void error(const Token& token, const std::string& msg);
+	[[noreturn]] void syntaxError(const Token& token);
+	[[noreturn]] void error(const Token& token, const std::string& msg);
 
 public:
 	std::vector<Interface*> interfaces;

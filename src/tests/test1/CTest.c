@@ -28,7 +28,7 @@
 #define DLL_EXPORT __declspec(dllexport)
 #else
 #include <dlfcn.h>
-#define DLL_EXPORT
+#define DLL_EXPORT __attribute__((visibility("default")))
 #endif
 
 

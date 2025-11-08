@@ -21,10 +21,12 @@
 
 #include "Parser.h"
 #include "Expr.h"
+#include <format>
 #include <stdexcept>
 #include <stdlib.h>
 #include <string.h>
 
+using std::format;
 using std::map;
 using std::pair;
 using std::runtime_error;
@@ -527,10 +529,7 @@ TypeRef Parser::parseTypeRef()
 
 [[noreturn]] void Parser::error(const Token& token, const string& msg)
 {
-	char buffer[1024];
-	snprintf(
-		buffer, sizeof(buffer), "%s:%i:%i: error: %s", lexer->filename.c_str(), token.line, token.column, msg.c_str());
-	throw runtime_error(buffer);
+	throw runtime_error(format("{}:{}:{}: error: {}", lexer->filename, token.line, token.column, msg));
 }
 
 bool TypeRef::valueIsPointer()

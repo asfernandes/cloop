@@ -21,8 +21,9 @@
 
 #include "Expr.h"
 #include "Parser.h"
-#include <stdio.h>
+#include <format>
 
+using std::format;
 using std::string;
 
 
@@ -37,20 +38,15 @@ IntLiteralExpr::IntLiteralExpr(int value, bool hex)
 
 string IntLiteralExpr::generate(Language language, const string& prefix)
 {
-	char buffer[128];
-
 	if (language == Language::JSON)  // TODO: Does json support hex constants?
 	{
-		snprintf(buffer, sizeof(buffer), "{ \"type\": \"int-literal\", \"value\": %d }", value);
-		return buffer;
+		return format("{{ \"type\": \"int-literal\", \"value\": {} }}", value);
 	}
 
 	if (hex)
-		snprintf(buffer, sizeof(buffer), "%s%x", language == Language::PASCAL ? "$" : "0x", value);
-	else
-		snprintf(buffer, sizeof(buffer), "%d", value);
+		return format("{}{:x}", language == Language::PASCAL ? "$" : "0x", value);
 
-	return buffer;
+	return format("{}", value);
 }
 
 
@@ -66,9 +62,7 @@ string BooleanLiteralExpr::generate(Language language, const string& prefix)
 {
 	if (language == Language::JSON)
 	{
-		char buffer[64];
-		sprintf(buffer, "{ \"type\": \"boolean-literal\", \"value\": %s }", (value ? "true" : "false"));
-		return buffer;
+		return format("{{ \"type\": \"boolean-literal\", \"value\": {} }}", (value ? "true" : "false"));
 	}
 	else
 		return value ? "true" : "false";

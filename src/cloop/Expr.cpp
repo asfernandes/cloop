@@ -30,7 +30,7 @@ using std::string;
 //--------------------------------------
 
 
-IntLiteralExpr::IntLiteralExpr(int value, bool hex)
+IntLiteralExpr::IntLiteralExpr(std::int64_t value, bool hex)
 	: value(value),
 	  hex(hex)
 {

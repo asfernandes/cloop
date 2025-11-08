@@ -22,6 +22,7 @@
 #include "Parser.h"
 #include "Expr.h"
 #include <format>
+#include <cstdint>
 #include <stdexcept>
 #include <stdlib.h>
 #include <string.h>
@@ -424,9 +425,9 @@ Expr* Parser::parsePrimaryExpr()
 			const char* p = token.text.c_str();
 			size_t len = strlen(p);
 			int base = len > 2 && tolower(p[1]) == 'x' ? 16 : 10;
-			long long val = strtoll(p, NULL, base);
+			std::int64_t val = static_cast<std::int64_t>(strtoll(p, NULL, base));
 
-			return new IntLiteralExpr((int) val, base == 16);
+			return new IntLiteralExpr(val, base == 16);
 		}
 
 		case Token::Type::IDENTIFIER:

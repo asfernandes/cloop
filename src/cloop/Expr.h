@@ -22,6 +22,7 @@
 #ifndef CLOOP_EXPR_H
 #define CLOOP_EXPR_H
 
+#include <cstdint>
 #include <string>
 
 
@@ -51,13 +52,13 @@ public:
 class IntLiteralExpr final : public Expr
 {
 public:
-	explicit IntLiteralExpr(int value, bool hex);
+	explicit IntLiteralExpr(std::int64_t value, bool hex);
 
 public:
 	std::string generate(Language language, const std::string& prefix) override;
 
 private:
-	int value;
+	std::int64_t value;
 	bool hex;
 };
 

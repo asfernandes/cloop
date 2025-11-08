@@ -41,9 +41,7 @@ enum Language
 class Expr
 {
 public:
-	virtual ~Expr()
-	{
-	}
+	virtual ~Expr() = default;
 
 public:
 	virtual std::string generate(Language language, const std::string& prefix) = 0;

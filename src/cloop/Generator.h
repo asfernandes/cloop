@@ -34,9 +34,7 @@
 class Generator
 {
 public:
-	virtual ~Generator()
-	{
-	}
+	virtual ~Generator() = default;
 
 	virtual void generate() = 0;
 

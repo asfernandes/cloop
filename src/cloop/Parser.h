@@ -49,9 +49,7 @@ protected:
 	{
 	}
 
-	virtual ~BaseType()
-	{
-	}
+	virtual ~BaseType() = default;
 
 public:
 	Type type;

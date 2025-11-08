@@ -44,8 +44,7 @@ struct ActionParametersBlock final
 class Action
 {
 public:
-	virtual ~Action()
-	{ }
+	virtual ~Action() = default;
 
 	virtual void generate(const ActionParametersBlock& apb, unsigned ident) = 0;
 };

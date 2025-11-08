@@ -60,19 +60,16 @@ public:
 class TypeRef final
 {
 public:
-	explicit TypeRef()
-		: isConst(false),
-		  isPointer(false),
-		  type(BaseType::Type::INTERFACE)
-	{
-	}
+	explicit TypeRef() = default;
 
-	Token token;
-	bool isConst;
-	bool isPointer;
-	BaseType::Type type;
-
+public:
 	bool valueIsPointer();
+
+public:
+	Token token;
+	bool isConst = false;
+	bool isPointer = false;
+	BaseType::Type type = BaseType::Type::INTERFACE;
 };
 
 
@@ -89,30 +86,23 @@ class Constant final
 public:
 	std::string name;
 	TypeRef typeRef;
-	Expr* expr;
+	Expr* expr = nullptr;
 };
 
 
 class Method final
 {
 public:
-	explicit Method()
-		: notImplementedExpr(NULL),
-		  notImplementedAction(NULL),
-		  stubAction(NULL),
-		  version(0),
-		  isConst(false)
-	{
-	}
+	explicit Method() = default;
 
 	std::string name;
 	TypeRef returnTypeRef;
 	std::vector<Parameter*> parameters;
-	Expr* notImplementedExpr;
-	Action* notImplementedAction;
-	Action* stubAction;
-	unsigned version;
-	bool isConst;
+	Expr* notImplementedExpr = nullptr;
+	Action* notImplementedAction = nullptr;
+	Action* stubAction = nullptr;
+	unsigned version = 0;
+	bool isConst = false;
 	std::string onErrorFunction;
 	std::string statusName;
 };
@@ -122,17 +112,15 @@ class Interface final : public BaseType
 {
 public:
 	explicit Interface()
-		: BaseType(Type::INTERFACE),
-		  super(NULL),
-		  version(1)
+		: BaseType(Type::INTERFACE)
 	{
 	}
 
 public:
-	Interface* super;
+	Interface* super = nullptr;
 	std::vector<Constant*> constants;
 	std::vector<Method*> methods;
-	unsigned version;
+	unsigned version = 1;
 };
 
 
@@ -204,12 +192,12 @@ private:
 public:
 	std::vector<Interface*> interfaces;
 	std::map<std::string, BaseType*> typesByName;
-	Interface* exceptionInterface;
+	Interface* exceptionInterface = nullptr;
 
 private:
 	Lexer* lexer;
 	Token token;
-	Interface* interface;
+	Interface* interface = nullptr;
 };
 
 

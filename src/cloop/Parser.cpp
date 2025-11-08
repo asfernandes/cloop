@@ -36,15 +36,13 @@ using std::vector;
 
 
 Parser::Parser(Lexer* lexer)
-	: exceptionInterface(NULL),
-	  lexer(lexer),
-	  interface(NULL)
+	: lexer(lexer)
 {
 }
 
 void Parser::parse()
 {
-	interface = NULL;
+	interface = nullptr;
 
 	while (true)
 	{
@@ -456,7 +454,7 @@ Expr* Parser::parsePrimaryExpr()
 
 		default:
 			syntaxError(token);
-			return NULL;  // warning
+			return nullptr;  // warning
 	}
 }
 

@@ -33,12 +33,12 @@ class Interface;
 
 struct ActionParametersBlock final
 {
-	FILE* out;
+	FILE* out = nullptr;
 	Language language;
 	const std::string& prefix;
 	const std::string& exceptionClass;
-	Interface* interface;
-	Method* method;
+	Interface* interface = nullptr;
+	Method* method = nullptr;
 };
 
 class Action
@@ -53,20 +53,16 @@ public:
 class IfThenElseAction final : public Action
 {
 public:
-	explicit IfThenElseAction()
-		: exprIf(nullptr),
-		  actThen(nullptr),
-		  actElse(nullptr)
-	{
-	}
+	explicit IfThenElseAction() = default;
 
 	IfThenElseAction(const IfThenElseAction&) = default;
 
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 
-	Expr* exprIf;
-	Action* actThen;
-	Action* actElse;
+public:
+	Expr* exprIf = nullptr;
+	Action* actThen = nullptr;
+	Action* actElse = nullptr;
 };
 
 
@@ -84,6 +80,7 @@ public:
 		parameters.push_back(parName);
 	}
 
+public:
 	std::string name;
 	std::vector<std::string> parameters;
 };
@@ -105,6 +102,7 @@ public:
 
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 
+public:
 	DefType defType;
 };
 

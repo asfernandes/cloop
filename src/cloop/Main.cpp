@@ -35,6 +35,7 @@ using std::runtime_error;
 using std::string;
 using std::unique_ptr;
 
+
 static string paramError(const char* generator = nullptr, const char* perGenerator = nullptr)
 {
 	string text = "Invalid command line parameters. Required format: inputFile ";
@@ -111,7 +112,7 @@ static void run(int argc, const char* argv[])
 			throw runtime_error(paramError("pascal",
 				"--uses uses --interfaceFile interfaces-file "
 				"--implementationFile implementation-file --exceptionClass class-name --prefix prefix --functionsFile "
-			    "functions-file"));
+				"functions-file"));
 		}
 
 		string unitName(argv[4]);

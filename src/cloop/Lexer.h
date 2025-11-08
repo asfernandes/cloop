@@ -102,7 +102,8 @@ public:
 
 private:
 	FILE* in;
-	unsigned line, column;
+	unsigned line = 1;
+	unsigned column = 1;
 	std::stack<Token> tokens;
 };
 

@@ -30,9 +30,7 @@ using std::string;
 
 
 Lexer::Lexer(const string& filename)
-	: filename(filename),
-	  line(1),
-	  column(1)
+	: filename(filename)
 {
 	in = fopen(filename.c_str(), "r");
 

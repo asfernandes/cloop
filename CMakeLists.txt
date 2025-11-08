@@ -5,7 +5,7 @@ project(cloop LANGUAGES C CXX)
 option(CLOOP_BUILD_TESTS "Build the sample test artifacts" ON)
 option(CLOOP_WITH_PASCAL "Build Pascal test artifacts using Free Pascal" ON)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)

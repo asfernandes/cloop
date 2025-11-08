@@ -239,8 +239,9 @@ void Lexer::skip(Char& ch)  // skip spaces and comments
 				break;
 
 			default:  // not a comment
+				ungetChar(ch);
 				ch = firstCh;
-				break;
+				return;
 		}
 	}
 

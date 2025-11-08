@@ -67,7 +67,7 @@ string snakeUpperCase(const string& name)
 		if (isUpper && !wasUpper)
 			result += '_';
 
-		result += toupper(c);
+		result += static_cast<char>(toupper(c));
 		wasUpper = isUpper;
 	}
 
@@ -1434,7 +1434,7 @@ void PascalGenerator::insertFile(const string& filename)
 		throw runtime_error(string("Error opening input file '") + filename + "'.");
 
 	char buffer[1024];
-	int count;
+	size_t count;
 
 	while ((count = fread(buffer, 1, sizeof(buffer), in)) > 0)
 		fwrite(buffer, 1, count, out);

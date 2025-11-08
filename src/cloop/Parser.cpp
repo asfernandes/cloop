@@ -454,7 +454,6 @@ Expr* Parser::parsePrimaryExpr()
 
 		default:
 			syntaxError(token);
-			return nullptr;  // warning
 	}
 }
 

@@ -27,8 +27,8 @@
 #include <string>
 
 
-#define DUMMY_VTABLE 1
-#define DUMMY_INSTANCE 1
+inline constexpr int DUMMY_VTABLE = 1;
+inline constexpr int DUMMY_INSTANCE = 1;
 
 
 class Generator

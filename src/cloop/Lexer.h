@@ -27,9 +27,6 @@
 #include <stdio.h>
 
 
-#define TOKEN(c) static_cast<::Token::Type>(c)
-
-
 struct Token
 {
 	enum class Type
@@ -108,6 +105,12 @@ private:
 	unsigned line, column;
 	std::stack<Token> tokens;
 };
+
+
+inline constexpr Token::Type TOKEN(char c)
+{
+	return static_cast<Token::Type>(c);
+}
 
 
 #endif  // CLOOP_LEXER_H

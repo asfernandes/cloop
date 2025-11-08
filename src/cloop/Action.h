@@ -46,6 +46,7 @@ class Action
 public:
 	virtual ~Action() = default;
 
+public:
 	virtual void generate(const ActionParametersBlock& apb, unsigned ident) = 0;
 };
 
@@ -57,6 +58,7 @@ public:
 
 	IfThenElseAction(const IfThenElseAction&) = default;
 
+public:
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 
 public:
@@ -73,6 +75,7 @@ public:
 
 	CallAction(const CallAction&) = default;
 
+public:
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 
 	void addParam(const std::string& parName)
@@ -95,11 +98,13 @@ public:
 		IGNORE,
 	};
 
+public:
 	explicit DefAction(DefType dt)
 		: defType(dt)
 	{
 	}
 
+public:
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 
 public:

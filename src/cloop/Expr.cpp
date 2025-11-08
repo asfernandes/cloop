@@ -30,7 +30,8 @@ using std::string;
 
 
 IntLiteralExpr::IntLiteralExpr(int value, bool hex)
-	: value(value), hex(hex)
+	: value(value),
+	  hex(hex)
 {
 }
 
@@ -38,7 +39,7 @@ string IntLiteralExpr::generate(Language language, const string& prefix)
 {
 	char buffer[128];
 
-	if (language == Language::JSON)		// TODO: Does json support hex constants?
+	if (language == Language::JSON)  // TODO: Does json support hex constants?
 	{
 		snprintf(buffer, sizeof(buffer), "{ \"type\": \"int-literal\", \"value\": %d }", value);
 		return buffer;
@@ -66,8 +67,7 @@ string BooleanLiteralExpr::generate(Language language, const string& prefix)
 	if (language == Language::JSON)
 	{
 		char buffer[64];
-		sprintf(buffer, "{ \"type\": \"boolean-literal\", \"value\": %s }",
-			(value ? "true" : "false"));
+		sprintf(buffer, "{ \"type\": \"boolean-literal\", \"value\": %s }", (value ? "true" : "false"));
 		return buffer;
 	}
 	else
@@ -126,8 +126,8 @@ string ConstantExpr::generate(Language language, const string& prefix)
 				break;
 
 			case Language::JSON:
-				return "{ \"type\": \"constant\", \"interface\": \"" + interface->name +
-					"\", \"name\": \"" + name + "\" }";
+				return "{ \"type\": \"constant\", \"interface\": \"" + interface->name + "\", \"name\": \"" + name +
+					"\" }";
 		}
 	}
 
@@ -148,14 +148,12 @@ string BitwiseOrExpr::generate(Language language, const string& prefix)
 {
 	if (language == Language::JSON)
 	{
-		return "{ \"type\": \"|\", \"args\": [ " +
-			expr1->generate(language, prefix) + ", " +
+		return "{ \"type\": \"|\", \"args\": [ " + expr1->generate(language, prefix) + ", " +
 			expr2->generate(language, prefix) + " ] }";
 	}
 	else
 	{
-		return expr1->generate(language, prefix) +
-			(language == Language::PASCAL ? " or " : " | ") +
+		return expr1->generate(language, prefix) + (language == Language::PASCAL ? " or " : " | ") +
 			expr2->generate(language, prefix);
 	}
 }

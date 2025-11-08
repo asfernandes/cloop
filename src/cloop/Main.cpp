@@ -28,12 +28,12 @@
 #include <string>
 #include <stdexcept>
 
-using std::unique_ptr;
 using std::cerr;
 using std::endl;
 using std::exception;
-using std::string;
 using std::runtime_error;
+using std::string;
+using std::unique_ptr;
 
 static string paramError(const char* generator = nullptr, const char* perGenerator = nullptr)
 {
@@ -108,8 +108,10 @@ static void run(int argc, const char* argv[])
 	{
 		if (argc < 5)
 		{
-			throw runtime_error(paramError("pascal", "--uses uses --interfaceFile interfaces-file "
-				"--implementationFile implementation-file --exceptionClass class-name --prefix prefix --functionsFile functions-file"));
+			throw runtime_error(paramError("pascal",
+				"--uses uses --interfaceFile interfaces-file "
+				"--implementationFile implementation-file --exceptionClass class-name --prefix prefix --functionsFile "
+			    "functions-file"));
 		}
 
 		string unitName(argv[4]);
@@ -119,10 +121,8 @@ static void run(int argc, const char* argv[])
 			const char* sw;
 			string val;
 		};
-		pascalSwitch sw[] = {
-			{"--uses", ""}, {"--interfaceFile", ""}, {"--implementationFile", ""},
-			{"--exceptionClass", ""}, {"--prefix", ""}, {"--functionsFile", ""},
-			{NULL, ""} };
+		pascalSwitch sw[] = {{"--uses", ""}, {"--interfaceFile", ""}, {"--implementationFile", ""},
+			{"--exceptionClass", ""}, {"--prefix", ""}, {"--functionsFile", ""}, {NULL, ""}};
 
 		argv += 5;
 		argc -= 5;
@@ -146,10 +146,9 @@ static void run(int argc, const char* argv[])
 				throw runtime_error("Unknown switch " + key);
 		}
 
-		generator.reset(new PascalGenerator(outFilename, sw[4].val/*prefix*/, &parser, unitName,
-			sw[0].val/*additionalUses*/, sw[1].val/*interfaceFile*/,
-			sw[2].val/*implementationFile*/, sw[3].val/*exceptionClass*/,
-			sw[5].val/*functionsFile*/));
+		generator.reset(new PascalGenerator(outFilename, sw[4].val /*prefix*/, &parser, unitName,
+			sw[0].val /*additionalUses*/, sw[1].val /*interfaceFile*/, sw[2].val /*implementationFile*/,
+			sw[3].val /*exceptionClass*/, sw[5].val /*functionsFile*/));
 	}
 	else if (outFormat == "jna")
 	{

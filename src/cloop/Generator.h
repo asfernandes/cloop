@@ -27,8 +27,8 @@
 #include <string>
 
 
-#define DUMMY_VTABLE	1
-#define DUMMY_INSTANCE	1
+#define DUMMY_VTABLE 1
+#define DUMMY_INSTANCE 1
 
 
 class Generator
@@ -103,8 +103,8 @@ private:
 class CImplGenerator final : public CBasedGenerator
 {
 public:
-	explicit CImplGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
-		const std::string& includeFilename);
+	explicit CImplGenerator(
+		const std::string& filename, const std::string& prefix, Parser* parser, const std::string& includeFilename);
 
 public:
 	void generate() override;
@@ -119,9 +119,8 @@ class PascalGenerator final : public FileGenerator
 {
 public:
 	explicit PascalGenerator(const std::string& filename, const std::string& prefix, Parser* parser,
-		const std::string& unitName, const std::string& additionalUses,
-		const std::string& interfaceFile, const std::string& implementationFile,
-		const std::string& exceptionClass, const std::string& functionsFile);
+		const std::string& unitName, const std::string& additionalUses, const std::string& interfaceFile,
+		const std::string& implementationFile, const std::string& exceptionClass, const std::string& functionsFile);
 
 public:
 	void generate() override;
@@ -190,4 +189,4 @@ private:
 void identify(FILE* out, unsigned ident);
 
 
-#endif	// CLOOP_GENERATOR_H
+#endif  // CLOOP_GENERATOR_H

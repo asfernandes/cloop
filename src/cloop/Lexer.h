@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 
-#define TOKEN(c)	static_cast< ::Token::Type>(c)
+#define TOKEN(c) static_cast<::Token::Type>(c)
 
 
 struct Token
@@ -110,4 +110,4 @@ private:
 };
 
 
-#endif	// CLOOP_LEXER_H
+#endif  // CLOOP_LEXER_H

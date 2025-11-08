@@ -54,8 +54,11 @@ class IfThenElseAction final : public Action
 {
 public:
 	explicit IfThenElseAction()
-		: exprIf(nullptr), actThen(nullptr), actElse(nullptr)
-	{ }
+		: exprIf(nullptr),
+		  actThen(nullptr),
+		  actElse(nullptr)
+	{
+	}
 
 	IfThenElseAction(const IfThenElseAction&) = default;
 
@@ -97,11 +100,12 @@ public:
 
 	explicit DefAction(DefType dt)
 		: defType(dt)
-	{ }
+	{
+	}
 
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 
 	DefType defType;
 };
 
-#endif //CLOOP_ACTION_H
+#endif  // CLOOP_ACTION_H

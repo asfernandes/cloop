@@ -28,11 +28,11 @@
 #include <string>
 #include <vector>
 
-using std::transform;
 using std::deque;
 using std::runtime_error;
 using std::set;
 using std::string;
+using std::transform;
 using std::vector;
 
 
@@ -108,7 +108,7 @@ string CBasedGenerator::convertType(const TypeRef& typeRef)
 	switch (typeRef.token.type)
 	{
 		case Token::Type::BOOLEAN:
-			ret += "FB_BOOLEAN";	// seems to be more portable than bool, specially thinking on pointers
+			ret += "FB_BOOLEAN";  // seems to be more portable than bool, specially thinking on pointers
 			break;
 
 		case Token::Type::INT:
@@ -116,7 +116,7 @@ string CBasedGenerator::convertType(const TypeRef& typeRef)
 			break;
 
 		case Token::Type::INT64:
-			ret += "ISC_INT64";		//int64_t
+			ret += "ISC_INT64";  // int64_t
 			break;
 
 		case Token::Type::INTPTR:
@@ -136,7 +136,7 @@ string CBasedGenerator::convertType(const TypeRef& typeRef)
 			break;
 
 		case Token::Type::UINT64:
-			ret += "ISC_UINT64";	//uint64_t
+			ret += "ISC_UINT64";  // uint64_t
 			break;
 
 		case Token::Type::IDENTIFIER:
@@ -162,8 +162,8 @@ string CBasedGenerator::convertType(const TypeRef& typeRef)
 //--------------------------------------
 
 
-CppGenerator::CppGenerator(const string& filename, const string& prefix, Parser* parser,
-		const string& headerGuard, const string& nameSpace)
+CppGenerator::CppGenerator(
+	const string& filename, const string& prefix, Parser* parser, const string& headerGuard, const string& nameSpace)
 	: CBasedGenerator(filename, prefix, true),
 	  parser(parser),
 	  headerGuard(headerGuard),
@@ -180,7 +180,7 @@ void CppGenerator::generate()
 
 	fprintf(out, "#ifndef %s\n", headerGuard.c_str());
 	fprintf(out, "#define %s\n\n", headerGuard.c_str());
-	///fprintf(out, "#include <stdint.h>\n\n");
+	/// fprintf(out, "#include <stdint.h>\n\n");
 
 	fprintf(out, "#ifndef CLOOP_CARG\n");
 	fprintf(out, "#define CLOOP_CARG\n");
@@ -223,9 +223,7 @@ void CppGenerator::generate()
 
 	fprintf(out, "\t// Forward interfaces declarations\n\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -235,19 +233,14 @@ void CppGenerator::generate()
 	fprintf(out, "\n");
 	fprintf(out, "\t// Interfaces declarations\n\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
 		const string snakeInterfaceName = snakeUpperCase(interface->name);
 
-		fprintf(out, "#define %s_%s%s_VERSION %uu\n\n",
-			nameSpaceUpper.c_str(),
-			prefix.c_str(),
-			snakeInterfaceName.c_str(),
-			interface->version);
+		fprintf(out, "#define %s_%s%s_VERSION %uu\n\n", nameSpaceUpper.c_str(), prefix.c_str(),
+			snakeInterfaceName.c_str(), interface->version);
 
 		deque<Method*> methods;
 
@@ -258,9 +251,8 @@ void CppGenerator::generate()
 			fprintf(out, "\tclass %s%s\n", prefix.c_str(), interface->name.c_str());
 		else
 		{
-			fprintf(out, "\tclass %s%s : public %s%s\n",
-				prefix.c_str(), interface->name.c_str(),
-				prefix.c_str(), interface->super->name.c_str());
+			fprintf(out, "\tclass %s%s : public %s%s\n", prefix.c_str(), interface->name.c_str(), prefix.c_str(),
+				interface->super->name.c_str());
 		}
 
 		fprintf(out, "\t{\n");
@@ -275,32 +267,22 @@ void CppGenerator::generate()
 		}
 		else
 		{
-			fprintf(out, "\t\tstruct VTable : public %s%s::VTable\n",
-				prefix.c_str(), interface->super->name.c_str());
+			fprintf(out, "\t\tstruct VTable : public %s%s::VTable\n", prefix.c_str(), interface->super->name.c_str());
 			fprintf(out, "\t\t{\n");
 		}
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t\t\t%s (CLOOP_CARG *%s)(%s%s%s* self",
-				convertType(method->returnTypeRef).c_str(),
-				method->name.c_str(),
-				(method->isConst ? "const " : ""),
-				prefix.c_str(),
-				interface->name.c_str());
+			fprintf(out, "\t\t\t%s (CLOOP_CARG *%s)(%s%s%s* self", convertType(method->returnTypeRef).c_str(),
+				method->name.c_str(), (method->isConst ? "const " : ""), prefix.c_str(), interface->name.c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
-				fprintf(out, ", %s %s",
-					convertType(parameter->typeRef).c_str(), parameter->name.c_str());
+				fprintf(out, ", %s %s", convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 			}
 
 			fprintf(out, ") CLOOP_NOEXCEPT;\n");
@@ -321,8 +303,7 @@ void CppGenerator::generate()
 
 		if (interface->super)
 		{
-			fprintf(out, "\t\t\t: %s%s(DoNotInherit())\n",
-				prefix.c_str(), interface->super->name.c_str());
+			fprintf(out, "\t\t\t: %s%s(DoNotInherit())\n", prefix.c_str(), interface->super->name.c_str());
 		}
 
 		fprintf(out, "\t\t{\n");
@@ -335,29 +316,21 @@ void CppGenerator::generate()
 
 		fprintf(out, "\tpublic:\n");
 
-		fprintf(out, "\t\tstatic CLOOP_CONSTEXPR unsigned VERSION = %s_%s%s_VERSION;\n",
-			nameSpaceUpper.c_str(),
-			prefix.c_str(),
-			snakeInterfaceName.c_str());
+		fprintf(out, "\t\tstatic CLOOP_CONSTEXPR unsigned VERSION = %s_%s%s_VERSION;\n", nameSpaceUpper.c_str(),
+			prefix.c_str(), snakeInterfaceName.c_str());
 
 		if (!interface->constants.empty())
 			fprintf(out, "\n");
 
-		for (vector<Constant*>::iterator j = interface->constants.begin();
-			 j != interface->constants.end();
-			 ++j)
+		for (vector<Constant*>::iterator j = interface->constants.begin(); j != interface->constants.end(); ++j)
 		{
 			Constant* constant = *j;
 
-			fprintf(out, "\t\tstatic CLOOP_CONSTEXPR %s %s = %s;\n",
-				convertType(constant->typeRef).c_str(),
-				constant->name.c_str(),
-				constant->expr->generate(Language::CPP, prefix).c_str());
+			fprintf(out, "\t\tstatic CLOOP_CONSTEXPR %s %s = %s;\n", convertType(constant->typeRef).c_str(),
+				constant->name.c_str(), constant->expr->generate(Language::CPP, prefix).c_str());
 		}
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
@@ -366,12 +339,9 @@ void CppGenerator::generate()
 			if (!method->statusName.empty())
 				fprintf(out, "template <typename StatusType> ");
 
-			fprintf(out, "%s %s(",
-				convertType(method->returnTypeRef).c_str(), method->name.c_str());
+			fprintf(out, "%s %s(", convertType(method->returnTypeRef).c_str(), method->name.c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -382,8 +352,7 @@ void CppGenerator::generate()
 					fprintf(out, "StatusType* %s", parameter->name.c_str());
 				else
 				{
-					fprintf(out, "%s %s",
-						convertType(parameter->typeRef).c_str(), parameter->name.c_str());
+					fprintf(out, "%s %s", convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 				}
 			}
 
@@ -405,13 +374,12 @@ void CppGenerator::generate()
 
 				fprintf(out, "\t\t\t\treturn");
 
-				if (method->returnTypeRef.token.type != Token::Type::VOID ||
-					method->returnTypeRef.isPointer)
+				if (method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer)
 				{
 					fprintf(out, " %s",
-						(method->notImplementedExpr ?
-							method->notImplementedExpr->generate(Language::CPP, prefix).c_str() :
-							"0"));
+						(method->notImplementedExpr
+								? method->notImplementedExpr->generate(Language::CPP, prefix).c_str()
+								: "0"));
 				}
 
 				fprintf(out, ";\n");
@@ -429,18 +397,14 @@ void CppGenerator::generate()
 
 			fprintf(out, "\t\t\t");
 
-			if (method->returnTypeRef.token.type != Token::Type::VOID ||
-				method->returnTypeRef.isPointer)
+			if (method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer)
 			{
 				fprintf(out, "%s ret = ", convertType(method->returnTypeRef).c_str());
 			}
 
-			fprintf(out, "static_cast<VTable*>(this->cloopVTable)->%s(this",
-				method->name.c_str());
+			fprintf(out, "static_cast<VTable*>(this->cloopVTable)->%s(this", method->name.c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 				fprintf(out, ", %s", parameter->name.c_str());
@@ -449,16 +413,13 @@ void CppGenerator::generate()
 			fprintf(out, ")");
 			fprintf(out, ";\n");
 
-			if (!method->parameters.empty() &&
-				parser->exceptionInterface &&
+			if (!method->parameters.empty() && parser->exceptionInterface &&
 				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name)
 			{
-				fprintf(out, "\t\t\tStatusType::checkException(%s);\n",
-					method->parameters.front()->name.c_str());
+				fprintf(out, "\t\t\tStatusType::checkException(%s);\n", method->parameters.front()->name.c_str());
 			}
 
-			if (method->returnTypeRef.token.type != Token::Type::VOID ||
-				method->returnTypeRef.isPointer)
+			if (method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer)
 			{
 				fprintf(out, "\t\t\treturn ret;\n");
 			}
@@ -471,9 +432,7 @@ void CppGenerator::generate()
 
 	fprintf(out, "\t// Interfaces implementations\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -484,14 +443,12 @@ void CppGenerator::generate()
 
 		fprintf(out, "\n");
 		fprintf(out, "\ttemplate <typename Name, typename StatusType, typename Base>\n");
-		fprintf(out, "\tclass %s%sBaseImpl : public Base\n",
-			prefix.c_str(), interface->name.c_str());
+		fprintf(out, "\tclass %s%sBaseImpl : public Base\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t{\n");
 		fprintf(out, "\tpublic:\n");
 		fprintf(out, "\t\ttypedef %s%s Declaration;\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\n");
-		fprintf(out, "\t\t%s%sBaseImpl(DoNotInherit = DoNotInherit())\n",
-			prefix.c_str(), interface->name.c_str());
+		fprintf(out, "\t\t%s%sBaseImpl(DoNotInherit = DoNotInherit())\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t\tstatic struct VTableImpl : Base::VTable\n");
 		fprintf(out, "\t\t\t{\n");
@@ -503,8 +460,8 @@ void CppGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t\t\t\t\tthis->%s = &Name::cloop%sDispatcher;\n",
-				method->name.c_str(), method->name.c_str());
+			fprintf(
+				out, "\t\t\t\t\tthis->%s = &Name::cloop%sDispatcher;\n", method->name.c_str(), method->name.c_str());
 		}
 
 		fprintf(out, "\t\t\t\t}\n");
@@ -526,35 +483,28 @@ void CppGenerator::generate()
 
 				fprintf(out, "\n");
 				fprintf(out, "\t\tstatic %s CLOOP_CARG cloop%sDispatcher(%s%s%s* self",
-					convertType(method->returnTypeRef).c_str(),
-					method->name.c_str(),
-					(method->isConst ? "const " : ""),
-					prefix.c_str(),
-					p->name.c_str());
+					convertType(method->returnTypeRef).c_str(), method->name.c_str(), (method->isConst ? "const " : ""),
+					prefix.c_str(), p->name.c_str());
 
-				for (vector<Parameter*>::iterator k = method->parameters.begin();
-					 k != method->parameters.end();
-					 ++k)
+				for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 				{
 					Parameter* parameter = *k;
 
-					fprintf(out, ", %s %s",
-						convertType(parameter->typeRef).c_str(), parameter->name.c_str());
+					fprintf(out, ", %s %s", convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 				}
 
 				Parameter* exceptionParameter =
-					(!method->parameters.empty() &&
-					 parser->exceptionInterface &&
-					 method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name
-					) ? method->parameters.front() : NULL;
+					(!method->parameters.empty() && parser->exceptionInterface &&
+						method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name)
+					? method->parameters.front()
+					: NULL;
 
 				fprintf(out, ") CLOOP_NOEXCEPT\n");
 				fprintf(out, "\t\t{\n");
 
 				if (exceptionParameter)
 				{
-					fprintf(out, "\t\t\tStatusType %s2(%s);\n",
-						exceptionParameter->name.c_str(),
+					fprintf(out, "\t\t\tStatusType %s2(%s);\n", exceptionParameter->name.c_str(),
 						exceptionParameter->name.c_str());
 					fprintf(out, "\n");
 				}
@@ -564,19 +514,15 @@ void CppGenerator::generate()
 
 				fprintf(out, "\t\t\t\t");
 
-				if (method->returnTypeRef.token.type != Token::Type::VOID ||
-					method->returnTypeRef.isPointer)
+				if (method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer)
 				{
 					fprintf(out, "return ");
 				}
 
-				fprintf(out, "static_cast<%sName*>(self)->Name::%s(",
-					(method->isConst ? "const " : ""),
+				fprintf(out, "static_cast<%sName*>(self)->Name::%s(", (method->isConst ? "const " : ""),
 					method->name.c_str());
 
-				for (vector<Parameter*>::iterator k = method->parameters.begin();
-					 k != method->parameters.end();
-					 ++k)
+				for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 				{
 					Parameter* parameter = *k;
 
@@ -597,19 +543,16 @@ void CppGenerator::generate()
 				fprintf(out, "\t\t\t\tStatusType::catchException(%s);\n",
 					(exceptionParameter ? ("&" + exceptionParameter->name + "2").c_str() : "0"));
 
-				if (method->returnTypeRef.token.type != Token::Type::VOID ||
-					method->returnTypeRef.isPointer)
+				if (method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer)
 				{
 					const char* ret = "\t\t\t\treturn";
 					if (method->onErrorFunction.length())
 					{
-						fprintf(out, "%s %s();\n",
-							ret, method->onErrorFunction.c_str());
+						fprintf(out, "%s %s();\n", ret, method->onErrorFunction.c_str());
 					}
 					else
 					{
-						fprintf(out, "%s static_cast<%s>(0);\n",
-							ret, convertType(method->returnTypeRef).c_str());
+						fprintf(out, "%s static_cast<%s>(0);\n", ret, convertType(method->returnTypeRef).c_str());
 					}
 				}
 
@@ -645,12 +588,11 @@ void CppGenerator::generate()
 			fprintf(out, "\ttemplate <typename Name, typename StatusType, typename Base = %s>\n", base.c_str());
 		}
 
-		fprintf(out, "\tclass %s%sImpl : public %s%sBaseImpl<Name, StatusType, Base>\n",
-			prefix.c_str(), interface->name.c_str(), prefix.c_str(), interface->name.c_str());
+		fprintf(out, "\tclass %s%sImpl : public %s%sBaseImpl<Name, StatusType, Base>\n", prefix.c_str(),
+			interface->name.c_str(), prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t{\n");
 		fprintf(out, "\tprotected:\n");
-		fprintf(out, "\t\t%s%sImpl(DoNotInherit = DoNotInherit())\n",
-			prefix.c_str(), interface->name.c_str());
+		fprintf(out, "\t\t%s%sImpl(DoNotInherit = DoNotInherit())\n", prefix.c_str(), interface->name.c_str());
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t}\n");
 		fprintf(out, "\n");
@@ -660,24 +602,19 @@ void CppGenerator::generate()
 		fprintf(out, "\t\t}\n");
 		fprintf(out, "\n");
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
 			Parameter* exceptionParameter =
-				(!method->parameters.empty() &&
-				 parser->exceptionInterface &&
-				 method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name
-				) ? method->parameters.front() : NULL;
+				(!method->parameters.empty() && parser->exceptionInterface &&
+					method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name)
+				? method->parameters.front()
+				: NULL;
 
-			fprintf(out, "\t\tvirtual %s %s(",
-				convertType(method->returnTypeRef).c_str(), method->name.c_str());
+			fprintf(out, "\t\tvirtual %s %s(", convertType(method->returnTypeRef).c_str(), method->name.c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -688,8 +625,7 @@ void CppGenerator::generate()
 					fprintf(out, "StatusType* %s", parameter->name.c_str());
 				else
 				{
-					fprintf(out, "%s %s",
-						convertType(parameter->typeRef).c_str(), parameter->name.c_str());
+					fprintf(out, "%s %s", convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 				}
 			}
 
@@ -722,14 +658,14 @@ void CppGenerator::generate()
 
 
 CHeaderGenerator::CHeaderGenerator(const string& filename, const string& prefix, Parser* parser,
-		const string& headerGuard, const std::string& parMacro)
+	const string& headerGuard, const std::string& parMacro)
 	: CBasedGenerator(filename, prefix, false),
 	  parser(parser),
 	  headerGuard(headerGuard),
 	  macro(false)
 {
 	if (parMacro.length() > 0 && parMacro != "macro")
-			throw runtime_error("Last (#6) param should be exactly 'macro' or missing");
+		throw runtime_error("Last (#6) param should be exactly 'macro' or missing");
 
 	macro = parMacro.length() > 0;
 }
@@ -750,9 +686,7 @@ void CHeaderGenerator::generate()
 	fprintf(out, "#endif\n");
 	fprintf(out, "#endif\n\n\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -761,9 +695,7 @@ void CHeaderGenerator::generate()
 
 	fprintf(out, "\n\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -772,20 +704,14 @@ void CHeaderGenerator::generate()
 		for (Interface* p = interface; p; p = p->super)
 			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
-		fprintf(out, "#define %s%s_VERSION %d\n\n",
-			prefix.c_str(), interface->name.c_str(), interface->version);
+		fprintf(out, "#define %s%s_VERSION %d\n\n", prefix.c_str(), interface->name.c_str(), interface->version);
 
-		for (vector<Constant*>::iterator j = interface->constants.begin();
-			 j != interface->constants.end();
-			 ++j)
+		for (vector<Constant*>::iterator j = interface->constants.begin(); j != interface->constants.end(); ++j)
 		{
 			Constant* constant = *j;
 
-			fprintf(out, "#define %s%s_%s ((%s) (%s))\n",
-				prefix.c_str(),
-				interface->name.c_str(),
-				constant->name.c_str(),
-				convertType(constant->typeRef).c_str(),
+			fprintf(out, "#define %s%s_%s ((%s) (%s))\n", prefix.c_str(), interface->name.c_str(),
+				constant->name.c_str(), convertType(constant->typeRef).c_str(),
 				constant->expr->generate(Language::C, prefix).c_str());
 		}
 
@@ -803,21 +729,14 @@ void CHeaderGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t%s (*%s)(%sstruct %s%s* self",
-				convertType(method->returnTypeRef).c_str(),
-				method->name.c_str(),
-				(method->isConst ? "const " : ""),
-				prefix.c_str(),
-				interface->name.c_str());
+			fprintf(out, "\t%s (*%s)(%sstruct %s%s* self", convertType(method->returnTypeRef).c_str(),
+				method->name.c_str(), (method->isConst ? "const " : ""), prefix.c_str(), interface->name.c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
-				fprintf(out, ", %s %s", convertType(parameter->typeRef).c_str(),
-					parameter->name.c_str());
+				fprintf(out, ", %s %s", convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 			}
 
 			fprintf(out, ");\n");
@@ -837,59 +756,42 @@ void CHeaderGenerator::generate()
 
 			if (macro)
 			{
-				fprintf(out, "#define %s%s_%s(self",
-					prefix.c_str(),
-					interface->name.c_str(),
-					method->name.c_str());
+				fprintf(out, "#define %s%s_%s(self", prefix.c_str(), interface->name.c_str(), method->name.c_str());
 			}
 			else
 			{
 				fprintf(out, "CLOOP_EXTERN_C %s %s%s_%s(%sstruct %s%s* self",
-					convertType(method->returnTypeRef).c_str(),
-					prefix.c_str(),
-					interface->name.c_str(),
-					method->name.c_str(),
-					(method->isConst ? "const " : ""),
-					prefix.c_str(),
-					interface->name.c_str());
+					convertType(method->returnTypeRef).c_str(), prefix.c_str(), interface->name.c_str(),
+					method->name.c_str(), (method->isConst ? "const " : ""), prefix.c_str(), interface->name.c_str());
 			}
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
 				if (macro)
 				{
-					fprintf(out, ", %s",
-						parameter->name.c_str());
+					fprintf(out, ", %s", parameter->name.c_str());
 				}
 				else
 				{
-					fprintf(out, ", %s %s",
-						convertType(parameter->typeRef).c_str(), parameter->name.c_str());
+					fprintf(out, ", %s %s", convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 				}
 			}
 
 			if (macro)
 			{
 				fprintf(out, ") %s(self)->vtable->%s(self",
-					method->returnTypeRef.token.type != Token::Type::VOID ? "(" : "",
-					method->name.c_str());
+					method->returnTypeRef.token.type != Token::Type::VOID ? "(" : "", method->name.c_str());
 
-				for (vector<Parameter*>::iterator k = method->parameters.begin();
-					 k != method->parameters.end();
-					 ++k)
+				for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 				{
 					Parameter* parameter = *k;
 
-					fprintf(out, ", (%s)",
-						parameter->name.c_str());
+					fprintf(out, ", (%s)", parameter->name.c_str());
 				}
 
-				fprintf(out, ")%s\n",
-					method->returnTypeRef.token.type != Token::Type::VOID ? ")" : "");
+				fprintf(out, ")%s\n", method->returnTypeRef.token.type != Token::Type::VOID ? ")" : "");
 			}
 			else
 				fprintf(out, ");\n");
@@ -906,8 +808,8 @@ void CHeaderGenerator::generate()
 //--------------------------------------
 
 
-CImplGenerator::CImplGenerator(const string& filename, const string& prefix, Parser* parser,
-		const string& includeFilename)
+CImplGenerator::CImplGenerator(
+	const string& filename, const string& prefix, Parser* parser, const string& includeFilename)
 	: CBasedGenerator(filename, prefix, false),
 	  parser(parser),
 	  includeFilename(includeFilename)
@@ -920,9 +822,7 @@ void CImplGenerator::generate()
 
 	fprintf(out, "#include \"%s\"\n\n\n", includeFilename.c_str());
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -935,23 +835,15 @@ void CImplGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "CLOOP_EXTERN_C %s %s%s_%s(%sstruct %s%s* self",
-				convertType(method->returnTypeRef).c_str(),
-				prefix.c_str(),
-				interface->name.c_str(),
-				method->name.c_str(),
-				(method->isConst ? "const " : ""),
-				prefix.c_str(),
-				interface->name.c_str());
+			fprintf(out, "CLOOP_EXTERN_C %s %s%s_%s(%sstruct %s%s* self", convertType(method->returnTypeRef).c_str(),
+				prefix.c_str(), interface->name.c_str(), method->name.c_str(), (method->isConst ? "const " : ""),
+				prefix.c_str(), interface->name.c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
-				fprintf(out, ", %s %s",
-					convertType(parameter->typeRef).c_str(), parameter->name.c_str());
+				fprintf(out, ", %s %s", convertType(parameter->typeRef).c_str(), parameter->name.c_str());
 			}
 
 			fprintf(out, ")\n");
@@ -960,17 +852,14 @@ void CImplGenerator::generate()
 
 			//// TODO: checkVersion
 
-			if (method->returnTypeRef.token.type != Token::Type::VOID ||
-				method->returnTypeRef.isPointer)
+			if (method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer)
 			{
 				fprintf(out, "return ");
 			}
 
 			fprintf(out, "self->vtable->%s(self", method->name.c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 				fprintf(out, ", %s", parameter->name.c_str());
@@ -986,9 +875,9 @@ void CImplGenerator::generate()
 //--------------------------------------
 
 
-PascalGenerator::PascalGenerator(const string& filename, const string& prefix, Parser* parser,
-		const string& unitName, const std::string& additionalUses, const std::string& interfaceFile,
-		const std::string& implementationFile, const std::string& exceptionClass, const std::string& functionsFile)
+PascalGenerator::PascalGenerator(const string& filename, const string& prefix, Parser* parser, const string& unitName,
+	const std::string& additionalUses, const std::string& interfaceFile, const std::string& implementationFile,
+	const std::string& exceptionClass, const std::string& functionsFile)
 	: FileGenerator(filename, prefix),
 	  parser(parser),
 	  unitName(unitName),
@@ -1020,9 +909,7 @@ void PascalGenerator::generate()
 	fprintf(out, "\tQWord = UInt64;\n");
 	fprintf(out, "{$ENDIF}\n\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 		fprintf(out, "\t%s = class;\n", escapeIfaceName(interface->name).c_str());
@@ -1034,23 +921,17 @@ void PascalGenerator::generate()
 
 	// Pass at every type to fill pointerTypes. We need it in advance.
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
 			convertType(method->returnTypeRef);
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 				convertParameter(*parameter);
@@ -1067,29 +948,22 @@ void PascalGenerator::generate()
 	if (!pointerTypes.empty())
 		fprintf(out, "\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
-				 !method->returnTypeRef.isPointer;
+			bool isProcedure =
+				method->returnTypeRef.token.type == Token::Type::VOID && !method->returnTypeRef.isPointer;
 
-			fprintf(out, "\t%s_%sPtr = %s(this: %s",
-				escapeIfaceName(interface->name).c_str(), escapeName(method->name).c_str(),
-				(isProcedure ? "procedure" : "function"),
+			fprintf(out, "\t%s_%sPtr = %s(this: %s", escapeIfaceName(interface->name).c_str(),
+				escapeName(method->name).c_str(), (isProcedure ? "procedure" : "function"),
 				escapeIfaceName(interface->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 				fprintf(out, "; %s", convertParameter(*parameter).c_str());
@@ -1106,9 +980,7 @@ void PascalGenerator::generate()
 
 	fprintf(out, "\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -1122,9 +994,7 @@ void PascalGenerator::generate()
 		if (!interface->super)
 			fprintf(out, "\t\tversion: NativeInt;\n");
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
@@ -1146,36 +1016,26 @@ void PascalGenerator::generate()
 
 		fprintf(out, "\t\tconst VERSION = %d;\n", interface->version);
 
-		for (vector<Constant*>::iterator j = interface->constants.begin();
-			 j != interface->constants.end();
-			 ++j)
+		for (vector<Constant*>::iterator j = interface->constants.begin(); j != interface->constants.end(); ++j)
 		{
 			Constant* constant = *j;
 
-			fprintf(out, "\t\tconst %s = %s(%s);\n",
-				constant->name.c_str(),
-				convertType(constant->typeRef).c_str(),
+			fprintf(out, "\t\tconst %s = %s(%s);\n", constant->name.c_str(), convertType(constant->typeRef).c_str(),
 				constant->expr->generate(Language::PASCAL, prefix).c_str());
 		}
 
 		fprintf(out, "\n");
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
-				 !method->returnTypeRef.isPointer;
+			bool isProcedure =
+				method->returnTypeRef.token.type == Token::Type::VOID && !method->returnTypeRef.isPointer;
 
-			fprintf(out, "\t\t%s %s(",
-				(isProcedure ? "procedure" : "function"),
-				escapeName(method->name).c_str());
+			fprintf(out, "\t\t%s %s(", (isProcedure ? "procedure" : "function"), escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -1201,8 +1061,8 @@ void PascalGenerator::generate()
 
 		fprintf(out, "\tend;\n\n");
 
-		fprintf(out, "\t%sImpl = class(%s)\n",
-			escapeIfaceName(interface->name).c_str(), escapeIfaceName(interface->name).c_str());
+		fprintf(out, "\t%sImpl = class(%s)\n", escapeIfaceName(interface->name).c_str(),
+			escapeIfaceName(interface->name).c_str());
 		fprintf(out, "\t\tconstructor create;\n\n");
 
 		deque<Method*> methods;
@@ -1214,16 +1074,12 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
-				 !method->returnTypeRef.isPointer;
+			bool isProcedure =
+				method->returnTypeRef.token.type == Token::Type::VOID && !method->returnTypeRef.isPointer;
 
-			fprintf(out, "\t\t%s %s(",
-				(isProcedure ? "procedure" : "function"),
-				escapeName(method->name).c_str());
+			fprintf(out, "\t\t%s %s(", (isProcedure ? "procedure" : "function"), escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -1251,29 +1107,21 @@ void PascalGenerator::generate()
 
 	fprintf(out, "implementation\n\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
-				 !method->returnTypeRef.isPointer;
+			bool isProcedure =
+				method->returnTypeRef.token.type == Token::Type::VOID && !method->returnTypeRef.isPointer;
 
-			fprintf(out, "%s %s.%s(",
-				(isProcedure ? "procedure" : "function"),
-				escapeIfaceName(interface->name).c_str(),
-				escapeName(method->name).c_str());
+			fprintf(out, "%s %s.%s(", (isProcedure ? "procedure" : "function"),
+				escapeIfaceName(interface->name).c_str(), escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -1303,14 +1151,14 @@ void PascalGenerator::generate()
 				else
 					DefAction(DefAction::DefType::NOT_IMPLEMENTED).generate(apb, 2);
 
-				if (method->returnTypeRef.token.type != Token::Type::VOID ||
-					method->returnTypeRef.isPointer)
+				if (method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer)
 				{
 					fprintf(out, "\t\tResult := %s;\n",
-						method->notImplementedExpr ?
-							method->notImplementedExpr->generate(Language::PASCAL, prefix).c_str() :
-							method->returnTypeRef.valueIsPointer() ? "nil" :
-							method->returnTypeRef.token.type == Token::Type::BOOLEAN ? "false" : "0");
+						method->notImplementedExpr
+							? method->notImplementedExpr->generate(Language::PASCAL, prefix).c_str()
+							: method->returnTypeRef.valueIsPointer()                   ? "nil"
+							: method->returnTypeRef.token.type == Token::Type::BOOLEAN ? "false"
+																					   : "0");
 				}
 
 				fprintf(out, "\tend\n\telse begin\n");
@@ -1321,12 +1169,10 @@ void PascalGenerator::generate()
 			if (!isProcedure)
 				fprintf(out, "Result := ");
 
-			fprintf(out, "%sVTable(vTable).%s(Self",
-				escapeName(interface->name).c_str(), escapeName(method->name).c_str());
+			fprintf(
+				out, "%sVTable(vTable).%s(Self", escapeName(interface->name).c_str(), escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 				fprintf(out, ", %s", escapeName(parameter->name).c_str());
@@ -1338,15 +1184,14 @@ void PascalGenerator::generate()
 				fprintf(out, "\tend;\n");
 
 			if (!method->statusName.empty() && !exceptionClass.empty())
-				fprintf(out, "\t%s.checkException(%s);\n", exceptionClass.c_str(), escapeName(method->statusName).c_str());
+				fprintf(
+					out, "\t%s.checkException(%s);\n", exceptionClass.c_str(), escapeName(method->statusName).c_str());
 
 			fprintf(out, "end;\n\n");
 		}
 	}
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -1359,20 +1204,16 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
-				 !method->returnTypeRef.isPointer;
+			bool isProcedure =
+				method->returnTypeRef.token.type == Token::Type::VOID && !method->returnTypeRef.isPointer;
 
 			ActionParametersBlock apb = {out, Language::PASCAL, prefix, exceptionClass, interface, method};
 
-			fprintf(out, "%s %sImpl_%sDispatcher(this: %s",
-				(isProcedure ? "procedure" : "function"),
-				escapeIfaceName(interface->name).c_str(),
-				escapeName(method->name).c_str(),
+			fprintf(out, "%s %sImpl_%sDispatcher(this: %s", (isProcedure ? "procedure" : "function"),
+				escapeIfaceName(interface->name).c_str(), escapeName(method->name).c_str(),
 				escapeIfaceName(interface->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -1396,12 +1237,10 @@ void PascalGenerator::generate()
 			if (!isProcedure)
 				fprintf(out, "Result := ");
 
-			fprintf(out, "%sImpl(this).%s(", escapeIfaceName(interface->name).c_str(),
-				escapeName(method->name).c_str());
+			fprintf(
+				out, "%sImpl(this).%s(", escapeIfaceName(interface->name).c_str(), escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -1416,14 +1255,13 @@ void PascalGenerator::generate()
 			if (!exceptionClass.empty())
 			{
 				Parameter* exceptionParameter =
-					(!method->parameters.empty() &&
-					 parser->exceptionInterface &&
-					 method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name
-					) ? method->parameters.front() : NULL;
+					(!method->parameters.empty() && parser->exceptionInterface &&
+						method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name)
+					? method->parameters.front()
+					: NULL;
 
 				fprintf(out, "\texcept\n");
-				fprintf(out, "\t\ton e: Exception do %s.catchException(%s, e);\n",
-					exceptionClass.c_str(),
+				fprintf(out, "\t\ton e: Exception do %s.catchException(%s, e);\n", exceptionClass.c_str(),
 					(exceptionParameter ? escapeName(exceptionParameter->name).c_str() : "nil"));
 
 				fprintf(out, "\tend\n");
@@ -1433,20 +1271,15 @@ void PascalGenerator::generate()
 
 			if (method->stubAction)
 			{
-				fprintf(out, "%s %sImpl.%s(",
-					(isProcedure ? "procedure" : "function"),
-					escapeIfaceName(interface->name).c_str(),
-					escapeName(method->name).c_str());
+				fprintf(out, "%s %sImpl.%s(", (isProcedure ? "procedure" : "function"),
+					escapeIfaceName(interface->name).c_str(), escapeName(method->name).c_str());
 
-				for (vector<Parameter*>::iterator k = method->parameters.begin();
-					 k != method->parameters.end();
-					 ++k)
+				for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 				{
 					Parameter* parameter = *k;
 
-					fprintf(out, "%s%s",
-						k == method->parameters.begin() ? "" : "; ",
-						convertParameter(*parameter).c_str());
+					fprintf(
+						out, "%s%s", k == method->parameters.begin() ? "" : "; ", convertParameter(*parameter).c_str());
 				}
 
 				fprintf(out, ")");
@@ -1461,8 +1294,8 @@ void PascalGenerator::generate()
 		}
 
 		fprintf(out, "var\n");
-		fprintf(out, "\t%sImpl_vTable: %sVTable;\n\n",
-			escapeIfaceName(interface->name).c_str(), escapeName(interface->name).c_str());
+		fprintf(out, "\t%sImpl_vTable: %sVTable;\n\n", escapeIfaceName(interface->name).c_str(),
+			escapeName(interface->name).c_str());
 
 		fprintf(out, "constructor %sImpl.create;\n", escapeIfaceName(interface->name).c_str());
 		fprintf(out, "begin\n");
@@ -1474,9 +1307,7 @@ void PascalGenerator::generate()
 
 	fprintf(out, "initialization\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -1485,19 +1316,16 @@ void PascalGenerator::generate()
 		for (Interface* p = interface; p; p = p->super)
 			methods.insert(methods.begin(), p->methods.begin(), p->methods.end());
 
-		fprintf(out, "\t%sImpl_vTable := %sVTable.create;\n",
-			escapeIfaceName(interface->name).c_str(), escapeName(interface->name).c_str());
-		fprintf(out, "\t%sImpl_vTable.version := %d;\n",
-			escapeIfaceName(interface->name).c_str(), interface->version);
+		fprintf(out, "\t%sImpl_vTable := %sVTable.create;\n", escapeIfaceName(interface->name).c_str(),
+			escapeName(interface->name).c_str());
+		fprintf(out, "\t%sImpl_vTable.version := %d;\n", escapeIfaceName(interface->name).c_str(), interface->version);
 
 		for (deque<Method*>::iterator j = methods.begin(); j != methods.end(); ++j)
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t%sImpl_vTable.%s := @%sImpl_%sDispatcher;\n",
-				escapeIfaceName(interface->name).c_str(),
-				escapeName(method->name).c_str(),
-				escapeIfaceName(interface->name).c_str(),
+			fprintf(out, "\t%sImpl_vTable.%s := @%sImpl_%sDispatcher;\n", escapeIfaceName(interface->name).c_str(),
+				escapeName(method->name).c_str(), escapeIfaceName(interface->name).c_str(),
 				escapeName(method->name).c_str());
 		}
 
@@ -1506,9 +1334,7 @@ void PascalGenerator::generate()
 
 	fprintf(out, "finalization\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 		fprintf(out, "\t%sImpl_vTable.destroy;\n", escapeIfaceName(interface->name).c_str());
@@ -1588,13 +1414,8 @@ string PascalGenerator::escapeName(string name)
 {
 	//// TODO: Create a table of keywords.
 
-	if (name == "file" ||
-		name == "function" ||
-		name == "procedure" ||
-		name == "record" ||
-		name == "set" ||
-		name == "to" ||
-		name == "type")
+	if (name == "file" || name == "function" || name == "procedure" || name == "record" || name == "set" ||
+		name == "to" || name == "type")
 	{
 		name += "_";
 	}
@@ -1625,8 +1446,8 @@ void PascalGenerator::insertFile(const string& filename)
 //--------------------------------------
 
 
-JnaGenerator::JnaGenerator(const string& filename, const string& prefix, Parser* parser,
-		const string& className, const string& exceptionClass)
+JnaGenerator::JnaGenerator(
+	const string& filename, const string& prefix, Parser* parser, const string& className, const string& exceptionClass)
 	: FileGenerator(filename, prefix),
 	  parser(parser),
 	  className(className),
@@ -1652,73 +1473,57 @@ void JnaGenerator::generate()
 	else
 		classStart = 0;
 
-	fprintf(out, "public interface %s extends com.sun.jna.Library\n",
-		className.substr(classStart).c_str());
+	fprintf(out, "public interface %s extends com.sun.jna.Library\n", className.substr(classStart).c_str());
 	fprintf(out, "{\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		if (i != parser->interfaces.begin())
 			fprintf(out, "\n");
 
 		Interface* interface = *i;
 
-		fprintf(out, "\tpublic static interface %s%sIntf",
-			prefix.c_str(), escapeName(interface->name).c_str());
+		fprintf(out, "\tpublic static interface %s%sIntf", prefix.c_str(), escapeName(interface->name).c_str());
 
 		if (interface->super)
 		{
-			fprintf(out, " extends %s%sIntf",
-				prefix.c_str(), escapeName(interface->super->name).c_str());
+			fprintf(out, " extends %s%sIntf", prefix.c_str(), escapeName(interface->super->name).c_str());
 		}
 
 		fprintf(out, "\n");
 		fprintf(out, "\t{\n");
 
-		for (vector<Constant*>::iterator j = interface->constants.begin();
-			 j != interface->constants.end();
-			 ++j)
+		for (vector<Constant*>::iterator j = interface->constants.begin(); j != interface->constants.end(); ++j)
 		{
 			Constant* constant = *j;
 
-			fprintf(out, "\t\tpublic static %s %s = %s;\n",
-				convertType(constant->typeRef, false).c_str(),
-				constant->name.c_str(),
-				constant->expr->generate(Language::JAVA, prefix).c_str());
+			fprintf(out, "\t\tpublic static %s %s = %s;\n", convertType(constant->typeRef, false).c_str(),
+				constant->name.c_str(), constant->expr->generate(Language::JAVA, prefix).c_str());
 		}
 
 		if (!interface->constants.empty())
 			fprintf(out, "\n");
 
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t\tpublic %s %s(",
-				convertType(method->returnTypeRef, true).c_str(),
+			fprintf(out, "\t\tpublic %s %s(", convertType(method->returnTypeRef, true).c_str(),
 				escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
 				if (k != method->parameters.begin())
 					fprintf(out, ", ");
 
-				fprintf(out, "%s %s",
-					convertType(parameter->typeRef, false).c_str(),
-					escapeName(parameter->name).c_str());
+				fprintf(
+					out, "%s %s", convertType(parameter->typeRef, false).c_str(), escapeName(parameter->name).c_str());
 			}
 
-			bool mayThrow = !method->parameters.empty() &&
-				parser->exceptionInterface &&
+			bool mayThrow = !method->parameters.empty() && parser->exceptionInterface &&
 				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
 				!exceptionClass.empty();
 
@@ -1733,15 +1538,12 @@ void JnaGenerator::generate()
 		fprintf(out, "\t}\n");
 	}
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
 		fprintf(out, "\n");
-		fprintf(out, "\tpublic static class %s%s extends ",
-			prefix.c_str(), escapeName(interface->name).c_str());
+		fprintf(out, "\tpublic static class %s%s extends ", prefix.c_str(), escapeName(interface->name).c_str());
 
 		if (interface->super)
 			fprintf(out, "%s%s", prefix.c_str(), escapeName(interface->super->name).c_str());
@@ -1770,26 +1572,21 @@ void JnaGenerator::generate()
 		{
 			Method* method = *j;
 
-			fprintf(out, "\t\tpublic %s %s(",
-				convertType(method->returnTypeRef, true).c_str(),
+			fprintf(out, "\t\tpublic %s %s(", convertType(method->returnTypeRef, true).c_str(),
 				escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
 				if (k != method->parameters.begin())
 					fprintf(out, ", ");
 
-				fprintf(out, "%s %s",
-					convertType(parameter->typeRef, false).c_str(),
-					escapeName(parameter->name).c_str());
+				fprintf(
+					out, "%s %s", convertType(parameter->typeRef, false).c_str(), escapeName(parameter->name).c_str());
 			}
 
-			bool mayThrow = !method->parameters.empty() &&
-				parser->exceptionInterface &&
+			bool mayThrow = !method->parameters.empty() && parser->exceptionInterface &&
 				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name &&
 				!exceptionClass.empty();
 
@@ -1801,16 +1598,14 @@ void JnaGenerator::generate()
 			fprintf(out, "\n");
 			fprintf(out, "\t\t{\n");
 
-			bool hasReturn = method->returnTypeRef.token.type != Token::Type::VOID ||
-				method->returnTypeRef.isPointer;
+			bool hasReturn = method->returnTypeRef.token.type != Token::Type::VOID || method->returnTypeRef.isPointer;
 
 			if (hasReturn)
 				fprintf(out, "\t\t\t%s result;\n", convertType(method->returnTypeRef, true).c_str());
 
 			string statusName;
 
-			if (!method->parameters.empty() &&
-				parser->exceptionInterface &&
+			if (!method->parameters.empty() && parser->exceptionInterface &&
 				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name)
 			{
 				statusName = method->parameters.front()->name;
@@ -1824,9 +1619,7 @@ void JnaGenerator::generate()
 
 			fprintf(out, "\t\t\t\tvTable.%s.invoke(this", escapeName(method->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
@@ -1860,9 +1653,7 @@ void JnaGenerator::generate()
 		fprintf(out, "\t\t{\n");
 		fprintf(out, "\t\t\tpublic int version;\n\n");
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
@@ -1872,27 +1663,21 @@ void JnaGenerator::generate()
 
 			const string selfPrefix = method->isConst ? "" : className.substr(classStart) + ".";
 
-			fprintf(out, "\t\t\t\t%s invoke(%s%s self",
-				convertType(method->returnTypeRef, true).c_str(),
-				selfPrefix.c_str(),
-				escapeName(interface->name).c_str());
+			fprintf(out, "\t\t\t\t%s invoke(%s%s self", convertType(method->returnTypeRef, true).c_str(),
+				selfPrefix.c_str(), escapeName(interface->name).c_str());
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
-				fprintf(out, ", %s %s",
-					convertType(parameter->typeRef, false).c_str(),
+				fprintf(out, ", %s %s", convertType(parameter->typeRef, false).c_str(),
 					escapeName(parameter->name).c_str());
 			}
 
 			fprintf(out, ");\n");
 			fprintf(out, "\t\t\t}\n\n");
 
-			fprintf(out, "\t\t\tpublic %s %s;\n",
-				escapeName(method->name).c_str(), escapeName(method->name).c_str());
+			fprintf(out, "\t\t\tpublic %s %s;\n", escapeName(method->name).c_str(), escapeName(method->name).c_str());
 		}
 
 		fprintf(out, "\t\t}\n");
@@ -1944,8 +1729,7 @@ string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
 			break;
 
 		default:
-			if (typeRef.type == BaseType::Type::INTERFACE &&
-				typeRef.token.type == Token::Type::IDENTIFIER)
+			if (typeRef.type == BaseType::Type::INTERFACE && typeRef.token.type == Token::Type::IDENTIFIER)
 			{
 				name = prefix;
 			}
@@ -2014,9 +1798,7 @@ void JsonGenerator::generate()
 	fprintf(out, "\t\t\"interfaces\":\n");
 	fprintf(out, "\t\t[\n");
 
-	for (vector<Interface*>::iterator i = parser->interfaces.begin();
-		 i != parser->interfaces.end();
-		 ++i)
+	for (vector<Interface*>::iterator i = parser->interfaces.begin(); i != parser->interfaces.end(); ++i)
 	{
 		Interface* interface = *i;
 
@@ -2030,17 +1812,14 @@ void JsonGenerator::generate()
 		fprintf(out, "\t\t\t\t\"constants\":\n");
 		fprintf(out, "\t\t\t\t[\n");
 
-		for (vector<Constant*>::iterator j = interface->constants.begin();
-			 j != interface->constants.end();
-			 ++j)
+		for (vector<Constant*>::iterator j = interface->constants.begin(); j != interface->constants.end(); ++j)
 		{
 			Constant* constant = *j;
 
 			fprintf(out, "\t\t\t\t\t{\n");
 			fprintf(out, "\t\t\t\t\t\t\"name\": \"%s\",\n", constant->name.c_str());
 			fprintf(out, "\t\t\t\t\t\t\"type\": %s,\n", convertType(constant->typeRef).c_str());
-			fprintf(out, "\t\t\t\t\t\t\"expr\": %s\n",
-				constant->expr->generate(Language::JSON, prefix).c_str());
+			fprintf(out, "\t\t\t\t\t\t\"expr\": %s\n", constant->expr->generate(Language::JSON, prefix).c_str());
 
 			fprintf(out, "\t\t\t\t\t}");
 
@@ -2055,20 +1834,16 @@ void JsonGenerator::generate()
 		fprintf(out, "\t\t\t\t\"methods\":\n");
 		fprintf(out, "\t\t\t\t[\n");
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
 			fprintf(out, "\t\t\t\t\t{\n");
 			fprintf(out, "\t\t\t\t\t\t\"name\": \"%s\",\n", method->name.c_str());
 			fprintf(out, "\t\t\t\t\t\t\"version\": %d,\n", method->version);
-			fprintf(out, "\t\t\t\t\t\t\"returnType\": %s,\n",
-				convertType(method->returnTypeRef).c_str());
+			fprintf(out, "\t\t\t\t\t\t\"returnType\": %s,\n", convertType(method->returnTypeRef).c_str());
 
-			bool mayThrow = !method->parameters.empty() &&
-				parser->exceptionInterface &&
+			bool mayThrow = !method->parameters.empty() && parser->exceptionInterface &&
 				method->parameters.front()->typeRef.token.text == parser->exceptionInterface->name;
 
 			fprintf(out, "\t\t\t\t\t\t\"mayThrow\": %s,\n", (mayThrow ? "true" : "false"));
@@ -2082,16 +1857,13 @@ void JsonGenerator::generate()
 			fprintf(out, "\t\t\t\t\t\t\"parameters\":\n");
 			fprintf(out, "\t\t\t\t\t\t[\n");
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 
 				fprintf(out, "\t\t\t\t\t\t\t{\n");
 				fprintf(out, "\t\t\t\t\t\t\t\t\"name\": \"%s\",\n", parameter->name.c_str());
-				fprintf(out, "\t\t\t\t\t\t\t\t\"type\": %s\n",
-					convertType(parameter->typeRef).c_str());
+				fprintf(out, "\t\t\t\t\t\t\t\t\"type\": %s\n", convertType(parameter->typeRef).c_str());
 				fprintf(out, "\t\t\t\t\t\t\t}");
 
 				if (k + 1 != method->parameters.end())
@@ -2126,8 +1898,6 @@ void JsonGenerator::generate()
 
 string JsonGenerator::convertType(const TypeRef& typeRef)
 {
-	return "{ \"name\": \"" + typeRef.token.text +
-		"\", \"isPointer\": " + (typeRef.isPointer ? "true" : "false") +
-		", \"isConst\": " + (typeRef.isConst ? "true" : "false") +
-		" }";
+	return "{ \"name\": \"" + typeRef.token.text + "\", \"isPointer\": " + (typeRef.isPointer ? "true" : "false") +
+		", \"isConst\": " + (typeRef.isConst ? "true" : "false") + " }";
 }

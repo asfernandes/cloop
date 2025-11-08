@@ -213,4 +213,4 @@ private:
 };
 
 
-#endif	// CLOOP_PARSER_H
+#endif  // CLOOP_PARSER_H

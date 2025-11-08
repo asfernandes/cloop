@@ -69,8 +69,8 @@ Token& Lexer::getToken(Token& token)
 	}
 	else if ((ch.c >= 'a' && ch.c <= 'z') || (ch.c >= 'A' && ch.c <= 'Z') || ch.c == '_')
 	{
-		while ((ch.c >= 'a' && ch.c <= 'z') || (ch.c >= 'A' && ch.c <= 'Z') || ch.c == '_' ||
-			   (ch.c >= '0' && ch.c <= '9'))
+		while (
+			(ch.c >= 'a' && ch.c <= 'z') || (ch.c >= 'A' && ch.c <= 'Z') || ch.c == '_' || (ch.c >= '0' && ch.c <= '9'))
 		{
 			token.text += ch.c;
 			getChar(ch);
@@ -145,8 +145,7 @@ Token& Lexer::getToken(Token& token)
 		{
 			token.text += ch.c;
 
-			while ((getChar(ch).c >= '0' && ch.c <= '9') ||
-				(tolower(ch.c) >= 'a' && tolower(ch.c) <= 'f'))
+			while ((getChar(ch).c >= '0' && ch.c <= '9') || (tolower(ch.c) >= 'a' && tolower(ch.c) <= 'f'))
 			{
 				token.text += ch.c;
 			}
@@ -154,8 +153,8 @@ Token& Lexer::getToken(Token& token)
 			if (token.text.length() == 2)
 			{
 				char buffer[1024];
-				snprintf(buffer, sizeof(buffer), "%s:%i:%i: error: Invalid hexadecimal prefix.",
-					filename.c_str(), line, column);
+				snprintf(buffer, sizeof(buffer), "%s:%i:%i: error: Invalid hexadecimal prefix.", filename.c_str(), line,
+					column);
 				throw runtime_error(buffer);
 			}
 		}
@@ -191,7 +190,7 @@ void Lexer::pushToken(const Token& token)
 	tokens.push(token);
 }
 
-void Lexer::skip(Char& ch)	// skip spaces and comments
+void Lexer::skip(Char& ch)  // skip spaces and comments
 {
 	while (true)
 	{
@@ -220,8 +219,7 @@ void Lexer::skip(Char& ch)	// skip spaces and comments
 					if (ch.c == -1)
 					{
 						char buffer[1024];
-						snprintf(buffer, sizeof(buffer), "%s:%i:%i: error: Unterminated comment.",
-							filename.c_str(),
+						snprintf(buffer, sizeof(buffer), "%s:%i:%i: error: Unterminated comment.", filename.c_str(),
 							firstCh.line, firstCh.column);
 						throw runtime_error(buffer);
 					}
@@ -245,7 +243,7 @@ void Lexer::skip(Char& ch)	// skip spaces and comments
 
 				break;
 
-			default:	// not a comment
+			default:  // not a comment
 				ch = firstCh;
 				break;
 		}

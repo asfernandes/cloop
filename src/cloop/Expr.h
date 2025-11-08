@@ -116,4 +116,4 @@ private:
 };
 
 
-#endif	// CLOOP_EXPR_H
+#endif  // CLOOP_EXPR_H

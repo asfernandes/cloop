@@ -55,7 +55,7 @@ void Parser::parse()
 			break;
 		else if (token.type == TOKEN('['))
 		{
-			getToken(token, Token::Type::EXCEPTION);	// This is the only attribute we allow now.
+			getToken(token, Token::Type::EXCEPTION);  // This is the only attribute we allow now.
 			exception = true;
 			getToken(token, TOKEN(']'));
 		}
@@ -100,24 +100,19 @@ void Parser::parse()
 	{
 		Interface* interface = *i;
 
-		for (vector<Method*>::iterator j = interface->methods.begin();
-			 j != interface->methods.end();
-			 ++j)
+		for (vector<Method*>::iterator j = interface->methods.begin(); j != interface->methods.end(); ++j)
 		{
 			Method* method = *j;
 
 			checkType(method->returnTypeRef);
 
-			for (vector<Parameter*>::iterator k = method->parameters.begin();
-				 k != method->parameters.end();
-				 ++k)
+			for (vector<Parameter*>::iterator k = method->parameters.begin(); k != method->parameters.end(); ++k)
 			{
 				Parameter* parameter = *k;
 				checkType(parameter->typeRef);
 			}
 
-			if (!method->parameters.empty() &&
-				exceptionInterface &&
+			if (!method->parameters.empty() && exceptionInterface &&
 				method->parameters.front()->typeRef.token.text == exceptionInterface->name)
 			{
 				method->statusName = method->parameters.front()->name;
@@ -281,17 +276,17 @@ Action* Parser::parseAction(DefAction::DefType dt)
 {
 	switch (lexer->getToken(token).type)
 	{
-	case Token::Type::IF:
-		return parseIfThenElseAction(dt);
+		case Token::Type::IF:
+			return parseIfThenElseAction(dt);
 
-	case Token::Type::CALL:
-		return parseCallAction();
+		case Token::Type::CALL:
+			return parseCallAction();
 
-	case Token::Type::DEFAULT_ACTION:
-		return parseDefAction(dt);
+		case Token::Type::DEFAULT_ACTION:
+			return parseDefAction(dt);
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	syntaxError(token);
@@ -326,7 +321,7 @@ Action* Parser::parseCallAction()
 	do
 	{
 		act.addParam(getToken(token, Token::Type::IDENTIFIER).text);
-	} while(static_cast<int>(lexer->getToken(token).type) == ',');
+	} while (static_cast<int>(lexer->getToken(token).type) == ',');
 
 	if (static_cast<int>(token.type) == ')')
 		return new CallAction(act);
@@ -461,7 +456,7 @@ Expr* Parser::parsePrimaryExpr()
 
 		default:
 			syntaxError(token);
-			return NULL;	// warning
+			return NULL;  // warning
 	}
 }
 
@@ -514,8 +509,7 @@ TypeRef Parser::parseTypeRef()
 			break;
 
 		default:
-			error(typeRef.token, string("Syntax error at '") +
-				typeRef.token.text + "'. Expected a type.");
+			error(typeRef.token, string("Syntax error at '") + typeRef.token.text + "'. Expected a type.");
 			break;
 	}
 
@@ -537,8 +531,8 @@ TypeRef Parser::parseTypeRef()
 [[noreturn]] void Parser::error(const Token& token, const string& msg)
 {
 	char buffer[1024];
-	snprintf(buffer, sizeof(buffer), "%s:%i:%i: error: %s",
-		lexer->filename.c_str(), token.line, token.column, msg.c_str());
+	snprintf(
+		buffer, sizeof(buffer), "%s:%i:%i: error: %s", lexer->filename.c_str(), token.line, token.column, msg.c_str());
 	throw runtime_error(buffer);
 }
 
@@ -563,4 +557,3 @@ bool TypeRef::valueIsPointer()
 
 	return false;
 }
-

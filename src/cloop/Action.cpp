@@ -70,6 +70,11 @@ void IfThenElseAction::generate(const ActionParametersBlock& apb, unsigned ident
 				fprintf(apb.out, "end\n");
 			}
 			break;
+
+		case Language::JSON:
+		case Language::JAVA:
+			// Not implemented!
+			break;
 	}
 }
 
@@ -128,6 +133,11 @@ void DefAction::generate(const ActionParametersBlock& apb, unsigned ident)
 							apb.interface->name.c_str(), apb.method->version);
 					}
 					break;
+
+				case Language::JSON:
+				case Language::JAVA:
+					// Not implemented!
+					break;
 			}
 			break;
 
@@ -171,6 +181,11 @@ void DefAction::generate(const ActionParametersBlock& apb, unsigned ident)
 						fprintf(apb.out, "Result := %s;\n", sResult);
 					}
 					break;
+
+					case Language::JSON:
+					case Language::JAVA:
+						// Not implemented!
+						break;
 				}
 			}
 			break;

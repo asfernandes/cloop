@@ -22,6 +22,7 @@
 #include "Generator.h"
 #include "Expr.h"
 #include <algorithm>
+#include <cctype>
 #include <deque>
 #include <set>
 #include <stdexcept>
@@ -61,13 +62,13 @@ string snakeUpperCase(const string& name)
 
 	for (size_t i = 0; i < len; ++i)
 	{
-		const char c = name[i];
-		const bool isUpper = isupper(c);
+		const unsigned char c = static_cast<unsigned char>(name[i]);
+		const bool isUpper = std::isupper(c) != 0;
 
 		if (isUpper && !wasUpper)
 			result += '_';
 
-		result += static_cast<char>(toupper(c));
+		result += static_cast<char>(std::toupper(c));
 		wasUpper = isUpper;
 	}
 

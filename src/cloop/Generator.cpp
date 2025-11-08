@@ -107,43 +107,43 @@ string CBasedGenerator::convertType(const TypeRef& typeRef)
 
 	switch (typeRef.token.type)
 	{
-		case Token::TYPE_BOOLEAN:
+		case Token::Type::BOOLEAN:
 			ret += "FB_BOOLEAN";	// seems to be more portable than bool, specially thinking on pointers
 			break;
 
-		case Token::TYPE_INT:
+		case Token::Type::INT:
 			ret += "int";
 			break;
 
-		case Token::TYPE_INT64:
+		case Token::Type::INT64:
 			ret += "ISC_INT64";		//int64_t
 			break;
 
-		case Token::TYPE_INTPTR:
+		case Token::Type::INTPTR:
 			ret += "intptr_t";
 			break;
 
-		case Token::TYPE_STRING:
+		case Token::Type::STRING:
 			ret += "char*";
 			break;
 
-		case Token::TYPE_UCHAR:
+		case Token::Type::UCHAR:
 			ret += "unsigned char";
 			break;
 
-		case Token::TYPE_UINT:
+		case Token::Type::UINT:
 			ret += "unsigned";
 			break;
 
-		case Token::TYPE_UINT64:
+		case Token::Type::UINT64:
 			ret += "ISC_UINT64";	//uint64_t
 			break;
 
-		case Token::TYPE_IDENTIFIER:
-			ret += string(cPlusPlus || typeRef.type == BaseType::TYPE_TYPEDEF ? "" : "struct ") +
-				(typeRef.type == BaseType::TYPE_INTERFACE ? prefix : "") + typeRef.token.text;
+		case Token::Type::IDENTIFIER:
+			ret += string(cPlusPlus || typeRef.type == BaseType::Type::TYPEDEF ? "" : "struct ") +
+				(typeRef.type == BaseType::Type::INTERFACE ? prefix : "") + typeRef.token.text;
 
-			if (typeRef.type == BaseType::TYPE_INTERFACE)
+			if (typeRef.type == BaseType::Type::INTERFACE)
 				ret += "*";
 			break;
 
@@ -352,7 +352,7 @@ void CppGenerator::generate()
 			fprintf(out, "\t\tstatic CLOOP_CONSTEXPR %s %s = %s;\n",
 				convertType(constant->typeRef).c_str(),
 				constant->name.c_str(),
-				constant->expr->generate(LANGUAGE_CPP, prefix).c_str());
+				constant->expr->generate(Language::CPP, prefix).c_str());
 		}
 
 		for (vector<Method*>::iterator j = interface->methods.begin();
@@ -396,21 +396,21 @@ void CppGenerator::generate()
 				fprintf(out, "\t\t\t{\n");
 
 				const string exceptionClass("StatusType");
-				ActionParametersBlock apb = {out, LANGUAGE_CPP, prefix, exceptionClass, interface, method};
+				ActionParametersBlock apb = {out, Language::CPP, prefix, exceptionClass, interface, method};
 
 				if (method->notImplementedAction)
 					method->notImplementedAction->generate(apb, 4);
 				else
-					DefAction(DefAction::DEF_NOT_IMPLEMENTED).generate(apb, 4);
+					DefAction(DefAction::DefType::NOT_IMPLEMENTED).generate(apb, 4);
 
 				fprintf(out, "\t\t\t\treturn");
 
-				if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				if (method->returnTypeRef.token.type != Token::Type::VOID ||
 					method->returnTypeRef.isPointer)
 				{
 					fprintf(out, " %s",
 						(method->notImplementedExpr ?
-							method->notImplementedExpr->generate(LANGUAGE_CPP, prefix).c_str() :
+							method->notImplementedExpr->generate(Language::CPP, prefix).c_str() :
 							"0"));
 				}
 
@@ -429,7 +429,7 @@ void CppGenerator::generate()
 
 			fprintf(out, "\t\t\t");
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+			if (method->returnTypeRef.token.type != Token::Type::VOID ||
 				method->returnTypeRef.isPointer)
 			{
 				fprintf(out, "%s ret = ", convertType(method->returnTypeRef).c_str());
@@ -457,7 +457,7 @@ void CppGenerator::generate()
 					method->parameters.front()->name.c_str());
 			}
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+			if (method->returnTypeRef.token.type != Token::Type::VOID ||
 				method->returnTypeRef.isPointer)
 			{
 				fprintf(out, "\t\t\treturn ret;\n");
@@ -564,7 +564,7 @@ void CppGenerator::generate()
 
 				fprintf(out, "\t\t\t\t");
 
-				if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				if (method->returnTypeRef.token.type != Token::Type::VOID ||
 					method->returnTypeRef.isPointer)
 				{
 					fprintf(out, "return ");
@@ -597,7 +597,7 @@ void CppGenerator::generate()
 				fprintf(out, "\t\t\t\tStatusType::catchException(%s);\n",
 					(exceptionParameter ? ("&" + exceptionParameter->name + "2").c_str() : "0"));
 
-				if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				if (method->returnTypeRef.token.type != Token::Type::VOID ||
 					method->returnTypeRef.isPointer)
 				{
 					const char* ret = "\t\t\t\treturn";
@@ -698,7 +698,7 @@ void CppGenerator::generate()
 			if (method->stubAction)
 			{
 				const string exceptionClass("StatusType");
-				ActionParametersBlock apb = {out, LANGUAGE_CPP, prefix, exceptionClass, interface, method};
+				ActionParametersBlock apb = {out, Language::CPP, prefix, exceptionClass, interface, method};
 
 				fprintf(out, "\n\t\t{\n");
 				method->stubAction->generate(apb, 3);
@@ -786,7 +786,7 @@ void CHeaderGenerator::generate()
 				interface->name.c_str(),
 				constant->name.c_str(),
 				convertType(constant->typeRef).c_str(),
-				constant->expr->generate(LANGUAGE_C, prefix).c_str());
+				constant->expr->generate(Language::C, prefix).c_str());
 		}
 
 		if (!interface->constants.empty())
@@ -875,7 +875,7 @@ void CHeaderGenerator::generate()
 			if (macro)
 			{
 				fprintf(out, ") %s(self)->vtable->%s(self",
-					method->returnTypeRef.token.type != Token::TYPE_VOID ? "(" : "",
+					method->returnTypeRef.token.type != Token::Type::VOID ? "(" : "",
 					method->name.c_str());
 
 				for (vector<Parameter*>::iterator k = method->parameters.begin();
@@ -889,7 +889,7 @@ void CHeaderGenerator::generate()
 				}
 
 				fprintf(out, ")%s\n",
-					method->returnTypeRef.token.type != Token::TYPE_VOID ? ")" : "");
+					method->returnTypeRef.token.type != Token::Type::VOID ? ")" : "");
 			}
 			else
 				fprintf(out, ");\n");
@@ -960,7 +960,7 @@ void CImplGenerator::generate()
 
 			//// TODO: checkVersion
 
-			if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+			if (method->returnTypeRef.token.type != Token::Type::VOID ||
 				method->returnTypeRef.isPointer)
 			{
 				fprintf(out, "return ");
@@ -1079,7 +1079,7 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
 				 !method->returnTypeRef.isPointer;
 
 			fprintf(out, "\t%s_%sPtr = %s(this: %s",
@@ -1155,7 +1155,7 @@ void PascalGenerator::generate()
 			fprintf(out, "\t\tconst %s = %s(%s);\n",
 				constant->name.c_str(),
 				convertType(constant->typeRef).c_str(),
-				constant->expr->generate(LANGUAGE_PASCAL, prefix).c_str());
+				constant->expr->generate(Language::PASCAL, prefix).c_str());
 		}
 
 		fprintf(out, "\n");
@@ -1166,7 +1166,7 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
 				 !method->returnTypeRef.isPointer;
 
 			fprintf(out, "\t\t%s %s(",
@@ -1214,7 +1214,7 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
 				 !method->returnTypeRef.isPointer;
 
 			fprintf(out, "\t\t%s %s(",
@@ -1263,7 +1263,7 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
 				 !method->returnTypeRef.isPointer;
 
 			fprintf(out, "%s %s.%s(",
@@ -1296,21 +1296,21 @@ void PascalGenerator::generate()
 			{
 				fprintf(out, "\tif (vTable.version < %d) then begin\n", method->version);
 
-				ActionParametersBlock apb = {out, LANGUAGE_PASCAL, prefix, exceptionClass, interface, method};
+				ActionParametersBlock apb = {out, Language::PASCAL, prefix, exceptionClass, interface, method};
 
 				if (method->notImplementedAction)
 					method->notImplementedAction->generate(apb, 2);
 				else
-					DefAction(DefAction::DEF_NOT_IMPLEMENTED).generate(apb, 2);
+					DefAction(DefAction::DefType::NOT_IMPLEMENTED).generate(apb, 2);
 
-				if (method->returnTypeRef.token.type != Token::TYPE_VOID ||
+				if (method->returnTypeRef.token.type != Token::Type::VOID ||
 					method->returnTypeRef.isPointer)
 				{
 					fprintf(out, "\t\tResult := %s;\n",
 						method->notImplementedExpr ?
-							method->notImplementedExpr->generate(LANGUAGE_PASCAL, prefix).c_str() :
+							method->notImplementedExpr->generate(Language::PASCAL, prefix).c_str() :
 							method->returnTypeRef.valueIsPointer() ? "nil" :
-							method->returnTypeRef.token.type == Token::TYPE_BOOLEAN ? "false" : "0");
+							method->returnTypeRef.token.type == Token::Type::BOOLEAN ? "false" : "0");
 				}
 
 				fprintf(out, "\tend\n\telse begin\n");
@@ -1359,10 +1359,10 @@ void PascalGenerator::generate()
 		{
 			Method* method = *j;
 
-			bool isProcedure = method->returnTypeRef.token.type == Token::TYPE_VOID &&
+			bool isProcedure = method->returnTypeRef.token.type == Token::Type::VOID &&
 				 !method->returnTypeRef.isPointer;
 
-			ActionParametersBlock apb = {out, LANGUAGE_PASCAL, prefix, exceptionClass, interface, method};
+			ActionParametersBlock apb = {out, Language::PASCAL, prefix, exceptionClass, interface, method};
 
 			fprintf(out, "%s %sImpl_%sDispatcher(this: %s",
 				(isProcedure ? "procedure" : "function"),
@@ -1386,7 +1386,7 @@ void PascalGenerator::generate()
 
 			fprintf(out, "; cdecl;\n");
 			fprintf(out, "begin\n");
-			DefAction(DefAction::DEF_IGNORE).generate(apb, 1);
+			DefAction(DefAction::DefType::IGNORE).generate(apb, 1);
 
 			if (!exceptionClass.empty())
 				fprintf(out, "\ttry\n\t");
@@ -1529,40 +1529,40 @@ string PascalGenerator::convertType(const TypeRef& typeRef)
 
 	switch (typeRef.token.type)
 	{
-		case Token::TYPE_BOOLEAN:
+		case Token::Type::BOOLEAN:
 			name = "Boolean";
 			break;
 
-		case Token::TYPE_INT:
+		case Token::Type::INT:
 			name = "Integer";
 			break;
 
-		case Token::TYPE_INT64:
+		case Token::Type::INT64:
 			name = "Int64";
 			break;
 
-		case Token::TYPE_INTPTR:
+		case Token::Type::INTPTR:
 			name = "NativeInt";
 			break;
 
-		case Token::TYPE_STRING:
+		case Token::Type::STRING:
 			name = "PAnsiChar";
 			break;
 
-		case Token::TYPE_UCHAR:
+		case Token::Type::UCHAR:
 			name = "Byte";
 			break;
 
-		case Token::TYPE_UINT:
+		case Token::Type::UINT:
 			name = "Cardinal";
 			break;
 
-		case Token::TYPE_UINT64:
+		case Token::Type::UINT64:
 			name = "QWord";
 			break;
 
-		case Token::TYPE_IDENTIFIER:
-			name = (typeRef.type == BaseType::TYPE_INTERFACE ? prefix : "") + typeRef.token.text;
+		case Token::Type::IDENTIFIER:
+			name = (typeRef.type == BaseType::Type::INTERFACE ? prefix : "") + typeRef.token.text;
 			break;
 
 		default:
@@ -1686,7 +1686,7 @@ void JnaGenerator::generate()
 			fprintf(out, "\t\tpublic static %s %s = %s;\n",
 				convertType(constant->typeRef, false).c_str(),
 				constant->name.c_str(),
-				constant->expr->generate(LANGUAGE_JAVA, prefix).c_str());
+				constant->expr->generate(Language::JAVA, prefix).c_str());
 		}
 
 		if (!interface->constants.empty())
@@ -1801,7 +1801,7 @@ void JnaGenerator::generate()
 			fprintf(out, "\n");
 			fprintf(out, "\t\t{\n");
 
-			bool hasReturn = method->returnTypeRef.token.type != Token::TYPE_VOID ||
+			bool hasReturn = method->returnTypeRef.token.type != Token::Type::VOID ||
 				method->returnTypeRef.isPointer;
 
 			if (hasReturn)
@@ -1908,44 +1908,44 @@ string JnaGenerator::convertType(const TypeRef& typeRef, bool forReturn)
 
 	switch (typeRef.token.type)
 	{
-		case Token::TYPE_BOOLEAN:
+		case Token::Type::BOOLEAN:
 			name = "boolean";
 			break;
 
-		case Token::TYPE_INT:
+		case Token::Type::INT:
 			name = "int";
 			break;
 
-		case Token::TYPE_INT64:
+		case Token::Type::INT64:
 			name = "long";
 			break;
 
-		case Token::TYPE_INTPTR:
+		case Token::Type::INTPTR:
 			name = "com.sun.jna.Pointer";
 			break;
 
-		case Token::TYPE_STRING:
+		case Token::Type::STRING:
 			if (typeRef.isConst)
 				name = "String";
 			else
 				name = "com.sun.jna.Pointer";
 			break;
 
-		case Token::TYPE_UCHAR:
+		case Token::Type::UCHAR:
 			name = "byte";
 			break;
 
-		case Token::TYPE_UINT:
+		case Token::Type::UINT:
 			name = "int";
 			break;
 
-		case Token::TYPE_UINT64:
+		case Token::Type::UINT64:
 			name = "long";
 			break;
 
 		default:
-			if (typeRef.type == BaseType::TYPE_INTERFACE &&
-				typeRef.token.type == Token::TYPE_IDENTIFIER)
+			if (typeRef.type == BaseType::Type::INTERFACE &&
+				typeRef.token.type == Token::Type::IDENTIFIER)
 			{
 				name = prefix;
 			}
@@ -1972,16 +1972,16 @@ string JnaGenerator::literalForError(const TypeRef& typeRef)
 
 	switch (typeRef.token.type)
 	{
-		case Token::TYPE_BOOLEAN:
+		case Token::Type::BOOLEAN:
 			return "false";
 
-		case Token::TYPE_INT:
-		case Token::TYPE_INT64:
-		case Token::TYPE_UINT:
-		case Token::TYPE_UINT64:
+		case Token::Type::INT:
+		case Token::Type::INT64:
+		case Token::Type::UINT:
+		case Token::Type::UINT64:
 			return "0";
 
-		case Token::TYPE_UCHAR:
+		case Token::Type::UCHAR:
 			return "(byte) 0";
 
 		default:
@@ -2040,7 +2040,7 @@ void JsonGenerator::generate()
 			fprintf(out, "\t\t\t\t\t\t\"name\": \"%s\",\n", constant->name.c_str());
 			fprintf(out, "\t\t\t\t\t\t\"type\": %s,\n", convertType(constant->typeRef).c_str());
 			fprintf(out, "\t\t\t\t\t\t\"expr\": %s\n",
-				constant->expr->generate(LANGUAGE_JSON, prefix).c_str());
+				constant->expr->generate(Language::JSON, prefix).c_str());
 
 			fprintf(out, "\t\t\t\t\t}");
 
@@ -2076,7 +2076,7 @@ void JsonGenerator::generate()
 			if (method->notImplementedExpr)
 			{
 				fprintf(out, "\t\t\t\t\t\t\"notImplementedExpr\": %s,\n",
-					method->notImplementedExpr->generate(LANGUAGE_JSON, prefix).c_str());
+					method->notImplementedExpr->generate(Language::JSON, prefix).c_str());
 			}
 
 			fprintf(out, "\t\t\t\t\t\t\"parameters\":\n");

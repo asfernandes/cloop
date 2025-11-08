@@ -89,7 +89,11 @@ public:
 class DefAction final : public Action
 {
 public:
-	enum DefType { DEF_NOT_IMPLEMENTED, DEF_IGNORE };
+	enum class DefType
+	{
+		NOT_IMPLEMENTED,
+		IGNORE,
+	};
 
 	explicit DefAction(DefType dt)
 		: defType(dt)

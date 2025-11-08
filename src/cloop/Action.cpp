@@ -38,8 +38,8 @@ void IfThenElseAction::generate(const ActionParametersBlock& apb, unsigned ident
 {
 	switch(apb.language)
 	{
-	case LANGUAGE_C:
-	case LANGUAGE_CPP:
+	case Language::C:
+	case Language::CPP:
 		identify(apb, ident);
 		fprintf(apb.out, "if (%s) {\n", exprIf->generate(apb.language, apb.prefix).c_str());
 		actThen->generate(apb, ident + 1);
@@ -55,7 +55,7 @@ void IfThenElseAction::generate(const ActionParametersBlock& apb, unsigned ident
 		}
 		break;
 
-	case LANGUAGE_PASCAL:
+	case Language::PASCAL:
 		identify(apb, ident);
 		fprintf(apb.out, "if %s then begin\n", exprIf->generate(apb.language, apb.prefix).c_str());
 		actThen->generate(apb, ident + 1);
@@ -77,11 +77,11 @@ void IfThenElseAction::generate(const ActionParametersBlock& apb, unsigned ident
 void CallAction::generate(const ActionParametersBlock& apb, unsigned ident)
 {
 	identify(apb, ident);
-	fprintf(apb.out, "%s(", (apb.language == LANGUAGE_PASCAL ? PascalGenerator::escapeName(name) : name).c_str());
+	fprintf(apb.out, "%s(", (apb.language == Language::PASCAL ? PascalGenerator::escapeName(name) : name).c_str());
 	for (auto itr = parameters.begin(); itr != parameters.end(); ++itr)
 	{
 		string parname = *itr;
-		if (apb.language == LANGUAGE_PASCAL)
+		if (apb.language == Language::PASCAL)
 			parname = PascalGenerator::escapeName(parname);
 		fprintf(apb.out, "%s%s", itr == parameters.begin() ? "" : ", ", parname.c_str());
 	}
@@ -93,10 +93,10 @@ void DefAction::generate(const ActionParametersBlock& apb, unsigned ident)
 {
 	switch(defType)
 	{
-	case DEF_NOT_IMPLEMENTED:
+	case DefType::NOT_IMPLEMENTED:
 		switch(apb.language)
 		{
-		case LANGUAGE_C:
+		case Language::C:
 			if (!apb.method->statusName.empty())
 			{
 				identify(apb, ident);
@@ -106,7 +106,7 @@ void DefAction::generate(const ActionParametersBlock& apb, unsigned ident)
 			}
 			break;
 
-		case LANGUAGE_CPP:
+		case Language::CPP:
 			if (!apb.method->statusName.empty())
 			{
 				identify(apb, ident);
@@ -119,7 +119,7 @@ void DefAction::generate(const ActionParametersBlock& apb, unsigned ident)
 			}
 			break;
 
-		case LANGUAGE_PASCAL:
+		case Language::PASCAL:
 			if (!apb.method->statusName.empty() && !apb.exceptionClass.empty())
 			{
 				identify(apb, ident);
@@ -131,35 +131,35 @@ void DefAction::generate(const ActionParametersBlock& apb, unsigned ident)
 		}
 		break;
 
-	case DEF_IGNORE:
-		if (apb.method->returnTypeRef.token.type != Token::TYPE_VOID ||
+	case DefType::IGNORE:
+		if (apb.method->returnTypeRef.token.type != Token::Type::VOID ||
 			apb.method->returnTypeRef.isPointer)
 		{
 			identify(apb, ident);
 
 			switch(apb.language)
 			{
-			case LANGUAGE_C:
-			case LANGUAGE_CPP:
+			case Language::C:
+			case Language::CPP:
 				fprintf(apb.out, "return 0;\n");
 				break;
 
-			case LANGUAGE_PASCAL:
+			case Language::PASCAL:
 				{
 					const char* sResult = "nil";
 					if (!apb.method->returnTypeRef.isPointer)
 					{
 						switch (apb.method->returnTypeRef.token.type)
 						{
-						case Token::TYPE_STRING:
+						case Token::Type::STRING:
 							break;
 
-						case Token::TYPE_BOOLEAN:
+						case Token::Type::BOOLEAN:
 							sResult = "false";
 							break;
 
-						case Token::TYPE_IDENTIFIER:
-							if (apb.method->returnTypeRef.type == BaseType::TYPE_INTERFACE)
+						case Token::Type::IDENTIFIER:
+							if (apb.method->returnTypeRef.type == BaseType::Type::INTERFACE)
 								break;
 
 							// fallthru

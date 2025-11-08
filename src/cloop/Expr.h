@@ -28,13 +28,13 @@
 class Interface;
 
 
-enum Language
+enum class Language
 {
-	LANGUAGE_C,
-	LANGUAGE_CPP,
-	LANGUAGE_PASCAL,
-	LANGUAGE_JAVA,
-	LANGUAGE_JSON
+	C,
+	CPP,
+	PASCAL,
+	JAVA,
+	JSON,
 };
 
 

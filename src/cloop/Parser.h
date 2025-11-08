@@ -35,12 +35,12 @@ class Expr;
 class BaseType
 {
 public:
-	enum Type
+	enum class Type
 	{
-		TYPE_INTERFACE,
-		TYPE_STRUCT,
-		TYPE_TYPEDEF,
-		TYPE_BOOLEAN
+		INTERFACE,
+		STRUCT,
+		TYPEDEF,
+		BOOLEAN,
 	};
 
 protected:
@@ -63,7 +63,7 @@ public:
 	explicit TypeRef()
 		: isConst(false),
 		  isPointer(false),
-		  type(BaseType::TYPE_INTERFACE)
+		  type(BaseType::Type::INTERFACE)
 	{
 	}
 
@@ -122,7 +122,7 @@ class Interface final : public BaseType
 {
 public:
 	explicit Interface()
-		: BaseType(TYPE_INTERFACE),
+		: BaseType(Type::INTERFACE),
 		  super(NULL),
 		  version(1)
 	{
@@ -140,7 +140,7 @@ class Struct final : public BaseType
 {
 public:
 	explicit Struct()
-		: BaseType(TYPE_STRUCT)
+		: BaseType(Type::STRUCT)
 	{
 	}
 };
@@ -150,7 +150,7 @@ class Boolean final : public BaseType
 {
 public:
 	explicit Boolean()
-		: BaseType(TYPE_BOOLEAN)
+		: BaseType(Type::BOOLEAN)
 	{
 	}
 };
@@ -160,7 +160,7 @@ class Typedef final : public BaseType
 {
 public:
 	explicit Typedef()
-		: BaseType(TYPE_TYPEDEF)
+		: BaseType(Type::TYPEDEF)
 	{
 	}
 };

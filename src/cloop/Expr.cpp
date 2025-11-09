@@ -22,6 +22,7 @@
 #include "Expr.h"
 #include "Parser.h"
 #include <format>
+#include <utility>
 
 using std::format;
 using std::string;
@@ -39,9 +40,7 @@ IntLiteralExpr::IntLiteralExpr(std::int64_t value, bool hex)
 string IntLiteralExpr::generate(Language language, const string& prefix)
 {
 	if (language == Language::JSON)  // TODO: Does json support hex constants?
-	{
 		return format("{{ \"type\": \"int-literal\", \"value\": {} }}", value);
-	}
 
 	if (hex)
 		return format("{}{:x}", language == Language::PASCAL ? "$" : "0x", value);
@@ -61,9 +60,7 @@ BooleanLiteralExpr::BooleanLiteralExpr(bool value)
 string BooleanLiteralExpr::generate(Language language, const string& prefix)
 {
 	if (language == Language::JSON)
-	{
 		return format("{{ \"type\": \"boolean-literal\", \"value\": {} }}", (value ? "true" : "false"));
-	}
 	else
 		return value ? "true" : "false";
 }
@@ -72,8 +69,8 @@ string BooleanLiteralExpr::generate(Language language, const string& prefix)
 //--------------------------------------
 
 
-NegateExpr::NegateExpr(Expr* expr)
-	: expr(expr)
+NegateExpr::NegateExpr(std::unique_ptr<Expr> expr)
+	: expr(std::move(expr))
 {
 }
 
@@ -132,9 +129,9 @@ string ConstantExpr::generate(Language language, const string& prefix)
 //--------------------------------------
 
 
-BitwiseOrExpr::BitwiseOrExpr(Expr* expr1, Expr* expr2)
-	: expr1(expr1),
-	  expr2(expr2)
+BitwiseOrExpr::BitwiseOrExpr(std::unique_ptr<Expr> expr1, std::unique_ptr<Expr> expr2)
+	: expr1(std::move(expr1)),
+	  expr2(std::move(expr2))
 {
 }
 

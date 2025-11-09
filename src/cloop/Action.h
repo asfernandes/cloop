@@ -24,6 +24,7 @@
 
 #include "Expr.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <stdio.h>
@@ -37,8 +38,8 @@ struct ActionParametersBlock final
 	Language language;
 	const std::string& prefix;
 	const std::string& exceptionClass;
-	Interface* interface = nullptr;
-	Method* method = nullptr;
+	const Interface* interface = nullptr;
+	const Method* method = nullptr;
 };
 
 class Action
@@ -54,27 +55,17 @@ public:
 class IfThenElseAction final : public Action
 {
 public:
-	explicit IfThenElseAction() = default;
-
-	IfThenElseAction(const IfThenElseAction&) = default;
-
-public:
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 
 public:
-	Expr* exprIf = nullptr;
-	Action* actThen = nullptr;
-	Action* actElse = nullptr;
+	std::unique_ptr<Expr> exprIf;
+	std::unique_ptr<Action> actThen;
+	std::unique_ptr<Action> actElse;
 };
 
 
 class CallAction final : public Action
 {
-public:
-	explicit CallAction() = default;
-
-	CallAction(const CallAction&) = default;
-
 public:
 	void generate(const ActionParametersBlock& apb, unsigned ident) override;
 

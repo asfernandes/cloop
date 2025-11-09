@@ -23,6 +23,7 @@
 #define CLOOP_EXPR_H
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 
@@ -79,13 +80,13 @@ private:
 class NegateExpr final : public Expr
 {
 public:
-	explicit NegateExpr(Expr* expr);
+	explicit NegateExpr(std::unique_ptr<Expr> expr);
 
 public:
 	std::string generate(Language language, const std::string& prefix) override;
 
 private:
-	Expr* expr;
+	std::unique_ptr<Expr> expr;
 };
 
 
@@ -106,14 +107,14 @@ private:
 class BitwiseOrExpr final : public Expr
 {
 public:
-	explicit BitwiseOrExpr(Expr* expr1, Expr* expr2);
+	explicit BitwiseOrExpr(std::unique_ptr<Expr> expr1, std::unique_ptr<Expr> expr2);
 
 public:
 	std::string generate(Language language, const std::string& prefix) override;
 
 private:
-	Expr* expr1;
-	Expr* expr2;
+	std::unique_ptr<Expr> expr1;
+	std::unique_ptr<Expr> expr2;
 };
 
 

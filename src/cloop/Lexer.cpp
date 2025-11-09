@@ -72,7 +72,7 @@ Token& Lexer::getToken(Token& token)
 		while (
 			(ch.c >= 'a' && ch.c <= 'z') || (ch.c >= 'A' && ch.c <= 'Z') || ch.c == '_' || (ch.c >= '0' && ch.c <= '9'))
 		{
-			token.text += ch.c;
+			token.text += static_cast<char>(ch.c);
 			getChar(ch);
 		}
 
@@ -139,15 +139,15 @@ Token& Lexer::getToken(Token& token)
 	else if (ch.c >= '0' && ch.c <= '9')
 	{
 		token.type = Token::Type::INT_LITERAL;
-		token.text += ch.c;
+		token.text += static_cast<char>(ch.c);
 
 		if ((getChar(ch).c == 'x' || ch.c == 'X') && token.text[0] == '0')
 		{
-			token.text += ch.c;
+			token.text += static_cast<char>(ch.c);
 
 			while ((getChar(ch).c >= '0' && ch.c <= '9') || (tolower(ch.c) >= 'a' && tolower(ch.c) <= 'f'))
 			{
-				token.text += ch.c;
+				token.text += static_cast<char>(ch.c);
 			}
 
 			if (token.text.length() == 2)
@@ -160,7 +160,7 @@ Token& Lexer::getToken(Token& token)
 			ungetChar(ch);
 
 			while (getChar(ch).c >= '0' && ch.c <= '9')
-				token.text += ch.c;
+				token.text += static_cast<char>(ch.c);
 		}
 
 		ungetChar(ch);
@@ -168,12 +168,12 @@ Token& Lexer::getToken(Token& token)
 	else
 	{
 		token.type = static_cast<Token::Type>(ch.c);
-		token.text = ch.c;
+		token.text = static_cast<char>(ch.c);
 
 		if (getChar(ch).c == ':')
 		{
 			token.type = Token::Type::DOUBLE_COLON;
-			token.text += ch.c;
+			token.text += static_cast<char>(ch.c);
 		}
 		else
 			ungetChar(ch);

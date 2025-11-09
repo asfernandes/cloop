@@ -57,7 +57,7 @@ BooleanLiteralExpr::BooleanLiteralExpr(bool value)
 {
 }
 
-string BooleanLiteralExpr::generate(Language language, const string& prefix)
+string BooleanLiteralExpr::generate(Language language, const string& /*prefix*/)
 {
 	if (language == Language::JSON)
 		return format("{{ \"type\": \"boolean-literal\", \"value\": {} }}", (value ? "true" : "false"));

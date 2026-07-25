@@ -23,45 +23,202 @@
 #include "Parser.h"
 #include "Expr.h"
 #include "Generator.h"
+#include <cstddef>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <stdexcept>
 
 using std::cerr;
+using std::cout;
 using std::endl;
 using std::exception;
+using std::map;
 using std::runtime_error;
+using std::size_t;
 using std::string;
 using std::unique_ptr;
 
 
-static string paramError(const char* generator = nullptr, const char* perGenerator = nullptr)
+namespace
 {
-	string text = "Invalid command line parameters. Required format: inputFile ";
-	text += generator ? generator : "outFormat (one of c-header, c-impl, c++, pascal)";
-	text += " outputFile";
-
-	if (perGenerator)
+	struct CommandLineOptions
 	{
-		text += " ";
-		text += perGenerator;
-	}
+		map<string, string> values;
 
-	return text;
-}
+		bool has(const char* name) const
+		{
+			return values.find(name) != values.end();
+		}
+
+		const string& get(const char* name) const
+		{
+			return values.at(name);
+		}
+	};
+}  // namespace
+
 
 //--------------------------------------
 
 
+static string usage()
+{
+	return "Usage: cloop --input input-file --output-format format --output output-file [options]\n"
+		   "Formats: c-header, c-impl, c++, pascal, jna, json\n"
+		   "Common options:\n"
+		   "  --input FILE\n"
+		   "  --output-format FORMAT\n"
+		   "  --output FILE\n"
+		   "C++ options:\n"
+		   "  --header-guard NAME --class-name NAME --prefix PREFIX\n"
+		   "C header options:\n"
+		   "  --header-guard NAME --prefix PREFIX [--macro]\n"
+		   "C implementation options:\n"
+		   "  --include-file FILE --prefix PREFIX\n"
+		   "Pascal options:\n"
+		   "  --unit-name NAME [--uses USES] [--interface-file FILE]\n"
+		   "  [--implementation-file FILE] [--exception-class NAME]\n"
+		   "  [--prefix PREFIX] [--functions-file FILE]\n"
+		   "JNA options:\n"
+		   "  --class-name NAME --exception-class NAME --prefix PREFIX\n"
+		   "Other options:\n"
+		   "  --help\n";
+}
+
+static bool isKnownOption(const string& name)
+{
+	static const char* const options[] = {
+		"--input",
+		"--output-format",
+		"--output",
+		"--header-guard",
+		"--class-name",
+		"--prefix",
+		"--macro",
+		"--include-file",
+		"--unit-name",
+		"--uses",
+		"--interface-file",
+		"--implementation-file",
+		"--exception-class",
+		"--functions-file",
+		"--help",
+	};
+
+	for (const char* option : options)
+	{
+		if (name == option)
+			return true;
+	}
+
+	return false;
+}
+
+static void addOption(CommandLineOptions& options, const string& name, const string& value)
+{
+	if (options.has(name.c_str()))
+		throw runtime_error("Repeated option " + name + ".");
+
+	options.values[name] = value;
+}
+
+static void parseCommandLine(int argc, const char* argv[], CommandLineOptions& options)
+{
+	for (int i = 1; i < argc; ++i)
+	{
+		string argument(argv[i]);
+
+		if (argument == "--help")
+		{
+			addOption(options, argument, "");
+			continue;
+		}
+
+		if (argument.size() < 3 || argument.compare(0, 2, "--") != 0)
+			throw runtime_error("Unexpected command line argument '" + argument + "'.\n" + usage());
+
+		const auto equals = argument.find('=');
+		const auto name = argument.substr(0, equals);
+
+		if (!isKnownOption(name))
+			throw runtime_error("Unknown option " + name + ".\n\n" + usage());
+
+		if (name == "--macro")
+		{
+			if (equals != string::npos && argument.substr(equals + 1) != "macro")
+				throw runtime_error("Option --macro does not take a value.");
+
+			if (equals == string::npos && i + 1 < argc && string(argv[i + 1]) == "macro")
+				++i;
+
+			addOption(options, name, "macro");
+			continue;
+		}
+
+		if (name == "--help")
+			throw runtime_error("Option --help does not take a value.");
+
+		string value;
+
+		if (equals == string::npos)
+		{
+			if (i + 1 >= argc)
+				throw runtime_error("Missing value for option " + name + ".");
+
+			value = argv[++i];
+		}
+		else
+			value = argument.substr(equals + 1);
+
+		addOption(options, name, value);
+	}
+}
+
+static string requiredOption(const CommandLineOptions& options, const char* name)
+{
+	if (!options.has(name) || options.get(name).empty())
+		throw runtime_error("Missing required option " + string(name) + ".\n\n" + usage());
+
+	return options.get(name);
+}
+
+static void checkAllowedOptions(
+	const CommandLineOptions& options, const char* const allowed[], size_t count, const string& format)
+{
+	for (const auto& option : options.values)
+	{
+		bool allowedOption = false;
+
+		for (size_t i = 0; i < count; ++i)
+		{
+			if (option.first == allowed[i])
+			{
+				allowedOption = true;
+				break;
+			}
+		}
+
+		if (!allowedOption && option.first != "--help")
+			throw runtime_error("Option " + option.first + " is not valid for " + format + " output.");
+	}
+}
+
 static void run(int argc, const char* argv[])
 {
-	if (argc < 4)
-		throw runtime_error(paramError());
+	CommandLineOptions options;
+	parseCommandLine(argc, argv, options);
 
-	string inFilename(argv[1]);
-	string outFormat(argv[2]);
-	string outFilename(argv[3]);
+	if (options.has("--help"))
+	{
+		cout << usage();
+		return;
+	}
+
+	const auto inFilename = requiredOption(options, "--input");
+	const auto outFormat = requiredOption(options, "--output-format");
+	const auto outFilename = requiredOption(options, "--output");
 
 	Lexer lexer(inFilename);
 
@@ -72,103 +229,122 @@ static void run(int argc, const char* argv[])
 
 	if (outFormat == "c++")
 	{
-		if (argc < 7)
-			throw runtime_error(paramError("c++", "headerGuard className prefix"));
+		static const char* const allowed[] = {
+			"--input",
+			"--output-format",
+			"--output",
+			"--header-guard",
+			"--class-name",
+			"--prefix",
+		};
 
-		string headerGuard(argv[4]);
-		string className(argv[5]);
-		string prefix(argv[6]);
+		checkAllowedOptions(options, allowed, sizeof(allowed) / sizeof(allowed[0]), outFormat);
+
+		const auto headerGuard = requiredOption(options, "--header-guard");
+		const auto className = requiredOption(options, "--class-name");
+		const auto prefix = requiredOption(options, "--prefix");
 
 		generator.reset(new CppGenerator(outFilename, prefix, &parser, headerGuard, className));
 	}
 	else if (outFormat == "c-header")
 	{
-		if (argc < 6)
-			throw runtime_error(paramError("c-header", "headerGuard prefix [macro]"));
+		static const char* const allowed[] = {
+			"--input",
+			"--output-format",
+			"--output",
+			"--header-guard",
+			"--prefix",
+			"--macro",
+		};
 
-		string headerGuard(argv[4]);
-		string prefix(argv[5]);
-		string macro;
+		checkAllowedOptions(options, allowed, sizeof(allowed) / sizeof(allowed[0]), outFormat);
 
-		if (argc == 7)
-			macro = argv[6];
+		const auto headerGuard = requiredOption(options, "--header-guard");
+		const auto prefix = requiredOption(options, "--prefix");
+		const auto macro = options.has("--macro") ? options.get("--macro") : string();
 
 		generator.reset(new CHeaderGenerator(outFilename, prefix, &parser, headerGuard, macro));
 	}
 	else if (outFormat == "c-impl")
 	{
-		if (argc < 6)
-			throw runtime_error(paramError("c-impl", "includeFilename prefix"));
+		static const char* const allowed[] = {
+			"--input",
+			"--output-format",
+			"--output",
+			"--include-file",
+			"--prefix",
+		};
 
-		string includeFilename(argv[4]);
-		string prefix(argv[5]);
+		checkAllowedOptions(options, allowed, sizeof(allowed) / sizeof(allowed[0]), outFormat);
+
+		const auto includeFilename = requiredOption(options, "--include-file");
+		const auto prefix = requiredOption(options, "--prefix");
 
 		generator.reset(new CImplGenerator(outFilename, prefix, &parser, includeFilename));
 	}
 	else if (outFormat == "pascal")
 	{
-		if (argc < 5)
-		{
-			throw runtime_error(paramError("pascal",
-				"--uses uses --interfaceFile interfaces-file "
-				"--implementationFile implementation-file --exceptionClass class-name --prefix prefix --functionsFile "
-				"functions-file"));
-		}
-
-		string unitName(argv[4]);
-
-		struct pascalSwitch
-		{
-			const char* sw;
-			string val;
+		static const char* const allowed[] = {
+			"--input",
+			"--output-format",
+			"--output",
+			"--unit-name",
+			"--uses",
+			"--interface-file",
+			"--implementation-file",
+			"--exception-class",
+			"--prefix",
+			"--functions-file",
 		};
-		pascalSwitch sw[] = {{"--uses", ""}, {"--interfaceFile", ""}, {"--implementationFile", ""},
-			{"--exceptionClass", ""}, {"--prefix", ""}, {"--functionsFile", ""}, {NULL, ""}};
 
-		argv += 5;
-		argc -= 5;
+		checkAllowedOptions(options, allowed, sizeof(allowed) / sizeof(allowed[0]), outFormat);
 
-		for (; argc >= 2; argc -= 2, argv += 2)
-		{
-			string key = argv[0];
-			bool found = false;
-			for (pascalSwitch* cur = sw; cur->sw; ++cur)
-			{
-				if (cur->sw == key)
-				{
-					if (!cur->val.empty())
-						throw runtime_error("Repeated switch " + key);
-					found = true;
-					cur->val = argv[1];
-					break;
-				}
-			}
-			if (!found)
-				throw runtime_error("Unknown switch " + key);
-		}
-
-		generator.reset(new PascalGenerator(outFilename, sw[4].val /*prefix*/, &parser, unitName,
-			sw[0].val /*additionalUses*/, sw[1].val /*interfaceFile*/, sw[2].val /*implementationFile*/,
-			sw[3].val /*exceptionClass*/, sw[5].val /*functionsFile*/));
+		generator.reset(new PascalGenerator(outFilename, options.has("--prefix") ? options.get("--prefix") : string(),
+			&parser, requiredOption(options, "--unit-name"), options.has("--uses") ? options.get("--uses") : string(),
+			options.has("--interface-file") ? options.get("--interface-file") : string(),
+			options.has("--implementation-file") ? options.get("--implementation-file") : string(),
+			options.has("--exception-class") ? options.get("--exception-class") : string(),
+			options.has("--functions-file") ? options.get("--functions-file") : string()));
 	}
 	else if (outFormat == "jna")
 	{
-		if (argc < 7)
-			throw runtime_error("Invalid command line parameters for JNA output.");
+		static const char* const allowed[] = {
+			"--input",
+			"--output-format",
+			"--output",
+			"--class-name",
+			"--exception-class",
+			"--prefix",
+		};
 
-		string className(argv[4]);
-		string exceptionClass(argv[5]);
-		string prefix(argv[6]);
+		checkAllowedOptions(options, allowed, sizeof(allowed) / sizeof(allowed[0]), outFormat);
+
+		const auto className = requiredOption(options, "--class-name");
+		const auto exceptionClass = requiredOption(options, "--exception-class");
+		const auto prefix = requiredOption(options, "--prefix");
 
 		generator.reset(new JnaGenerator(outFilename, prefix, &parser, className, exceptionClass));
 	}
 	else if (outFormat == "json")
+	{
+		static const char* const allowed[] = {
+			"--input",
+			"--output-format",
+			"--output",
+		};
+
+		checkAllowedOptions(options, allowed, sizeof(allowed) / sizeof(allowed[0]), outFormat);
+
 		generator.reset(new JsonGenerator(outFilename, &parser));
+	}
 	else
-		throw runtime_error("Invalid output format.");
+		throw runtime_error("Invalid output format '" + outFormat + "'.");
 
 	generator->generate();
 }
+
+
+//--------------------------------------
 
 
 int main(int argc, const char* argv[])

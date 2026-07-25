@@ -10,32 +10,36 @@ set(TEST1_GENERATOR $<TARGET_FILE:cloop>)
 
 add_custom_command(
   OUTPUT ${TEST1_C_HEADER}
-  COMMAND ${TEST1_GENERATOR} ${TEST1_IDL} c-header ${TEST1_C_HEADER} CALC_C_API_H CALC_I
+  COMMAND ${TEST1_GENERATOR} --input ${TEST1_IDL} --output-format c-header --output ${TEST1_C_HEADER}
+          --header-guard CALC_C_API_H --prefix CALC_I
   DEPENDS cloop ${TEST1_IDL}
   COMMENT "Generating CalcCApi.h"
   VERBATIM)
 
 add_custom_command(
   OUTPUT ${TEST1_C_IMPL}
-  COMMAND ${TEST1_GENERATOR} ${TEST1_IDL} c-impl ${TEST1_C_IMPL} CalcCApi.h CALC_I
+  COMMAND ${TEST1_GENERATOR} --input ${TEST1_IDL} --output-format c-impl --output ${TEST1_C_IMPL}
+          --include-file CalcCApi.h --prefix CALC_I
   DEPENDS cloop ${TEST1_IDL} ${TEST1_C_HEADER}
   COMMENT "Generating CalcCApi.c"
   VERBATIM)
 
 add_custom_command(
   OUTPUT ${TEST1_CPP_HEADER}
-  COMMAND ${TEST1_GENERATOR} ${TEST1_IDL} c++ ${TEST1_CPP_HEADER} CALC_CPP_API_H calc I
+  COMMAND ${TEST1_GENERATOR} --input ${TEST1_IDL} --output-format c++ --output ${TEST1_CPP_HEADER}
+          --header-guard CALC_CPP_API_H --class-name calc --prefix I
   DEPENDS cloop ${TEST1_IDL}
   COMMENT "Generating CalcCppApi.h"
   VERBATIM)
 
 add_custom_command(
   OUTPUT ${TEST1_PASCAL_API}
-  COMMAND ${TEST1_GENERATOR} ${TEST1_IDL} pascal ${TEST1_PASCAL_API} CalcPascalApi
+  COMMAND ${TEST1_GENERATOR} --input ${TEST1_IDL} --output-format pascal --output ${TEST1_PASCAL_API}
+          --unit-name CalcPascalApi
           --uses SysUtils
-          --interfaceFile ${TEST1_DIR}/CalcPascalApi.interface.pas
-          --implementationFile ${TEST1_DIR}/CalcPascalApi.implementation.pas
-          --exceptionClass CalcException
+          --interface-file ${TEST1_DIR}/CalcPascalApi.interface.pas
+          --implementation-file ${TEST1_DIR}/CalcPascalApi.implementation.pas
+          --exception-class CalcException
   DEPENDS cloop ${TEST1_IDL}
           ${TEST1_DIR}/CalcPascalApi.interface.pas
           ${TEST1_DIR}/CalcPascalApi.implementation.pas
@@ -44,10 +48,10 @@ add_custom_command(
 
 add_custom_command(
   OUTPUT ${TEST1_JAVA_INTERFACE}
-  COMMAND ${TEST1_GENERATOR} ${TEST1_IDL} jna ${TEST1_JAVA_INTERFACE}
-          com.github.asfernandes.cloop.tests.test1.ICalc
-          CalcException
-          I
+  COMMAND ${TEST1_GENERATOR} --input ${TEST1_IDL} --output-format jna --output ${TEST1_JAVA_INTERFACE}
+          --class-name com.github.asfernandes.cloop.tests.test1.ICalc
+          --exception-class CalcException
+          --prefix I
   DEPENDS cloop ${TEST1_IDL}
   COMMENT "Generating ICalc.java"
   VERBATIM)
